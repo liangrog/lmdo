@@ -1,0 +1,27 @@
+
+Service: UserService
+
+# Define package environment 
+Environment: development
+User: roger
+Profile: default
+Stage: dev
+
+API: UserService
+
+# Bucket used to put all your Lambda functions
+LambdaBucketName: lambda-pkg.merlingroup.co
+
+# Optional
+# Parameter mapping for your cloud formation
+#Parameters:
+#    key1: value1
+#    key2: value2
+
+# Optional
+# Mapping between Lambda function ARN to 
+# API gateway that uses it
+LambdaAPIMapping:
+    testLambdaArn: $testLambdaArn
+
+

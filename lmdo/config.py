@@ -47,6 +47,7 @@ exclude = {
         '.gitignore',
         '.coverage',
         '.travis.yml',
+        'requirement.txt',
     ]
 }
 
