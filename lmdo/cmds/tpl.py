@@ -4,6 +4,8 @@ import os
 import shutil
 import site
 
+from  lmdo.config import config_file
+
 class Tpl:
     """
     Copy templates
@@ -13,6 +15,11 @@ class Tpl:
         pass
 
     def run(self):
+        # Do not copy over unless it's a clearn dir
+        if os.path.isfile('./' + config_file):
+            print('Your have existing templates already, exiting...')
+            sys.exit(0)
+
         pkg_dir = site.getsitepackages()
         for pd in pkg_dir:
             if os.path.isdir(pd + '/lmdo'):
