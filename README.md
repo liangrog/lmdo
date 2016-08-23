@@ -41,10 +41,10 @@ Create/update API gateway and deploy stage
 
     $ lmdo api
 
-Deploy the whole service
+Deploy the service in one step
     
     $ lmdo deploy
 
-Delete the service and associate AWS assets
+Delete the service and associated AWS assets
 
     $ lmdo destroy
