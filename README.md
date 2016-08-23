@@ -9,12 +9,12 @@ Purpose
 
 The existing open source tool sets such as [Apex](https://github.com/apex/apex) and  [Serverless](https://github.com/serverless/serverless) bear all sort
 of limitations and too much abstractions, preventing the flexibility of utilising
-AWS cloudformation and other resource.
+AWS cloudformation and other resources.
 
 lmdo allows:
 
-- Customized cloud formation
-- Utilising Lambda function for queries
+- Customizing cloud formation template
+- Utilising Lambda function for queries to other AWS resources
 - Working in a team environment
 - Passing in parameters to cloud formation template
 
