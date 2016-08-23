@@ -148,7 +148,7 @@ class Base(object):
                 
                 params.append(put_lambda)
 
-                response = self.cf.create_stack(
+                response = self.cf.update_stack(
                     StackName=stack_name,
                     TemplateBody=template_body,
                     Capabilities=capabilities,
