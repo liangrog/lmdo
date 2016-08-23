@@ -7,7 +7,7 @@ from __future__ import print_function
 from .oprint import Oprint
 
 
-def mkdir(path, mode=777):
+def mkdir(path, mode=0777):
     """
     Wrapper for mkdir
     """
