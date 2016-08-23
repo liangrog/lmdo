@@ -7,11 +7,11 @@ lmdo
 Purpose
 -------
 
-The existing open source tool sets such as Apex, Serverless bear all sort
+The existing open source tool sets such as [Apex](https://github.com/apex/apex) and  [Serverless](https://github.com/serverless/serverless) bear all sort
 of limitations and too much abstractions, preventing the flexibility of utilising
 AWS cloudformation and other resource.
 
-Ideally, the tool should allow:
+lmdo allows:
 
 - Customized cloud formation
 - Utilising Lambda function for queries
