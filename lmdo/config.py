@@ -13,7 +13,7 @@ swagger_file = 'apigateway.json'
 tmp_dir = '/tmp/lmdo/'
 
 # Template location
-cf_dir = './cloundformation/'
+cf_dir = './cloudformation/'
 swagger_dir = './swagger/'
 
 # Mandatory keys in the config file

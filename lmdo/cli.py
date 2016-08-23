@@ -5,9 +5,9 @@ Usage:
     lmdo tpl
     lmdo lm
     lmdo cf
-    lmdo swag
     lmdo api
     lmdo deploy
+    lmdo destroy
     lmdo (-h | --help)
     lmdo --version
 
@@ -35,6 +35,6 @@ def main():
         if hasattr(cmds, k) and v:
             module = getattr(cmds, k)
             cls_commands = getmembers(module, isclass)
-            command = [command[1] for command in cls_commands if command[0] != 'Base'][0]
+            command = [command[1] for command in cls_commands if command[0] != 'Base' and command[0].lower() == k][0]
             command = command(args)
             command.run()

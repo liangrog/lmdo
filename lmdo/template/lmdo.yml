@@ -1,5 +1,5 @@
 
-Service: UserService
+Service: user
 
 # Define package environment 
 Environment: development
@@ -7,21 +7,39 @@ User: roger
 Profile: default
 Stage: dev
 
-API: UserService
+API: LmdoTest
 
 # Bucket used to put all your Lambda functions
-LambdaBucketName: lambda-pkg.merlingroup.co
+LambdaBucketName: lambda-packages.merlingroup.co
 
 # Optional
 # Parameter mapping for your cloud formation
-#Parameters:
-#    key1: value1
-#    key2: value2
+Parameters:
+    StackLookupArn: arn:aws:lambda:ap-southeast-2:105594462793:function:utils-merlingroupco-LookupStackOutputs-JOK0L75VOG3H
+    LookupStackName: lambda-global-infra-merlingroupco
+    BucketName: lambda-demo
+    RootDomainName: .merlingroup.co
+    DynamodbTableName: user
+
+# Optional
+# By default when delete a stack,
+# The associated bucket won't be
+# deleted if it has objects. Specified
+# here so the content will be deleted
+# first before we can delete the bucket
+#BucketInStackToDestroy:
+#    - bucket1
+#    - bucket2
 
 # Optional
 # Mapping between Lambda function ARN to 
 # API gateway that uses it
-LambdaAPIMapping:
-    testLambdaArn: $testLambdaArn
+#LambdaMapping:
+#    Lambda-test-function:
+#        TestLambdaFunctionArn: $testLambdaArn
+#    Lambda-test-function2: False
+LambdaMapping:
+    Lambda-test-function:
+        TestLambdaFunctionArn: $testLambdaArn
 
 

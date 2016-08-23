@@ -3,8 +3,8 @@
     "Description": "lmdo cloud formation template",
 
     "Parameters": {
-        "StackLookupArn" : {
-            "Description" : "The stack Lookup Lambda function ARN",
+        "StackLookupArn": {
+            "Description": "The stack Lookup Lambda function ARN",
             "Type": "String",
             "MinLength": "1",
             "MaxLength": "256"
@@ -15,23 +15,47 @@
             "Type": "String"
         },
 
-        "DefaultMemorySize" : {
-            "Description" : "The Lambda function default memory size",
+        "DefaultMemorySize": {
+            "Description": "The Lambda function default memory size",
             "Type": "String",
             "Default": "128",
-            "AllowedValues" : ["128", "512", "1024"]
+            "AllowedValues": ["128", "512", "1024"]
         },
 
-        "DefaultTimeout" : {
-            "Description" : "The Lambda function default timeout",
+        "DefaultTimeout": {
+            "Description": "The Lambda function default timeout",
             "Type": "Number",
             "Default": "16"
+        },
+
+        "TableReadCapacity": {
+            "Description": "The Lambda function default table read capacity",
+            "Type": "Number",
+            "Default": "25"
+        },
+
+        "TableWriteCapacity": {
+            "Description": "The Lambda function default table write capacity",
+            "Type": "Number",
+            "Default": "25"
+        },
+
+        "TableGlobalSecondaryReadCapacity": {
+            "Description": "The Lambda function default global secondary table read capacity",
+            "Type": "Number",
+            "Default": "25"
+        },
+
+        "TableGlobalSecondaryWriteCapacity": {
+            "Description": "The Lambda function default global secondary table write capacity",
+            "Type": "Number",
+            "Default": "25"
         },
 
         "EnableS3Policy" : {
             "Description" : "Enable default S3 IAM policy",
             "Type": "String",
-            "Default": "false"
+            "Default": "true"
         },       
         
         "EnableCognitoPolicy" : {
@@ -43,13 +67,76 @@
         "EnableDynamodbPolicyCondition" : {
             "Description" : "Enable default Dynamodb IAM policy",
             "Type": "String",
+            "Default": "true"
+        },
+
+        "PutLambdaFunction" : {
+            "Description" : "Create/Update Lambda function",
+            "Type": "String",
             "Default": "false"
         },
+
+        "BucketName" : {
+            "Description" : "Demo bucket",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "256"
+        },
+
+        "RootDomainName" : {
+            "Description" : "Root Domain Name",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "256"
+        },
+
+        "DynamodbTableName" : {
+            "Description" : "Demo Dynamodb Table",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "256"
+        },
+
+        "UserName" : {
+            "Description" : "Service user name",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "256"
+        },
+
+        "StageName" : {
+            "Description" : "Service stage name",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "256"
+        },
+
+        "ServiceName" : {
+            "Description" : "Service name",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "256"
+        },
+
+        "LambdaBucket" : {
+            "Description" : "Lambda package bucket name",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "256"
+        },
+
+        "LambdaKey" : {
+            "Description" : "Lambda package name",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "256"
+        }
     },
 
     "Conditions" : {
         "S3PolicyCondition" : {"Fn::Equals" : [{"Ref" : "EnableS3Policy"}, "true"]},
         "CognitoPolicyCondition" : {"Fn::Equals" : [{"Ref" : "EnableCognitoPolicy"}, "true"]},
+        "PutLambdaFunctionCondition" : {"Fn::Equals" : [{"Ref" : "PutLambdaFunction"}, "true"]},
         "DynamodbPolicyCondition" : {"Fn::Equals" : [{"Ref" : "EnableDynamodbPolicyCondition"}, "true"]}
     },
 
@@ -67,7 +154,7 @@
         "DefaultIamRoleLambda":{  
             "Type":"AWS::IAM::Role",
             "Properties":{  
-                "RoleName": "Fn::Join": ["-", ["LambdaDefaultIamRole", {"Ref":"AWS::StackId"}]]
+                "RoleName": {"Fn::Join": ["-", ["LambdaDefaultIamRole", {"Ref":"AWS::StackName"}]]},
                 "AssumeRolePolicyDocument":{  
                     "Version":"2012-10-17",
                     "Statement":[  
@@ -89,7 +176,7 @@
         "IamLogPolicyLambda":{  
             "Type":"AWS::IAM::Policy",
             "Properties":{  
-                "PolicyName": "Fn::Join": ["-", ["LambdaIamLogPolicy", {"Ref":"AWS::StackId"}]]
+                "PolicyName": {"Fn::Join": ["-", ["LambdaIamLogPolicy", {"Ref":"AWS::StackName"}]]},
                 "PolicyDocument":{  
                     "Version":"2012-10-17",
                     "Statement":[  
@@ -98,9 +185,12 @@
                             "Action":[  
                                 "logs:CreateLogGroup",
                                 "logs:CreateLogStream",
-                                "logs:PutLogEvents"
+                                "logs:PutLogEvents",
+                                "ec2:CreateNetworkInterface",
+                                "ec2:DescribeNetworkInterfaces",
+                                "ec2:DeleteNetworkInterface"
                             ],
-                            "Resource": "Fn::Join": [":", ["arn", "aws", "logs", {"Ref": "AWS::Region"}, "*", "*"]]
+                            "Resource": "*"
                         }
                     ]
                 },
@@ -116,7 +206,7 @@
             "Type":"AWS::IAM::Policy",
             "Condition" : "CognitoPolicyCondition",
             "Properties":{  
-                "PolicyName": "Fn::Join": ["-", ["LambdaIamCognitoPolicy", {"Ref":"AWS::StackId"}]]
+                "PolicyName": {"Fn::Join": ["-", ["LambdaIamCognitoPolicy", {"Ref":"AWS::StackName"}]]},
                 "PolicyDocument":{  
                     "Version":"2012-10-17",
                     "Statement":[  
@@ -141,7 +231,7 @@
             "Type":"AWS::IAM::Policy",
             "Condition" : "S3PolicyCondition",
             "Properties":{  
-                "PolicyName": "Fn::Join": ["-", ["LambdaIamS3Policy", {"Ref":"AWS::StackId"}]],
+                "PolicyName": {"Fn::Join": ["-", ["LambdaIamS3Policy", {"Ref":"AWS::StackName"}]]},
                 "PolicyDocument":{  
                     "Version":"2012-10-17",
                     "Statement":[  
@@ -153,7 +243,10 @@
                                 "s3:GetObject",
                                 "s3:PutObject"
                             ],
-                            "Resource": {"Fn::GetAtt": [ "GlobalStackInfo", "DefaultS3ServicesArn" ]}
+                            "Resource": [
+                                {"Fn::GetAtt": ["GlobalStackInfo", "LambdaBucketArn"]},
+                                {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref":"S3Bucket"}]]}
+                            ]
                         }
                     ]
                 },
@@ -169,7 +262,7 @@
             "Type":"AWS::IAM::Policy",
             "Condition" : "DynamodbPolicyCondition",
             "Properties":{  
-                "PolicyName": "Fn::Join": ["-", ["LambdaIamDynamodbPolicy", {"Ref":"AWS::StackId"}]]
+                "PolicyName": {"Fn::Join": ["-", ["LambdaIamDynamodbPolicy", {"Ref":"AWS::StackName"}]]},
                 "PolicyDocument":{  
                     "Version":"2012-10-17",
                     "Statement":[  
@@ -192,7 +285,7 @@
                                 "dynamodb:Scan",
                                 "dynamodb:UpdateItem"
                             ],
-                            "Resource": {"Fn::GetAtt": [ "DynamodbTable", "Arn" ]}
+                            "Resource": {"Fn::Join": ["", ["arn:aws:dynamodb:", {"Ref": "AWS::Region"}, ":", {"Ref": "AWS::AccountId"}, ":table/", {"Ref": "DynamodbTable"}]]}
                         }
                     ]
                 },
@@ -213,6 +306,8 @@
                 "AccessControl": "PublicReadWrite",
                 "Tags": [
                     {"Key": "AccountId", "Value": {"Ref": "AWS::AccountId"}},
+                    {"Key": "StackId", "Value": {"Ref": "AWS::StackId"}},
+                    {"Key": "StackName", "Value": {"Ref": "AWS::StackName"}},
                     {"Key": "Region", "Value": {"Ref": "AWS::Region"}},
                     {"Key": "AwsService", "Value": "S3"},
                     {"Key": "Name", "Value": {"Ref": "BucketName"}} 
@@ -244,24 +339,20 @@
         "DynamodbTable":{  
             "Type":"AWS::DynamoDB::Table",
             "Properties":{
-                "TableName": {"Ref": "TableName"},
+                "TableName": {"Ref": "DynamodbTableName"},
                 "AttributeDefinitions":[  
                     {  
-                        "AttributeName":"uid",
+                        "AttributeName":"id",
                         "AttributeType":"S"
                     },
                     {  
                         "AttributeName":"email",
                         "AttributeType":"S"
-                    },
-                    {  
-                        "AttributeName":"Language",
-                        "AttributeType":"S"
                     }
                 ],
                 "KeySchema":[  
                     {  
-                        "AttributeName":"uid",
+                        "AttributeName":"id",
                         "KeyType":"HASH"
                     }
                 ],
@@ -292,15 +383,14 @@
 
         "LambdaFunc":{  
             "Type":"AWS::Lambda::Function",
+            "Condition" : "PutLambdaFunctionCondition",
             "Properties":{  
                 "Code":{  
-                    "S3Bucket":{  
-                        {"Fn::GetAtt": [ "GlobalStackInfo", "DefaultS3ServicesBucketName" ]}
-                    },
-                    "S3Key": { "Fn::Join": ["/", [{"Ref":"ServiceName"}, {"Fn::Join": ["-", [{"Ref": "StageName"}, {"Fn::Join": ["", [{"Ref": "FunctionName"}, ".zip"]]} ]]} ]]}
+                    "S3Bucket":{"Ref": "LambdaBucket"},
+                    "S3Key": {"Ref": "LambdaKey"}
                 },
-                "FunctionName": { "Fn::Join": ["-", [{"Ref": "StageName"}, {"Ref":"ServiceName"}, "SomeLambdaFunction"]] },
-                "Handler": "SomeLambdaFunctionHandler",
+                "FunctionName": { "Fn::Join": ["-", [{"Ref": "UserName"}, {"Ref": "StageName"}, {"Ref":"ServiceName"}, "Lambda-test-function"]] },
+                "Handler": "handler.lambda_handler",
                 "MemorySize": {"Ref": "DefaultMemorySize"},
                 "Role":{  
                     "Fn::GetAtt":[  
@@ -311,22 +401,28 @@
                 "Runtime":"python2.7",
                 "Timeout": {"Ref": "DefaultTimeout"},
                 "VpcConfig": {
-                    "SecurityGroupIds": [{"Fn::GetAtt": [ "GlobalStackInfo", "DefaultLambdaSecurityGroupId" ]}],
-                    "SubnetIds": [{"Fn::GetAtt": [ "GlobalStackInfo", "DefaultLambdaSubnetId" ]}]
+                    "SecurityGroupIds": [{"Fn::GetAtt": [ "GlobalStackInfo", "DefaultSecurityGroupId"]}],
+                    "SubnetIds": [{"Fn::GetAtt": [ "GlobalStackInfo", "PrivateSubnet1"]}, {"Fn::GetAtt": [ "GlobalStackInfo", "PrivateSubnet2"]}]
                 }
             }
         }
     },
 
     "Outputs": {
-        "LmdoBucketName": {
-            "Value": {"Ref": "LmdoBucket"},
-            "Description": "Global Cloudformation bucket name"
+        "TestBucketName": {
+            "Value": {"Ref": "S3Bucket"},
+            "Description": "Test  bucket name"
         },
 
-    	"LmdoBucketDomainName": {
-	        "Description": "Global Cloudformation bucket domain name",
-	        "Value": {"Fn::GetAtt": ["LmdoBucket", "DomainName"]}
+    	"TestBucketDomainName": {
+	        "Description": "Test bucket domain name",
+	        "Value": {"Fn::GetAtt": ["S3Bucket", "DomainName"]}
+	    },
+
+        "TestLambdaFunctionArn": {
+            "Condition" : "PutLambdaFunctionCondition",
+ 	        "Description": "Test Lambda function Arn",
+	        "Value": {"Fn::GetAtt": ["LambdaFunc", "Arn"]}
 	    }
     }
 }

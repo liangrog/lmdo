@@ -10,7 +10,7 @@ class Base(object):
     Command base class
     """
 
-    def __init__(self, options, *args, **kwargs):
+    def __init__(self, options={}, *args, **kwargs):
         self.options = options
         self.args = args
         self.kwargs = kwargs
@@ -57,6 +57,7 @@ class Base(object):
         """
 
         s3 = self.get_aws_resource('s3')
+
         if s3.Bucket(bucket_name) in s3.buckets.all():
             return True
         return False
@@ -104,16 +105,25 @@ class Base(object):
         except Exception as e:
             return False
         
-        return True
+        return response
 
-    def update_stack(self, stack_name, template_body, capabilities='CAPABILITY_NAMED_IAM', **kwargs):
+    def update_stack(self, stack_name, template_body, capabilities=['CAPABILITY_NAMED_IAM','CAPABILITY_IAM'], **kwargs):
         update = False
-        if self.if_stack_exist(stack_name):
-            update = True
-
-        if not self.cf
+        if not self.cf:
             self.cf = self.get_aws_client('cloundformation')
 
+        stack_desc = self.if_stack_exist(stack_name)
+
+        if stack_desc:
+            if stack_desc['Stacks'][0]['StackStatus'] == 'ROLLBACK_COMPLETE':
+                self.remove_stack(stack_name)
+            else:
+                update = True
+
+        put_lambda = {'ParameterKey': 'PutLambdaFunction', 'ParameterValue': 'true'}
+
+        params = kwargs['parameters']
+        
         try:
             if not update:
                 waiter = self.cf.get_waiter('stack_create_complete')
@@ -128,8 +138,28 @@ class Base(object):
                 print('Waiting for new stack ' + stack_name + ' to be created...')
                 waiter.wait(StackName=stack_name)
                 print('New stack ' + stack_name + ' has been created')
+
+                # Need to create the stack first before
+                # we can create Lambda function, very odd 
+                # behavior from AWS, so essentially can't
+                # create lambda with other resource in one go
+                waiter = self.cf.get_waiter('stack_update_complete')
+                
+                params.append(put_lambda)
+
+                response = self.cf.create_stack(
+                    StackName=stack_name,
+                    TemplateBody=template_body,
+                    Capabilities=capabilities,
+                    Parameters=params
+                    )
+
+                print('Creating Lambda functions. Waiting for stack ' + stack_name + ' to be updated...')
+                waiter.wait(StackName=stack_name)
+                print('Stack ' + stack_name + ' has been updated')
             else:
                 waiter = self.cf.get_waiter('stack_update_complete')
+                params.append(put_lambda)
 
                 response = self.cf.update_stack(
                     StackName=stack_name,
@@ -154,6 +184,9 @@ class Base(object):
 
         if not self.cf:
             self.cf = self.get_aws_client('cloudformation')
+
+        if not self.if_stack_exist(stack_name):
+            return True
 
         try:
             waiter = self.cf.get_waiter('stack_delete_complete')

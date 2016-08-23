@@ -4,7 +4,7 @@ Common utility functions
 
 from __future__ import print_function 
 
-def mkdir(path, mode='0777'):
+def mkdir(path, mode=777):
     """
     Wrapper for mkdir
     """
@@ -12,17 +12,18 @@ def mkdir(path, mode='0777'):
     import os
     import errno
     import sys
+    from .config import tmp_dir
 
     try:
-        os.makedirs(config.tmp_dir, mode)
+        os.makedirs(tmp_dir, mode)
     except OSError as e:
-        if e.errno != errno.EEXIT:
+        if e.errno != errno.EEXIST:
             print(e)
             sys.exit(0)
         return True
     return True
 
-def zipper(self, from_path, target_file_name, exclude=None):
+def zipper(from_path, target_file_name, exclude=None):
     """
     Create zipped package 
     """
@@ -47,11 +48,11 @@ def zipper(self, from_path, target_file_name, exclude=None):
     zip_file = zipfile.ZipFile(target_file_name, 'w', zipfile.ZIP_DEFLATED)
    
     print('Start packaging directory')
-
+   
     for root, dirs, files in os.walk(from_path):
         if not exclude:
             for file in files:
-                f.write(os.path.join(root, file))
+                zip_file.write(os.path.join(root, file))
         else:
             for file in files:
                 excl = False
@@ -65,14 +66,14 @@ def zipper(self, from_path, target_file_name, exclude=None):
 
                 if exclude['file']:
                     for ex_file in exclude['file']:
-                        if fnmatch.fnmatch(file, ef):
+                        if fnmatch.fnmatch(file, ex_file):
                             excl = True
                             break
 
                 if not excl:
-                    f.write(os.path.join(root, file))
+                    zip_file.write(os.path.join(root, file))
 
-    f.close()
+    zip_file.close()
 
     print('Finished packaging directory' + from_path + '. Zipped package' + target_file_name + ' has been created')
 

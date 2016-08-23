@@ -1,6 +1,4 @@
 from __future__ import print_function
-import sys
-import getpass
 
 from .base import Base
 from .lm import Lm
@@ -10,13 +8,16 @@ from .api import Api
 
 class Deploy(Base):
     """
-    Class packaging Lambda function codes and
-    upload it to S3
+    Deploying AWS assets
     """
 
     def run(self):
+        print('Assets deployment process start...')
+
         Lm().run()
         Cf().run()
         Api().run()
+
+        print('Assets deployment process complete')
 
 

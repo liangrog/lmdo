@@ -24,7 +24,7 @@ class CLoader:
        
         # Check if config file exist and has content
         if not os.path.isfile(config_file) or not os.access(config_file, os.R_OK):
-            print(config.config_file, 'file doesn\'t exist in current directory')
+            print(config_file, 'file doesn\'t exist in current directory')
             sys.exit(0)
         
         # Load yaml file
@@ -35,13 +35,11 @@ class CLoader:
                 print(e)
                 sys.exit(0)
 
-        error_msg = self.check_mandatory_keys(self.config)
+        error_msg = self.check_mandatory_keys(
+                )
         if error_msg:
             print(error_msg)
             sys.exit(0)
-
-        print(self.config)
-        sys.exit(0)
 
     def init_tmp_dir(self):
         """
@@ -60,18 +58,22 @@ class CLoader:
 
         return None
 
-    def check_mandatory_keys(self, config_str):
+    def check_mandatory_keys(self):
         """
         Set default value and check if mandatory keys exist
         """
 
         # Set default profile if doesn't exist
-        if len(config_str['Profile']) <= 0:
-            config_str['Profile'] = profile
+        if len(self.config['Profile']) <= 0:
+            self.config['Profile'] = 'default'
+
+        # Set default user if doesn't exist
+        if len(self.config['User']) <= 0:
+            self.config['User'] = 'default'
         
         errors = {}
         for k in config_mandatory_keys:
-            if k not in config_str:
+            if k not in self.config:
                 errors[k] = 'Missing field'
 
         if (errors):
