@@ -3,6 +3,7 @@ import hashlib
 
 import boto3
 from lmdo.cloader import CLoader
+from lmdo.oprint import Oprint
 
 
 class Base(object):
@@ -71,9 +72,9 @@ class Base(object):
         waiter = self.get_aws_client('s3').get_waiter('bucket_exists')
 
         s3.create_bucket(ACL=acl, Bucket=bucket_name, CreateBucketConfiguration={'LocationConstraint': self.get_aws_region()})
-        print('S3 Bucket ' + bucket_name + ' is being created...')
+        Oprint.info('S3 Bucket ' + bucket_name + ' is being created...')
         waiter.wait(Bucket=bucket_name)
-        print('S3 Bucket ' + bucket_name + ' has been credated')
+        Oprint.info('S3 Bucket ' + bucket_name + ' has been credated')
 
         return True
 
@@ -86,9 +87,9 @@ class Base(object):
         waiter = self.get_aws_client('s3').get_waiter('bucket_not_exists')
         
         s3.delete_bucket(Bucket=bucket_name)
-        print('S3 Bucket ' + bucket_name + ' is being delete...')
+        Oprint.info('S3 Bucket ' + bucket_name + ' is being delete...')
         waiter.wait(Bucket=bucket_name)
-        print('S3 Bucket ' + bucket_name + ' has been deleted')
+        Oprint.info('S3 Bucket ' + bucket_name + ' has been deleted')
         
         return True
 
@@ -135,9 +136,9 @@ class Base(object):
                     Parameters=kwargs['parameters']
                     )
 
-                print('Waiting for new stack ' + stack_name + ' to be created...')
+                Oprint.info('Waiting for new stack ' + stack_name + ' to be created...')
                 waiter.wait(StackName=stack_name)
-                print('New stack ' + stack_name + ' has been created')
+                Oprint.info('New stack ' + stack_name + ' has been created')
 
                 # Need to create the stack first before
                 # we can create Lambda function, very odd 
@@ -154,9 +155,9 @@ class Base(object):
                     Parameters=params
                     )
 
-                print('Creating Lambda functions. Waiting for stack ' + stack_name + ' to be updated...')
+                Oprint.info('Creating Lambda functions. Waiting for stack ' + stack_name + ' to be updated...')
                 waiter.wait(StackName=stack_name)
-                print('Stack ' + stack_name + ' has been updated')
+                Oprint.info('Stack ' + stack_name + ' has been updated')
             else:
                 waiter = self.cf.get_waiter('stack_update_complete')
                 params.append(put_lambda)
@@ -168,11 +169,11 @@ class Base(object):
                     Parameters=kwargs['parameters']
                     )
 
-                print('Waiting for stack ' + stack_name + ' to be updated...')
+                Oprint.info('Waiting for stack ' + stack_name + ' to be updated...')
                 waiter.wait(StackName=stack_name)
-                print('Stack ' + stack_name + ' update has been completed')
+                Oprint.info('Stack ' + stack_name + ' update has been completed')
         except Exception as e:
-            print(e)
+            Oprint.err(e)
             return False
 
         return True
@@ -193,11 +194,11 @@ class Base(object):
 
             response = self.cf.delete_stack(StackName=stack_name)
 
-            print('Waiting for stack ' + stack_name + ' to be deleted...')
+            Oprint.info('Waiting for stack ' + stack_name + ' to be deleted...')
             waiter.wait(StackName=stack_name)
-            print('Stack ' + stack_name + ' has been deleted')
+            Oprint.info('Stack ' + stack_name + ' has been deleted')
         except Exception as e:
-            print(e)
+            Oprint.err(e)
             return False
         
         return True

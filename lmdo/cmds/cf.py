@@ -6,6 +6,8 @@ from .base import Base
 from .lm import Lm
 from lmdo.config import cf_file, cf_dir
 from lmdo.utils import mkdir
+from lmdo.oprint import Oprint
+
 
 class Cf(Base):
     """
@@ -22,7 +24,7 @@ class Cf(Base):
         if os.path.isfile(self.cf_path):
             self.has_template = True
         else:
-            print('No cloud formation template found')
+            Oprint.warn('No cloud formation template found')
             sys.exit(0)
             
         self.cf = self.get_aws_client('cloudformation')
@@ -44,7 +46,7 @@ class Cf(Base):
         try:
             result = self.cf.validate_template(TemplateBody=cf_str)
         except Exception as e:
-            print(e)
+            Oprint.err(e)
             return False
         return True
 
@@ -105,9 +107,9 @@ class Cf(Base):
                     S3Bucket=self.config_loader.get_value('LambdaBucketName'),
                     S3Key=lm.get_pkg_name()
                     )
-                 print('Lambda function ' + func_name + ' has been updated')
+                 Oprint.info('Lambda function ' + func_name + ' has been updated')
             except Exception as e:
-                print(e)
+                Oprint.err(e)
                 
         return True
 
@@ -163,7 +165,7 @@ class Cf(Base):
                     objects = self.s3.list_objects_v2(Bucket=bucket)
                     self.s3.delete_objects(Bucket=bucket, Delete={'Objects': objects['Contents']})
             except Exception as e:
-                print(e)
+                Oprint.err(e)
                 sys.exit(0)
                     
 

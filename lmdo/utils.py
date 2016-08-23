@@ -4,6 +4,9 @@ Common utility functions
 
 from __future__ import print_function 
 
+from .oprint import Oprint
+
+
 def mkdir(path, mode=777):
     """
     Wrapper for mkdir
@@ -18,7 +21,7 @@ def mkdir(path, mode=777):
         os.makedirs(tmp_dir, mode)
     except OSError as e:
         if e.errno != errno.EEXIST:
-            print(e)
+            Oprint.err(e)
             sys.exit(0)
         return True
     return True
@@ -47,7 +50,7 @@ def zipper(from_path, target_file_name, exclude=None):
 
     zip_file = zipfile.ZipFile(target_file_name, 'w', zipfile.ZIP_DEFLATED)
    
-    print('Start packaging directory')
+    Oprint.info('Start packaging directory')
    
     for root, dirs, files in os.walk(from_path):
         if not exclude:
@@ -75,7 +78,7 @@ def zipper(from_path, target_file_name, exclude=None):
 
     zip_file.close()
 
-    print('Finished packaging directory' + from_path + '. Zipped package' + target_file_name + ' has been created')
+    Oprint.info('Finished packaging directory' + from_path + '. Zipped package' + target_file_name + ' has been created')
 
     return True
 

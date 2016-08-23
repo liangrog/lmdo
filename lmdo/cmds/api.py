@@ -5,6 +5,8 @@ import os
 from .base import Base
 from .cf import Cf
 from lmdo.config import swagger_file, swagger_dir
+from lmdo.oprint import Oprint
+
 
 class Api(Base):
     """
@@ -82,20 +84,20 @@ class Api(Base):
         
         api_key = self.if_api_exist(self.config_loader.get_value('API'), self.api.get_rest_apis())
         if not api_key:
-            print('Can not find API ' + self.config_loader.get_value('API') + ' in AWS')
+            Oprint.warn('Can not find API ' + self.config_loader.get_value('API') + ' in AWS')
             sys.exit(0)
 
         try:
             api_stage = self.get_api_stage(api_key, self.config_loader.get_value('Stage'))
-            print('Start deploying API Gateway stage ' + self.config_loader.get_value('Stage'))
+            Oprint.info('Start deploying API Gateway stage ' + self.config_loader.get_value('Stage'))
             if api_stage:
                 self.delete_api_stage(api_key, self.config_loader.get_value('Stage'))
                 response = self.api.create_deployment(restApiId=api_key, stageName=self.config_loader.get_value('Stage'))
             else:
                 response = self.api.create_deployment(restApiId=api_key, stageName=self.config_loader.get_value('Stage'))
-            print('Finish deploying API Gateway stage ' + self.config_loader.get_value('Stage'))
+            Oprint.info('Finish deploying API Gateway stage ' + self.config_loader.get_value('Stage'))
         except Exception as e:
-            print(e)
+            Oprint.err(e)
             sys.exit(0)
 
         return True
@@ -108,7 +110,7 @@ class Api(Base):
         try:
             self.api.delete_stage(restApiId=api_id, stageName=stage)
         except Exception as e:
-            print(e)
+            Oprint.err(e)
             sys.exit(0)
 
         return True
@@ -124,10 +126,10 @@ class Api(Base):
             if stages['item']:
                 for stage in stages['item']:
                     self.delete_api_stage(api_id, stage['stageName'])
-                    print('Deleted rest API stage ' + stage['stageName'])
+                    Oprint.info('Deleted rest API stage ' + stage['stageName'])
 
         except Exception as e:
-            print(e)
+            Oprint.err(e)
             sys.exit(0)
 
     def destroy(self):
@@ -138,15 +140,15 @@ class Api(Base):
         api_key = self.if_api_exist(self.config_loader.get_value('API'), self.api.get_rest_apis())
 
         if not api_key:
-            print('No API Gateway assets to remove')
+            Oprint.warn('No API Gateway assets to remove')
             sys.exit(0)
 
         try:
             self.delete_api_stages(api_key)        
             self.api.delete_rest_api(restApiId=api_key)
-            print('Deleted rest API ' + self.config_loader.get_value('API'))
+            Oprint.info('Deleted rest API ' + self.config_loader.get_value('API'))
         except Exception as e:
-            print(e)
+            Oprint.err(e)
             sys.exit(0)
 
         return True

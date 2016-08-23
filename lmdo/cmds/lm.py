@@ -5,7 +5,7 @@ import os
 from .base import Base
 from lmdo.config import tmp_dir, exclude
 from lmdo.utils import zipper
-
+from lmdo.oprint import Oprint
 
 class Lm(Base):
     """
@@ -60,7 +60,7 @@ class Lm(Base):
         # Check if bucket exist
         if len(lambda_bucket) > 0:
             if not self.if_bucket_exist(lambda_bucket):
-                print('S3 bucket ' + lambda_bucket + " doesn't exist!")
+                Oprint.warn('S3 bucket ' + lambda_bucket + " doesn't exist!")
                 sys.exit(0)
         # Create a new bucket
         else:
@@ -68,13 +68,13 @@ class Lm(Base):
             if not self.if_bucket_exist(lambda_bucket):
                 self.create_bucket(lambda_bucket)
 
-        print('Start uploading ' +  self.get_pkg_name() + ' to S3 bucket ' + self.config_loader.get_value('LambdaBucketName'))
+        Oprint.info('Start uploading ' +  self.get_pkg_name() + ' to S3 bucket ' + self.config_loader.get_value('LambdaBucketName'))
 
         pkg_path = tmp_dir + self.get_pkg_name()
         with open(pkg_path, 'rb') as outfile:
             self.s3.put_object(Bucket=lambda_bucket, Key=self.get_s3_name(), Body=outfile)
 
-        print('Finished uploading ' +  self.get_pkg_name() + ' to S3 bucket ' + self.config_loader.get_value('LambdaBucketName'))
+        Oprint.info('Finished uploading ' +  self.get_pkg_name() + ' to S3 bucket ' + self.config_loader.get_value('LambdaBucketName'))
 
         return True
 
@@ -95,13 +95,13 @@ class Lm(Base):
         """
 
         try:
-            print('Start deleting ' +  self.get_pkg_name() + ' from S3 bucket ' + self.config_loader.get_value('LambdaBucketName'))
+            Oprint.info('Start deleting ' +  self.get_pkg_name() + ' from S3 bucket ' + self.config_loader.get_value('LambdaBucketName'))
 
             self.s3.delete_object(Bucket=lambda_bucket, Key=self.get_s3_name())
 
-            print(self.get_pkg_name() + ' has been deleted from S3 bucket ' + self.config_loader.get_value('LambdaBucketName'))
+            Oprint.info(self.get_pkg_name() + ' has been deleted from S3 bucket ' + self.config_loader.get_value('LambdaBucketName'))
         except Exception as e:
-            print(e)
+            Oprint.err(e)
             return False
 
         return True

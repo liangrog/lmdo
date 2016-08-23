@@ -4,6 +4,7 @@ from .base import Base
 from .lm import Lm
 from .cf import Cf
 from .api import Api
+from lmdo.oprint import Oprint
 
 
 class Destroy(Base):
@@ -12,12 +13,12 @@ class Destroy(Base):
     """
 
     def run(self):
-        print('Assets removal process start...')
+        Oprint.info('Assets removal process start...')
 
         Api().destroy()
         Cf().destroy()
         Lm().destroy()
         
-        print('Assets removal process complete')
+        Oprint.info('Assets removal process complete')
 
 

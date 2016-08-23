@@ -4,6 +4,7 @@ from .base import Base
 from .lm import Lm
 from .cf import Cf
 from .api import Api
+from lmdo.oprint import Oprint
 
 
 class Deploy(Base):
@@ -12,12 +13,12 @@ class Deploy(Base):
     """
 
     def run(self):
-        print('Assets deployment process start...')
+        Oprint.info('Assets deployment process start...')
 
         Lm().run()
         Cf().run()
         Api().run()
 
-        print('Assets deployment process complete')
+        Oprint.info('Assets deployment process complete')
 
 

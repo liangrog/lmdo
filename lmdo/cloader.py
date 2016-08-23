@@ -7,6 +7,8 @@ import yaml
 
 from .config import config_file, tmp_dir, config_mandatory_keys, profile
 from .utils import mkdir
+from .oprint import Oprint
+
 
 class CLoader:
     """
@@ -24,7 +26,7 @@ class CLoader:
        
         # Check if config file exist and has content
         if not os.path.isfile(config_file) or not os.access(config_file, os.R_OK):
-            print(config_file, 'file doesn\'t exist in current directory')
+            Oprint.err(config_file, 'file doesn\'t exist in current directory')
             sys.exit(0)
         
         # Load yaml file
@@ -32,13 +34,13 @@ class CLoader:
             try:
                 self.config = yaml.load(outfile)
             except yaml.YAMLError as e:
-                print(e)
+                Oprint.err(e)
                 sys.exit(0)
 
         error_msg = self.check_mandatory_keys(
                 )
         if error_msg:
-            print(error_msg)
+            Oprint.err(error_msg)
             sys.exit(0)
 
     def init_tmp_dir(self):
