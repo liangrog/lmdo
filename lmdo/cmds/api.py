@@ -141,7 +141,7 @@ class Api(Base):
 
         if not api_key:
             Oprint.warn('No API Gateway assets to remove')
-            sys.exit(0)
+            return False
 
         try:
             self.delete_api_stages(api_key)        

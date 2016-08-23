@@ -7,14 +7,18 @@ from lmdo.config import tmp_dir, exclude
 from lmdo.utils import zipper
 from lmdo.oprint import Oprint
 
+
 class Lm(Base):
     """
     Class packaging Lambda function codes and
     upload it to S3
     """
 
-    def run(self):
+    def __init__(self, options={}, *args, **kwargs):
+        super(Lm, self).__init__(options, *args, **kwargs)
         self.s3 = self.get_aws_client('s3')
+   
+    def run(self):
         self.package()
         self.upload()
         self.cleanup()
@@ -97,7 +101,7 @@ class Lm(Base):
         try:
             Oprint.info('Start deleting ' +  self.get_pkg_name() + ' from S3 bucket ' + self.config_loader.get_value('LambdaBucketName'))
 
-            self.s3.delete_object(Bucket=lambda_bucket, Key=self.get_s3_name())
+            self.s3.delete_object(Bucket=self.config_loader.get_value('LambdaBucketName'), Key=self.get_s3_name())
 
             Oprint.info(self.get_pkg_name() + ' has been deleted from S3 bucket ' + self.config_loader.get_value('LambdaBucketName'))
         except Exception as e:
