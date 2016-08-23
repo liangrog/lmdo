@@ -1,51 +1,50 @@
-skele-cli
+lmdo
 =========
 
-*A skeleton command line program in Python.*
+*A simple CLI tool for developing microservices using AWS Lambda*
 
 
 Purpose
 -------
 
-This is a skeleton application which demonstrates how to properly structure a
-Python CLI application.
+The existing open source tool sets such as Apex, Serverless bear all sort
+of limitations and too much abstractions, preventing the flexibility of utilising
+AWS cloudformation and other resource.
 
-I've done my best to structure this in a way that makes sense for *most* users,
-but if you have any feedback, please open a Github issue and I'll take a look.
+Ideally, the tool should allow:
 
-The idea with this project is that you should be able to use this as a template
-for building new CLI apps.
-
-You can fork this project and customize it to your liking, or just use it as a
-reference.
-
+- Customized cloud formation
+- Utilising Lambda function for queries
+- Working in a team environment
+- Passing in parameters to cloud formation template
 
 Usage
 -----
 
-If you've cloned this project, and want to install the library (*and all
-development dependencies*), the command you'll want to run is::
+Installation
 
-    $ pip install -e .[test]
+    $ pip install .
 
-If you'd like to run all tests for this project (*assuming you've written
-some*), you would run the following command::
+Create skeleton
+    
+    $ lmdo tpl
 
-    $ python setup.py test
+Pakaging and upload Lambda function to S3
 
-This will trigger `py.test <http://pytest.org/latest/>`_, along with its popular
-`coverage <https://pypi.python.org/pypi/pytest-cov>`_ plugin.
+    $ lmdo lm
 
-Lastly, if you'd like to cut a new release of this CLI tool, and publish it to
-the Python Package Index (`PyPI <https://pypi.python.org/pypi>`_), you can do so
-by running::
+Create/Update cloud formation and create Lambda function
 
-    $ python setup.py sdist bdist_wheel
-    $ twine upload dist/*
+    $ lmdo cf
 
-This will build both a source tarball of your CLI tool, as well as a newer wheel
-build (*and this will, by default, run on all platforms*).
+Create/update API gateway and deploy stage
 
-The ``twine upload`` command (which requires you to install the `twine
-<https://pypi.python.org/pypi/twine>`_ tool) will then securely upload your
-new package to PyPI so everyone in the world can use it!
+    $ lmdo api
+
+Deploy the whole service
+    
+    $ lmdo deploy
+
+Delete the service and associate AWS assets
+
+    $ lmdo destroy
