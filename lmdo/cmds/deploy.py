@@ -13,12 +13,12 @@ class Deploy(Base):
     """
 
     def run(self):
-        Oprint.info('Assets deployment process start...')
+        Oprint.info('Assets deployment process start...', 'default')
 
         Lm().run()
         Cf().run()
         Api().run()
 
-        Oprint.info('Assets deployment process complete')
+        Oprint.info('Assets deployment process complete', 'default')
 
 

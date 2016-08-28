@@ -24,7 +24,7 @@ class Cf(Base):
         if os.path.isfile(self.cf_path):
             self.has_template = True
         else:
-            Oprint.warn('No cloud formation template found')
+            Oprint.warn('No cloud formation template found', 'cloudformation')
             sys.exit(0)
             
         self.cf = self.get_aws_client('cloudformation')
@@ -46,7 +46,7 @@ class Cf(Base):
         try:
             result = self.cf.validate_template(TemplateBody=cf_str)
         except Exception as e:
-            Oprint.err(e)
+            Oprint.err(e, 'cloudformation')
             return False
         return True
 
@@ -107,9 +107,9 @@ class Cf(Base):
                     S3Bucket=self.config_loader.get_value('LambdaBucketName'),
                     S3Key=lm.get_pkg_name()
                     )
-                 Oprint.info('Lambda function ' + func_name + ' has been updated')
+                 Oprint.info('Lambda function ' + func_name + ' has been updated', 'lambda')
             except Exception as e:
-                Oprint.err(e)
+                Oprint.err(e, 'lambda')
                 
         return True
 
@@ -165,7 +165,7 @@ class Cf(Base):
                     objects = self.s3.list_objects_v2(Bucket=bucket)
                     self.s3.delete_objects(Bucket=bucket, Delete={'Objects': objects['Contents']})
             except Exception as e:
-                Oprint.err(e)
+                Oprint.err(e, 's3')
                 sys.exit(0)
                     
 

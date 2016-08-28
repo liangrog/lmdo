@@ -21,7 +21,7 @@ def mkdir(path, mode=0777):
         os.makedirs(tmp_dir, mode)
     except OSError as e:
         if e.errno != errno.EEXIST:
-            Oprint.err(e)
+            Oprint.err(e, 'lmdo')
             sys.exit(0)
         return True
     return True
@@ -50,7 +50,7 @@ def zipper(from_path, target_file_name, exclude=None):
 
     zip_file = zipfile.ZipFile(target_file_name, 'w', zipfile.ZIP_DEFLATED)
    
-    Oprint.info('Start packaging directory')
+    Oprint.info('Start packaging directory', 'lmdo')
    
     for root, dirs, files in os.walk(from_path):
         if not exclude:
@@ -78,7 +78,7 @@ def zipper(from_path, target_file_name, exclude=None):
 
     zip_file.close()
 
-    Oprint.info('Finished packaging directory' + from_path + '. Zipped package' + target_file_name + ' has been created')
+    Oprint.info('Finished packaging directory' + from_path + '. package' + target_file_name + ' has been created', 'lmdo')
 
     return True
 

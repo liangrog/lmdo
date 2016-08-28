@@ -1,5 +1,6 @@
 from __future__ import print_function
 import hashlib
+import time
 
 import boto3
 from lmdo.cloader import CLoader
@@ -72,9 +73,9 @@ class Base(object):
         waiter = self.get_aws_client('s3').get_waiter('bucket_exists')
 
         s3.create_bucket(ACL=acl, Bucket=bucket_name, CreateBucketConfiguration={'LocationConstraint': self.get_aws_region()})
-        Oprint.info('S3 Bucket ' + bucket_name + ' is being created...')
+        Oprint.info('Bucket ' + bucket_name + ' is being created...', 's3')
         waiter.wait(Bucket=bucket_name)
-        Oprint.info('S3 Bucket ' + bucket_name + ' has been credated')
+        Oprint.info('Bucket ' + bucket_name + ' has been credated', 's3')
 
         return True
 
@@ -87,9 +88,9 @@ class Base(object):
         waiter = self.get_aws_client('s3').get_waiter('bucket_not_exists')
         
         s3.delete_bucket(Bucket=bucket_name)
-        Oprint.info('S3 Bucket ' + bucket_name + ' is being delete...')
+        Oprint.info('Bucket ' + bucket_name + ' is being delete...', 's3')
         waiter.wait(Bucket=bucket_name)
-        Oprint.info('S3 Bucket ' + bucket_name + ' has been deleted')
+        Oprint.info('Bucket ' + bucket_name + ' has been deleted', 's3')
         
         return True
 
@@ -136,14 +137,18 @@ class Base(object):
                     Parameters=kwargs['parameters']
                     )
 
-                Oprint.info('Waiting for new stack ' + stack_name + ' to be created...')
+                Oprint.info('Waiting for new stack ' + stack_name + ' to be created...', 'cloudformation')
                 waiter.wait(StackName=stack_name)
-                Oprint.info('New stack ' + stack_name + ' has been created')
+                Oprint.info('New stack ' + stack_name + ' has been created', 'cloudformation')
 
                 # Need to create the stack first before
                 # we can create Lambda function, very odd 
                 # behavior from AWS, so essentially can't
-                # create lambda with other resource in one go
+                # create lambda with other resource in one go.
+                # Maybe timing issue?
+                Oprint.info('Sleep for 10 seconds, making sure all resource are created in AWS', 'cloudformation')
+                time.sleep(10)
+
                 waiter = self.cf.get_waiter('stack_update_complete')
                 
                 params.append(put_lambda)
@@ -155,9 +160,9 @@ class Base(object):
                     Parameters=params
                     )
 
-                Oprint.info('Creating Lambda functions. Waiting for stack ' + stack_name + ' to be updated...')
+                Oprint.info('Creating Lambda functions. Waiting for stack ' + stack_name + ' to be updated...', 'cloudformation')
                 waiter.wait(StackName=stack_name)
-                Oprint.info('Stack ' + stack_name + ' has been updated')
+                Oprint.info('Stack ' + stack_name + ' has been updated', 'cloudformation')
             else:
                 waiter = self.cf.get_waiter('stack_update_complete')
                 params.append(put_lambda)
@@ -169,11 +174,11 @@ class Base(object):
                     Parameters=kwargs['parameters']
                     )
 
-                Oprint.info('Waiting for stack ' + stack_name + ' to be updated...')
+                Oprint.info('Waiting for stack ' + stack_name + ' to be updated...', 'cloudformation')
                 waiter.wait(StackName=stack_name)
-                Oprint.info('Stack ' + stack_name + ' update has been completed')
+                Oprint.info('Stack ' + stack_name + ' update has been completed', 'cloudformation')
         except Exception as e:
-            Oprint.err(e)
+            Oprint.err(e, 'cloudformation')
             return False
 
         return True
@@ -194,11 +199,11 @@ class Base(object):
 
             response = self.cf.delete_stack(StackName=stack_name)
 
-            Oprint.info('Waiting for stack ' + stack_name + ' to be deleted...')
+            Oprint.info('Waiting for stack ' + stack_name + ' to be deleted...', 'cloudformation')
             waiter.wait(StackName=stack_name)
-            Oprint.info('Stack ' + stack_name + ' has been deleted')
+            Oprint.info('Stack ' + stack_name + ' has been deleted', 'cloudformation')
         except Exception as e:
-            Oprint.err(e)
+            Oprint.err(e, 'cloudformation')
             return False
         
         return True

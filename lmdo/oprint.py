@@ -1,5 +1,19 @@
 from __future__ import print_function
 
+def lmdo_output(func):
+    """
+    lmdo output message decorator
+    """
+
+    def __wrapper(cls, msg, src='lmdo', *args, **kwargs):
+        if type(msg) is str:
+            msg = '==> [{}]: {}'.format(src, msg).lower()
+
+        output = func(cls, msg, *args, **kwargs)
+        return output
+    return __wrapper
+
+    
 class Oprint:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -18,30 +32,34 @@ class Oprint:
         ENDC = ''
 
     @classmethod
-    def infog(cls, msg, prefix='- '):
+    @lmdo_output
+    def infog(cls, msg):
         if type(msg) is str:
-            print(prefix + Oprint.OKGREEN + msg + Oprint.ENDC)
+            print(Oprint.OKGREEN + msg + Oprint.ENDC)
         else:
             print(msg)
 
     @classmethod
-    def info(cls,  msg, prefix='- '):
+    @lmdo_output
+    def info(cls, msg):
         if type(msg) is str:
-            print(prefix+ Oprint.OKBLUE + msg + Oprint.ENDC)
+            print(Oprint.OKBLUE + msg + Oprint.ENDC)
         else:
             print(msg)
     
     @classmethod
-    def warn(cls, msg, prefix='- '):
+    @lmdo_output
+    def warn(cls, msg):
         if type(msg) is str:
-            print(prefix + Oprint.WARNING + msg + Oprint.ENDC)
+            print(Oprint.WARNING + msg + Oprint.ENDC)
         else:
             print(msg)
     
     @classmethod
-    def err(cls, msg, prefix='- '):
+    @lmdo_output
+    def err(cls, msg):
         if type(msg) is str:
-            print(prefix + Oprint.FAIL + msg + Oprint.ENDC)
+            print(Oprint.FAIL + msg + Oprint.ENDC)
         else:
             print(msg)
 

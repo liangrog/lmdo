@@ -18,7 +18,7 @@ class Tpl:
     def run(self):
         # Do not copy over unless it's a clearn dir
         if os.path.isfile('./' + config_file):
-            Oprint.warn('Your have existing templates already, exiting...')
+            Oprint.warn('Your have existing templates already, exiting...', 'lmdo')
             sys.exit(0)
 
         pkg_dir = site.getsitepackages()
@@ -45,7 +45,7 @@ class Tpl:
                 try:
                     shutil.rmtree(d)
                 except Exception as e:
-                    Oprint.err(e)
+                    Oprint.err(e, 'lmdo')
                     os.unlink(d)
             if os.path.isdir(s):
                 shutil.copytree(s, d, symlinks, ignore)

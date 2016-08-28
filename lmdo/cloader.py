@@ -26,7 +26,7 @@ class CLoader:
        
         # Check if config file exist and has content
         if not os.path.isfile(config_file) or not os.access(config_file, os.R_OK):
-            Oprint.err(config_file, 'file doesn\'t exist in current directory')
+            Oprint.err(config_file + 'file doesn\'t exist in current directory', 'config loader')
             sys.exit(0)
         
         # Load yaml file
@@ -34,13 +34,13 @@ class CLoader:
             try:
                 self.config = yaml.load(outfile)
             except yaml.YAMLError as e:
-                Oprint.err(e)
+                Oprint.err(e, 'config loader')
                 sys.exit(0)
 
         error_msg = self.check_mandatory_keys(
                 )
         if error_msg:
-            Oprint.err(error_msg)
+            Oprint.err(error_msg, 'config loader')
             sys.exit(0)
 
     def init_tmp_dir(self):

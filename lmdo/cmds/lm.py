@@ -64,7 +64,7 @@ class Lm(Base):
         # Check if bucket exist
         if len(lambda_bucket) > 0:
             if not self.if_bucket_exist(lambda_bucket):
-                Oprint.warn('S3 bucket ' + lambda_bucket + " doesn't exist!")
+                Oprint.warn('bucket ' + lambda_bucket + " doesn't exist!", 's3')
                 sys.exit(0)
         # Create a new bucket
         else:
@@ -72,13 +72,13 @@ class Lm(Base):
             if not self.if_bucket_exist(lambda_bucket):
                 self.create_bucket(lambda_bucket)
 
-        Oprint.info('Start uploading ' +  self.get_pkg_name() + ' to S3 bucket ' + self.config_loader.get_value('LambdaBucketName'))
+        Oprint.info('Start uploading ' +  self.get_pkg_name() + ' to S3 bucket ' + self.config_loader.get_value('LambdaBucketName'), 's3')
 
         pkg_path = tmp_dir + self.get_pkg_name()
         with open(pkg_path, 'rb') as outfile:
             self.s3.put_object(Bucket=lambda_bucket, Key=self.get_s3_name(), Body=outfile)
 
-        Oprint.info('Finished uploading ' +  self.get_pkg_name() + ' to S3 bucket ' + self.config_loader.get_value('LambdaBucketName'))
+        Oprint.info('Finished uploading ' +  self.get_pkg_name() + ' to S3 bucket ' + self.config_loader.get_value('LambdaBucketName'), 's3')
 
         return True
 
@@ -99,13 +99,13 @@ class Lm(Base):
         """
 
         try:
-            Oprint.info('Start deleting ' +  self.get_pkg_name() + ' from S3 bucket ' + self.config_loader.get_value('LambdaBucketName'))
+            Oprint.info('Start deleting ' +  self.get_pkg_name() + ' from S3 bucket ' + self.config_loader.get_value('LambdaBucketName'), 's3')
 
             self.s3.delete_object(Bucket=self.config_loader.get_value('LambdaBucketName'), Key=self.get_s3_name())
 
-            Oprint.info(self.get_pkg_name() + ' has been deleted from S3 bucket ' + self.config_loader.get_value('LambdaBucketName'))
+            Oprint.info(self.get_pkg_name() + ' has been deleted from S3 bucket ' + self.config_loader.get_value('LambdaBucketName'), 's3')
         except Exception as e:
-            Oprint.err(e)
+            Oprint.err(e, 's3')
             return False
 
         return True
