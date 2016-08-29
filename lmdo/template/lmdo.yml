@@ -1,45 +1,57 @@
-
+# @mandatory: true
+# @description: microservice name
 Service: user
 
-# Define package environment 
+# @mandatory: true
+# @description: package environment 
 Environment: development
+
+# @mandatory: true
+# @description: microservice creator
 User: roger
+
+# @mandatory: true
+# @description: AWS credential profile name, default to 'default'
 Profile: default
+
+# @mandatory: true
+# @description: API stage
 Stage: dev
 
-API: LmdoTest
+# @mandatory: false
+# @description: api name
+#API: LmdoTest
 
-# Bucket used to put all your Lambda functions
+# @mandatory: true
+# @description: global bucket name for storing Lambda functions
 LambdaBucketName: lambda-packages.merlingroup.co
 
-# Optional
-# Parameter mapping for your cloud formation
+# @mandatory: true (since you need to use stack lookup everytime)
+# description: parameters mapping for your cloud formation
 Parameters:
     StackLookupArn: arn:aws:lambda:ap-southeast-2:105594462793:function:utils-merlingroupco-LookupStackOutputs-JOK0L75VOG3H
     LookupStackName: lambda-global-infra-merlingroupco
-    BucketName: lambda-demo
-    RootDomainName: .merlingroup.co
-    DynamodbTableName: user
+    LambdaFunction1Name: Lambda-test-function 
+    LambdaFunction1HandlerName: handler.test
 
-# Optional
-# By default when delete a stack,
-# The associated bucket won't be
-# deleted if it has objects. Specified
-# here so the content will be deleted
-# first before we can delete the bucket
+# @mandatory: false
+# Description: By default when delete a stack,
+#              The associated bucket won't be
+#              deleted if it has objects. Specified
+#              here so the content will be deleted
+#              first before we can delete the bucket
 #BucketInStackToDestroy:
 #    - bucket1
 #    - bucket2
 
-# Optional
-# Mapping between Lambda function ARN to 
-# API gateway that uses it
+# @mandatory: true
+# @description: Mapping between Lambda function ARN to 
+#               API gateway that uses it
 #LambdaMapping:
-#    Lambda-test-function:
-#        TestLambdaFunctionArn: $testLambdaArn
-#    Lambda-test-function2: False
+#    [Lambda function name]:
+#        [Lambda function ARN reference from cloudformation output, also required for code update]: [Regular expression in apigateway template for replacing the corresponding lambda function ARN, set it to 'False' if no related API]
 LambdaMapping:
     Lambda-test-function:
-        TestLambdaFunctionArn: $testLambdaArn
+        LambdaFunctionArn: $lambdaArn
 
 

@@ -18,7 +18,7 @@ class Api(Base):
 
         self.api_path = swagger_dir + swagger_file
         
-        if os.path.isfile(self.api_path):
+        if self.config_loader.get_value('API') and os.path.isfile(self.api_path):
             self.has_api = True
 
         self.api = self.get_aws_client('apigateway')
