@@ -330,13 +330,13 @@
         },
 
       	"S3BucketDomainName": {
-  	        "Description": "Example bucket domain name",
-  	        "Value": {"Fn::GetAtt": ["S3Bucket", "DomainName"]}
+            "Description": "Example bucket domain name",
+            "Value": {"Fn::GetAtt": ["S3Bucket", "DomainName"]}
   	    },
 
         "LambdaFunctionArn": {
             "Condition" : "PutLambdaFunctionCondition",
-  	        "Description": "Test Lambda function Arn",
+            "Description": "Test Lambda function Arn",
             "Value": {"Fn::GetAtt": ["LambdaFunc", "Arn"]}
   	    }
     }
