@@ -17,7 +17,8 @@ class Api(Base):
         super(Api, self).__init__(options, *args, **kwargs)
 
         self.api_path = swagger_dir + swagger_file
-        
+       
+        self.has_api = False
         if self.config_loader.get_value('API') and os.path.isfile(self.api_path):
             self.has_api = True
 
