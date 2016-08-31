@@ -53,6 +53,7 @@ Parameters:
 LambdaMapping:
     Lambda-test-function:
         LambdaFunctionArn: $lambdaArn
+        DefaultIamRoleAPIArn: $apiRoleArn
 
 # APITemplateMapping:
 #    [Template file name under swagger folder]: [Variable in apigateway template to be replaced]
