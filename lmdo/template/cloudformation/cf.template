@@ -338,6 +338,6 @@
             "Condition" : "PutLambdaFunctionCondition",
             "Description": "Test Lambda function Arn",
             "Value": {"Fn::GetAtt": ["LambdaFunc", "Arn"]}
-  	    }
+        }
     }
 }
