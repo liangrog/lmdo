@@ -58,10 +58,10 @@ class Api(Base):
 
 
             # Replace variable in swagger template with content in a file.
-            file_mapping = self.config_loader.get_value('FileMapping')
-            if (file_mapping):
-                for k, v in file_mapping.items():
-                    with open(k, 'r+') as outfile:
+            api_template_mapping = self.config_loader.get_value('APITemplateMapping')
+            if (api_template_mapping):
+                for k, v in api_template_mapping.items():
+                    with open('swagger/' + k, 'r+') as outfile:
                         file_content = outfile.read()
                         file_content = file_content.replace('\n', '\\n').replace('"', '\\"')
                         contents = contents.replace(v, file_content)
