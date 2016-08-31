@@ -23,8 +23,7 @@ config_mandatory_keys = [
     'User',
     'LambdaBucketName', 
     'Stage', 
-    'Service', 
-    'API',
+    'Service' 
     ]
     
 # Default AWS credential profile

@@ -3,7 +3,7 @@
 Service: user
 
 # @mandatory: true
-# @description: package environment 
+# @description: package environment
 Environment: development
 
 # @mandatory: true
@@ -31,7 +31,7 @@ LambdaBucketName: lambda-packages.merlingroup.co
 Parameters:
     StackLookupArn: arn:aws:lambda:ap-southeast-2:105594462793:function:utils-merlingroupco-LookupStackOutputs-JOK0L75VOG3H
     LookupStackName: lambda-global-infra-merlingroupco
-    LambdaFunction1Name: Lambda-test-function 
+    LambdaFunction1Name: Lambda-test-function
     LambdaFunction1HandlerName: handler.test
 
 # @mandatory: false
@@ -45,7 +45,7 @@ Parameters:
 #    - bucket2
 
 # @mandatory: true
-# @description: Mapping between Lambda function ARN to 
+# @description: Mapping between Lambda function ARN to
 #               API gateway that uses it
 #LambdaMapping:
 #    [Lambda function name]:
@@ -53,5 +53,9 @@ Parameters:
 LambdaMapping:
     Lambda-test-function:
         LambdaFunctionArn: $lambdaArn
+        DefaultIamRoleAPIArn: $apiRoleArn
 
-
+# APITemplateMapping:
+#    [Template file name under swagger folder]: [Variable in apigateway template to be replaced]
+APITemplateMapping:
+    api_integration_request_template.json: $apiIntegrationRequestTemple

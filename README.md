@@ -7,16 +7,18 @@ lmdo
 Purpose
 -------
 
-The existing open source tool sets such as [Apex](https://github.com/apex/apex) and  [Serverless](https://github.com/serverless/serverless) bear all sort
-of limitations and too much abstractions, preventing the flexibility of utilising
-AWS cloudformation and other resources.
+The existing open source tool sets such as
+[Apex](https://github.com/apex/apex) and
+[Serverless](https://github.com/serverless/serverless) have all sorts
+of limitations and too many abstractions, preventing the flexibility
+of utilising AWS CloudFormation and other resources.
 
 lmdo allows:
 
-- Customizing cloud formation template
-- Utilising Lambda function for queries to other AWS resources
+- Customizing cloud formation templates
+- Utilising Lambda functions for queries to other AWS resources
 - Working in a team environment
-- Passing in parameters to cloud formation template
+- Passing in parameters to CloudFormation templates
 
 Usage
 -----
@@ -29,11 +31,11 @@ Create skeleton
     
     $ lmdo tpl
 
-Pakaging and upload Lambda function to S3
+Package and upload Lambda function to S3
 
     $ lmdo lm
 
-Create/Update cloud formation and create Lambda function
+Create/Update CloudFormation and create Lambda function
 
     $ lmdo cf
 

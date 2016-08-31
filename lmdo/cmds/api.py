@@ -12,7 +12,7 @@ class Api(Base):
     """
     Class create, update API Gateway
     """
-    
+
     def __init__(self, options={}, *args, **kwargs):
         super(Api, self).__init__(options, *args, **kwargs)
 
@@ -28,12 +28,12 @@ class Api(Base):
         if self.has_api:
             self.import_swagger_api()
             self.deploy_api_stage()
-    
+
     def if_api_exist(self, api_name, api_list):
         """
         check if api exist in api gateway
         """
-        
+
         for api in api_list['items']:
             if api_name == api['name']:
                 return api['id']
@@ -44,7 +44,7 @@ class Api(Base):
         """
         Import swagger template
         """
-        
+
         api_key = self.if_api_exist(self.config_loader.get_value('API'), self.api.get_rest_apis())
         with open(self.api_path, 'r+') as outfile:
             contents = outfile.read()
@@ -56,6 +56,16 @@ class Api(Base):
                     if funck:
                         for k, v in func.items():
                             contents = contents.replace(v, cf.get_stack_output_value(k, cf_output))
+
+
+            # Replace variable in swagger template with content in a file.
+            api_template_mapping = self.config_loader.get_value('APITemplateMapping')
+            if (api_template_mapping):
+                for k, v in api_template_mapping.items():
+                    with open('swagger/' + k, 'r+') as outfile:
+                        file_content = outfile.read()
+                        file_content = file_content.replace('\n', '\\n').replace('"', '\\"')
+                        contents = contents.replace(v, file_content)
 
             if not api_key:
                 self.api.import_rest_api(body=contents)
@@ -82,7 +92,7 @@ class Api(Base):
         """
         Deploy API to stage
         """
-        
+
         api_key = self.if_api_exist(self.config_loader.get_value('API'), self.api.get_rest_apis())
         if not api_key:
             Oprint.warn('Can not find API ' + self.config_loader.get_value('API') + ' in AWS', 'apigateway')
@@ -102,7 +112,7 @@ class Api(Base):
             sys.exit(0)
 
         return True
-      
+
     def delete_api_stage(self, api_id, stage):
         """
         Delete API stage
@@ -145,7 +155,7 @@ class Api(Base):
             return False
 
         try:
-            self.delete_api_stages(api_key)        
+            self.delete_api_stages(api_key)
             self.api.delete_rest_api(restApiId=api_key)
             Oprint.info('Deleted rest API ' + self.config_loader.get_value('API'), 'apigateway')
         except Exception as e:
@@ -153,5 +163,3 @@ class Api(Base):
             sys.exit(0)
 
         return True
-
-
