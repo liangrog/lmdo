@@ -1,0 +1,17 @@
+
+Prerequisite
+===============
+
+$ pip install alembic
+
+
+Autogenerating migrations
+==========================
+
+$ alembic revision --autogenerate -m "Added anzsco table"
+
+
+Applying migrations
+=======================
+
+$ alembic upgrade head
