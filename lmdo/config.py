@@ -34,7 +34,7 @@ exclude = {
     'dir': [
         'tests',
         '*boto*',
-        '.git',
+        '*.git*',
         '.cache',
         'cloudformation',
         'swagger',
