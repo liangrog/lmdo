@@ -3,6 +3,7 @@ lmdo system wide configuration
 """
 
 # File for all config data
+config_template = 'lmdo.yml.j2'
 config_file = 'lmdo.yml'
 
 # Template file name
