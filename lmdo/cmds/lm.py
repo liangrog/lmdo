@@ -75,6 +75,9 @@ class Lm(Base):
         Oprint.info('Start uploading ' +  self.get_pkg_name() + ' to S3 bucket ' + self.config_loader.get_value('LambdaBucketName'), 's3')
 
         pkg_path = tmp_dir + self.get_pkg_name()
+        pkg_size = os.stat(pkg_path).st_size / (1024 * 1024.0)
+        Oprint.info('File size of package: %.2f (MB)' % pkg_size)
+
         with open(pkg_path, 'rb') as outfile:
             self.s3.put_object(Bucket=lambda_bucket, Key=self.get_s3_name(), Body=outfile)
 
