@@ -16,6 +16,7 @@ with open(join(this_dir, 'README.md'), encoding='utf-8') as file:
 
 
 class RunTests(Command):
+
     """Run all tests."""
     description = 'run tests'
     user_options = []
@@ -33,15 +34,15 @@ class RunTests(Command):
 
 
 setup(
-    name = 'lmdo',
-    version = __version__,
-    description = 'CLI tools for microservices automation using AWS Lambda function',
-    long_description = long_description,
-    url = 'https://github.com/liangrog/lmdauto',
-    author = 'Roger Liang',
-    author_email = 'pinguroger@gmail.com',
-    license = 'APACHE',
-    classifiers = [
+    name='lmdo',
+    version=__version__,
+    description='CLI tools for microservices automation using AWS Lambda function',
+    long_description=long_description,
+    url='https://github.com/liangrog/lmdauto',
+    author='Roger Liang',
+    author_email='pinguroger@gmail.com',
+    license='APACHE',
+    classifiers=[
         'Intended Audience :: Developers',
         'Topic :: Utilities',
         'License :: OSI Approved :: Apache Software License',
@@ -51,17 +52,17 @@ setup(
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
     ],
-    keywords = 'cli',
-    packages = find_packages(exclude=['docs', 'tests*']),
-    install_requires = ['docopt', 'boto3', 'PyYAML', 'jinja2'],
-    extras_require = {
+    keywords='cli',
+    packages=find_packages(exclude=['docs', 'tests*']),
+    install_requires=['docopt', 'boto3', 'PyYAML', 'jinja2', 'tqdm'],
+    extras_require={
         'test': ['coverage', 'pytest', 'pytest-cov'],
     },
-    include_package_data = True,
-    entry_points = {
+    include_package_data=True,
+    entry_points={
         'console_scripts': [
             'lmdo=lmdo.cli:main',
         ],
     },
-    cmdclass = {'test': RunTests},
+    cmdclass={'test': RunTests},
 )

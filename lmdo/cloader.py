@@ -58,7 +58,7 @@ class CLoader:
             with open(config_file, 'wb') as fh:
                 fh.write(rendered)
                 fh.close()
-            Oprint.info('%s has been overriden by ' % config_file, 'lmdo')
+            Oprint.info('%s has been overriden by %s' % (config_file, config_template), 'lmdo')
 
     def init_tmp_dir(self):
         """
