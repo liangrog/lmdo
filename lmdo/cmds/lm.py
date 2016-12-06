@@ -1,6 +1,7 @@
 from __future__ import print_function
 import sys
 import os
+import pip
 
 from .base import Base
 from lmdo.config import tmp_dir, exclude
@@ -8,9 +9,13 @@ from lmdo.utils import zipper
 from lmdo.oprint import Oprint
 from tqdm import tqdm
 
+PIP_SITE_PACKAGES_DIR = os.getenv('PIP_SITE_PACKAGES_DIR', 'vendored')
+PIP_REQUIREMENTS_FILENAME = os.getenv(
+    'PIP_REQUIREMENTS_FILENAME', 'requirements.txt'
+)
+
 
 class Lm(Base):
-
     """
     Class packaging Lambda function codes and
     upload it to S3
@@ -21,6 +26,7 @@ class Lm(Base):
         self.s3 = self.get_aws_client('s3')
 
     def run(self):
+        self.install_requirements()
         self.package()
         self.upload()
         self.cleanup()
@@ -47,6 +53,20 @@ class Lm(Base):
         #surfix = self.config_loader.get_value('Stage')
         # return self.config_loader.get_value('User') + '/' + surfix + '/' +
         # self.get_pkg_name()
+
+    def install_requirements(self):
+        """
+        Install pip dependencies from requirements file
+        """
+        install_cmd = 'install -t {site_packages_dir} -r {requirements_file}'.format(
+            site_packages_dir=PIP_SITE_PACKAGES_DIR,
+            requirements_file=PIP_REQUIREMENTS_FILENAME
+        )
+        if os.path.isfile('./%s' % PIP_REQUIREMENTS_FILENAME):
+            Oprint.info('Running: pip %s' % install_cmd, 'pip')
+            pip.main(install_cmd.split(' '))
+        else:
+            Oprint.warn('requirements.txt could not be found, no dependencies to be installed', 'pip')
 
     def package(self):
         """
