@@ -54,7 +54,13 @@ setup(
     ],
     keywords='cli',
     packages=find_packages(exclude=['docs', 'tests*']),
-    install_requires=['docopt', 'boto3', 'PyYAML', 'jinja2', 'tqdm'],
+    install_requires=[
+        'docopt==0.6.2',
+        'boto3==1.4.2',
+        'PyYAML==3.12',
+        'jinja2==2.8',
+        'tqdm==4.10'
+    ],
     extras_require={
         'test': ['coverage', 'pytest', 'pytest-cov'],
     },
