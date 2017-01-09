@@ -1,37 +1,31 @@
 """
-lmdo system wide configuration
+lmdo system configuration
 """
-
-# File for all config data
-config_template = 'lmdo.yml.j2'
-config_file = 'lmdo.yml'
-
-# Template file name
-cf_file = 'cf.template'
-swagger_file = 'apigateway.json'
 
 # Where temporary files saved to
 tmp_dir = '/tmp/lmdo/'
 
-# Template location
-cf_dir = './cloudformation/'
-swagger_dir = './swagger/'
+# File for lmdo project config data
+project_config_template = 'lmdo.yml.j2'
+project_config_file = 'lmdo.yml'
 
-# Mandatory keys in the config file
-config_mandatory_keys = [
-    'Profile',
-    'Environment',
-    'User',
-    'LambdaBucketName', 
-    'Stage', 
-    'Service' 
-    ]
-    
-# Default AWS credential profile
-profile = 'default'
+# PIP
+pip_vendor_folder = 'vendored'
+pip_requirements_file = 'requirements.txt'
+
+# Cloudformations
+cloudformation_directory = 'cloudformation'
+cloudformation_template_allowed_postfix = ['json', 'template']
+cloudformation_template = 'main'
+cloudformation_paramemter_file = 'params.json'
+
+# Lambda
+lambda_memory_size = 128
+lambda_runtime = 'python2.7'
+lambda_timeout = 180
 
 # Files and directories excluding from packaging
-exclude = {
+lambda_exclude = {
     'dir': [
         'tests',
         '*boto*',
@@ -51,4 +45,47 @@ exclude = {
     ]
 }
 
+# Template file name
+swagger_file = 'apigateway.json'
 
+# Template location
+cf_dir = './cloudformation/'
+swagger_dir = './swagger/'
+
+# Mandatory keys in the config file
+config_mandatory_keys = [
+    'Environment',
+    'LambdaBucketName', 
+    'Stage', 
+    'Service' 
+]
+    
+
+
+"""
+User
+Stage
+Service
+StackName
+CloudformationBucket
+                "EnvironmentVariables": {
+                        "MYSQL_HOST": {"Ref": "MysqlHost"},
+                        "MYSQL_PASSWORD": {"Ref": "MysqlPassword"},
+                        "MYSQL_USERNAME": {"Ref": "MysqlUsername"},
+                        "MYSQL_DATABASE": {"Ref": "MysqlDatabase"},
+                        "REGION": {"Ref": "AWS::Region"}
+                },
+                "Bucket"
+                "FunctionName"
+                "Handler"
+                "MemorySize" 128
+                "Role":
+                "RolePolicyDocument":
+                "Runtime"
+                "Timeout" 180
+                "VpcConfig": {
+                    "SecurityGroupIds"
+                    "SubnetIds"
+                }
+            }
+"""

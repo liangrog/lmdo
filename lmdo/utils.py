@@ -1,21 +1,18 @@
-"""
-Common utility functions
-"""
+import os
+import errno
+import sys
+import fnmatch
+import zipfile
 
-from __future__ import print_function 
+from lmdo.oprint import Oprint
 
-from .oprint import Oprint
+
+"""Common utility functions"""
 
 
 def mkdir(path, mode=0777):
-    """
-    Wrapper for mkdir
-    """
-
-    import os
-    import errno
-    import sys
-    from .config import tmp_dir
+    """Wrapper for mkdir"""
+    from lmdo.config import tmp_dir
 
     try:
         os.makedirs(tmp_dir, mode)
@@ -28,13 +25,13 @@ def mkdir(path, mode=0777):
 
 def zipper(from_path, target_file_name, exclude=None):
     """
-    Create zipped package 
+    Create zipped package
+
+        exclude = {
+            'dir': [],
+            'file': []
+        }
     """
-
-    import zipfile
-    import os
-    import fnmatch
-
     # Set compression
     try:
         import zlib
@@ -50,7 +47,7 @@ def zipper(from_path, target_file_name, exclude=None):
 
     zip_file = zipfile.ZipFile(target_file_name, 'w', zipfile.ZIP_DEFLATED)
    
-    Oprint.info('Start packaging directory', 'lmdo')
+    Oprint.info(('Start packaging directory {}'.format(from_path), 'lmdo')
    
     for root, dirs, files in os.walk(from_path):
         if not exclude:
@@ -78,8 +75,30 @@ def zipper(from_path, target_file_name, exclude=None):
 
     zip_file.close()
 
-    Oprint.info('Finished packaging directory' + from_path + '. package' + target_file_name + ' has been created', 'lmdo')
+    Oprint.info('Finished packaging directory {}. Package {} has been created'.format(from_path, target_file_name), 'lmdo')
 
     return True
 
+def find_files_by_postfix(path, postfix):
+    """Find files with given postfix in path"""
+    all_files = [files for root, dirs, files in os.walk(path)]
+    return [f for f in all_files if f.endswith(postfix)]
+
+def find_files_by_name_only(path, file_name, allowed_postfix=None):
+    """
+    Find files in path given file name and filter by postfix if given
+    allowed_postfix: []
+    """
+    all_files = [files for root, dirs, files in os.walk(path)]
+    found_files = [f for f in all_files if fnmatch.fnmatch(f, "{}*".format(file_name))]
+    if allowed_postfix:
+        found_files = [f for f in found_files if f.split('.').pop() in allowed_postfix]
+        
+    return found_files
+        
+def sys_pause(message, match):
+    """pause program to catch user input"""
+    name = raw_input(message)
+    if !fnmatch.fnmatch(name, match):
+        Oprint.err('Exit excecution', 'lmdo')
 

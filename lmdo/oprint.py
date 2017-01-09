@@ -1,9 +1,9 @@
 from __future__ import print_function
+import os
+
 
 def lmdo_output(func):
-    """
-    lmdo output message decorator
-    """
+    """lmdo output message decorator"""
 
     def __wrapper(cls, msg, src='lmdo', *args, **kwargs):
         if type(msg) is str:
@@ -15,6 +15,9 @@ def lmdo_output(func):
 
     
 class Oprint:
+    """Printing class for output formatting"""
+
+    # Colour codes
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
     OKGREEN = '\033[92m'
@@ -62,5 +65,10 @@ class Oprint:
             print(Oprint.FAIL + msg + Oprint.ENDC)
         else:
             print(msg)
+        
+        # Exit if error. It's anti-pattern here (seperation
+        # of responsibility) but hate to put this everywhere
+        # in the code, so a compromise
+        sys.exit(0)
 
 
