@@ -6,7 +6,7 @@ from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.s3.s3 import S3
 from lmdo.cmds.iam.iam import IAM
 from lmdo.oprint import Oprint
-from lmdo.config import tmp_dir, lambda_memory_size, lambda_runtime, lambda_timeout, lambda_exclude
+from lmdo.config import TMP_DIR, LAMBDA_MEMORY_SIZE, LAMBDA_RUNTIME, LAMBDA_TIMEOUT, LAMBDA_EXCLUDE
 from lmdo.utils import zipper
 from lmdo.spinner import spinner
 
@@ -181,8 +181,8 @@ class Lambda(AWSBase):
 
     def zip_function(self, func_name):
         """Packaging lambda"""
-        target = tmp_dir + self.get_zip_name(func_name)
-        if zipper('./', target, lambda_exclude):
+        target = TMP_DIR + self.get_zip_name(func_name)
+        if zipper('./', target, LAMBDA_EXCLUDE):
             return target
 
         return False
@@ -190,7 +190,7 @@ class Lambda(AWSBase):
     def remove_zip(self, func_name):
         """Remove lambda package from local"""
         try:
-            target = tmp_dir + self.get_zip_name(func_name)
+            target = TMP_DIR + self.get_zip_name(func_name)
             os.remove(target)
         except OSError:
             pass
@@ -208,9 +208,9 @@ class Lambda(AWSBase):
                 'FunctionName': self.get_function_name(lm.get('FunctionName')),
                 'S3Bucket': lm.get('S3Bucket'),
                 'Handler': lm.get('Handler'),
-                'MemorySize': lm.get('MemorySize') or lambda_memory_size,
-                'Runtime': lm.get('Runtime') or lambda_runtime,
-                'Timeout': lm.get('Timeout') or lambda_timeout,
+                'MemorySize': lm.get('MemorySize') or LAMBDA_MEMORY_SIZE,
+                'Runtime': lm.get('Runtime') or LAMBDA_RUNTIME,
+                'Timeout': lm.get('Timeout') or LAMBDA_TIMEOUT,
                 'Description': 'Function deployed for service {} by lmdo'.format(self._config.get('Service'))
             }
 
@@ -250,15 +250,15 @@ class Lambda(AWSBase):
 
     def pip_install(self):
         """Install requirement"""
-        if os.path.isfile('./{}'.format(os.getenv('PIP_REQUIREMENTS_FILE', pip_requirements_file))):
+        if os.path.isfile('./{}'.format(os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE))):
             Oprint.info('Installing python package dependancies if there is any missing', 'pip')
 
             spinner.start()
-            pip.main(['install', '-t', os.getenv('PIP_VENDOR_FOLDER', pip_vendor_folder), '-r', os.getenv('PIP_REQUIREMENTS_FILE', pip_requirements_file), '&>/dev/null'])
+            pip.main(['install', '-t', os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER), '-r', os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE), '&>/dev/null'])
             spinner.stop()
 
             Oprint.info('Python package installation complete', 'pip')
         else:
-            Oprint.warn('{} could not be found, no dependencies will be installed'.format(os.getenv('PIP_REQUIREMENTS_FILE', pip_requirements_file)), 'pip')
+            Oprint.warn('{} could not be found, no dependencies will be installed'.format(os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE)), 'pip')
 
                    

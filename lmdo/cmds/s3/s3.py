@@ -8,7 +8,7 @@ from lmdo.cmds.aws_base import AWSBase
 from lmdo.oprint import Oprint
 from lmdo.utils import sys_pause
 from lmdo.waiters.s3_waiters import S3WaiterBucketCreate, S3WaiterBucketDelete 
-from lmdo.config import s3_upload_exclude
+from lmdo.config import S3_UPLOAD_EXCLUDE
 
 class S3(AWSBase):
     """S3 handler"""
@@ -26,7 +26,7 @@ class S3(AWSBase):
         if !self._config.get('AssetDirectory') or !self._config.get('AssetS3Bucket')):
             Oprint.err('Your AssetDirectory or AssetS3Bucket is missing from lmdo.yml', 's3')
 
-        files = self.prepare_files_for_upload('./{}'.format(self._config.get('AssetDirectory')), self._config.get('AssetDirectory'), s3_upload_exclude)
+        files = self.prepare_files_for_upload('./{}'.format(self._config.get('AssetDirectory')), self._config.get('AssetDirectory'), S3_UPLOAD_EXCLUDE)
         for f in files:
             self.upload_file(self._config.get('AssetS3Bucket'), f.get('key'), f.get('path'),  ExtraArgs=f.get('extra_args'))
 

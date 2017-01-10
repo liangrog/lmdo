@@ -3,29 +3,29 @@ lmdo system configuration
 """
 
 # Where temporary files saved to
-tmp_dir = '/tmp/lmdo/'
+TMP_DIR = '/tmp/lmdo/'
 
 # File for lmdo project config data
-project_config_template = 'lmdo.yml.j2'
-project_config_file = 'lmdo.yml'
+PROJECT_CONFIG_TEMPLATE = 'lmdo.yml.j2'
+PROJECT_CONFIG_FILE = 'lmdo.yml'
 
 # PIP
-pip_vendor_folder = 'vendored'
-pip_requirements_file = 'requirements.txt'
+PIP_VENDOR_FOLDER = 'vendored'
+PIP_REQUIREMENTS_FILE = 'requirements.txt'
 
 # Cloudformations
-cloudformation_directory = 'cloudformation'
-cloudformation_template_allowed_postfix = ['json', 'template']
-cloudformation_template = 'main'
-cloudformation_paramemter_file = 'params.json'
+CLOUDFORMATION_DIRECTORY = 'cloudformation'
+CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX = ['json', 'template']
+CLOUDFORMATION_TEMPLATE = 'main'
+CLOUDFORMATION_PARAMETER_FILE = 'params.json'
 
 # Lambda
-lambda_memory_size = 128
-lambda_runtime = 'python2.7'
-lambda_timeout = 180
+LAMBDA_MEMORY_SIZE = 128
+LAMBDA_RUNTIME= 'python2.7'
+LAMBDA_TIMEOUT = 180
 
 # Files and directories excluding from packaging
-lambda_exclude = {
+LAMBDA_EXCLUDE= {
     'dir': [
         'tests',
         '*boto*',
@@ -45,11 +45,11 @@ lambda_exclude = {
 }
 
 # Apigateway
-swagger_dir = 'swagger'
-swagger_file = 'apigateway.json'
+SWAGGER_DIR = 'swagger'
+SWAGGER_FILE = 'apigateway.json'
 
 # S3
-s3_upload_exclude = {
+S3_UPLOAD_EXCLUDE = {
     'dir': [
         '*.git*',
         '.gitignore',
@@ -61,7 +61,7 @@ s3_upload_exclude = {
 }
 
 # Mandatory keys in the config file
-config_mandatory_keys = [
+CONFIG_MANDATORY_KEYS= [
     'User', 
     'Stage', 
     'Service',

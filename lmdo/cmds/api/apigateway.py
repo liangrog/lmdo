@@ -3,7 +3,7 @@ import os
 
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.oprint import Oprint
-from lmdo.config import swagger_dir, swagger_file
+from lmdo.config import SWAGGER_DIR, SWAGGER_FILE
 
 
 class Apigateway(AWSBase):
@@ -28,7 +28,7 @@ class Apigateway(AWSBase):
 
     def get_swagger_template(self):
         """Return swagger template path"""
-        return './{}/{}'.format(swagger_dir, swagger_file)
+        return './{}/{}'.format(SWAGGER_DIR, SWAGGER_FILE)
     
     def get_api_name(self):
         """Create API name structure"""

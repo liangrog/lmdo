@@ -3,7 +3,7 @@ lmdo
 
 Usage:
     lmdo init <project_name>
-    lmdo bp fetch <git_url>
+    lmdo bp fetch <url>
     lmdo cf (create|update|delete) 
     lmdo lm (create|update|delete)
     lmdo api (create|update|delete)

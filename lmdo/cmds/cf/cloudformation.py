@@ -6,8 +6,8 @@ import json
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.s3.s3 import S3
 from lmdo.oprint import Oprint
-from lmdo.config import cloudformation_directory, cloudformation_template_allowed_postfix, 
-    cloudformation_template, cloudformation_paramemter_file
+from lmdo.config import CLOUDFORMATION_DIRECTORY, CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX, 
+    CLOUDFORMATION_TEMPLATE, CLOUDFORMATION_PARAMETER_FILE
 from lmdo.utils import find_files_by_postfix, find_files_by_name_only
 from lmdo.waiters.cloudformation_waiters import CloudformationWaiterStackCreate, CloudformationWaiterStackUpdate, CloudformationWaiterStackDelete
 
@@ -55,13 +55,13 @@ class Cloudformation(AWSBase):
 
     def find_template_files(self):
         """find all files end with .json or .templates"""
-        return find_files_by_name_only("./{}".format(cloudformation_directory), cloudformation_template, cloudformation_template_allowed_postfix)
+        return find_files_by_name_only("./{}".format(CLOUDFORMATION_DIRECTORY), CLOUDFORMATION_TEMPLATE, CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX)
 
     def if_main_template_exist(self):
         """Check if we have only one main template defined, allow .json or .template"""
         found_files = self.find_template_files()
         if len(found_files) > 1:
-            Oprint.err("You cannot define more than one {} template".format(cloudformation_template))
+            Oprint.err("You cannot define more than one {} template".format(CLOUDFORMATION_TEMPLATE))
         
         if len(found_files) < 1:
             return False
@@ -77,7 +77,7 @@ class Cloudformation(AWSBase):
 
         # Validate syntax of the template
         for template in templates:
-            with open("./{}/{}".format(cloudformation_directory, template), 'r') as outfile: 
+            with open("./{}/{}".format(CLOUDFORMATION_DIRECTORY, template), 'r') as outfile: 
                 tpl = outfile.read()
                 self.validate_template(tpl)
 
@@ -85,8 +85,8 @@ class Cloudformation(AWSBase):
         # all templates into the subfolder 
         if bucket_name:
             # Don't upload parameter file
-            for f in templatesi if fnmatch.fnmatch(f, cloudformation_paramemter_file):
-                self._s3.upload_file(bucket_name, "./{}/{}".format(cloudformation_directory, f), "{}/{}".format(self.get_stack_name(), f))
+            for f in templatesi if fnmatch.fnmatch(f, CLOUDFORMATION_PARAMETER_FILE):
+                self._s3.upload_file(bucket_name, "./{}/{}".format(CLOUDFORMATION_DIRECTORY, f), "{}/{}".format(self.get_stack_name(), f))
         else:
             # Put local prepare here
             is_local = True
@@ -123,8 +123,8 @@ class Cloudformation(AWSBase):
 
         if is_local:
             # Read template data into cache
-            if os.path.isfile("./{}/{}".format(cloudformation_directory, self._template)):
-                with open("./{}/{}".format(cloudformation_directory, self._template), 'r') as outfile:
+            if os.path.isfile("./{}/{}".format(CLOUDFORMATION_DIRECTORY, self._template)):
+                with open("./{}/{}".format(CLOUDFORMATION_DIRECTORY, self._template), 'r') as outfile:
                     template_body = outfile.read()
  
             func_params = {
@@ -136,8 +136,8 @@ class Cloudformation(AWSBase):
             }
 
         # If parameters file exist
-        if os.path.isfile("./{}/{}".format(cloudformation_directory, cloudformation_paramemter_file)):
-            with open("./{}/{}".format(cloudformation_directory, cloudformation_paramemter_file), 'r') as outfile:
+        if os.path.isfile("./{}/{}".format(CLOUDFORMATION_DIRECTORY, CLOUDFORMATION_PARAMETER_FILE)):
+            with open("./{}/{}".format(CLOUDFORMATION_DIRECTORY, CLOUDFORMATION_PARAMETER_FILE), 'r') as outfile:
                 func_params['Parameters'] = json.loads(outfile.read())
        
         if to_update:

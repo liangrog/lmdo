@@ -12,10 +12,10 @@ from lmdo.oprint import Oprint
 
 def mkdir(path, mode=0777):
     """Wrapper for mkdir"""
-    from lmdo.config import tmp_dir
+    from lmdo.config import TMP_DIR
 
     try:
-        os.makedirs(tmp_dir, mode)
+        os.makedirs(TMP_DIR, mode)
     except OSError as e:
         if e.errno != errno.EEXIST:
             Oprint.err(e, 'lmdo')

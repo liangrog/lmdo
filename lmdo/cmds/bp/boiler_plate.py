@@ -3,8 +3,9 @@ import sys
 import os
 import shutil
 import site
+from git import Repo
 
-from lmdo.config import project_config_file
+from lmdo.config import PROJECT_CONFIG_FILE, TMP_DIR
 from lmdo.oprint import Oprint
 from lmdo.utils import mkdir
 
@@ -15,11 +16,12 @@ class BoilerPlate(object):
         self._args = args
 
     def init(self):
+        """Initiating the project and provide a sample lmdo.yml file"""
         mkdir(self._args.get('project_name'))
 
         """Copy lmdo.yml over"""
         # Do not copy over unless it's a clearn dir
-        if os.path.isfile('./{}'.format(project_config_file)):
+        if os.path.isfile('./{}'.format(PROJECT_CONFIG_FILE)):
             Oprint.err('Your have existing lmdo.yml already, exiting...', 'lmdo')
 
         pkg_dir = site.getsitepackages()
@@ -31,9 +33,11 @@ class BoilerPlate(object):
             self.copytree(src_dir, './{}'.format(self._args.get('project_name')))
 
     def fetch(self):
-        pass
-        self.clone_boilerplate_to_tmp()
-        self.cp_boilerplate_to_project()
+        """Fetch template repo to local"""
+        tmp = '{}/{}'.format(TMP_DIR, 'git_tmp')
+        self.git_clone(self._args.get('url'), tmp)
+        self.cp_clean_repo(tmp, './')
+        shutil.rmtree(tmp)
 
     def copytree(self, src, dst, symlinks=False, ignore=None):
         """
@@ -58,10 +62,20 @@ class BoilerPlate(object):
             else:
                 shutil.copy2(s, d)
 
-    def clone_boilerplate_to_tmp(self):
-        pass
+    def git_clone(self, url, local_dir):
+        """Clone a repo from url to local"""
+        if os.path.isdir(local_dir):
+            shutil.rmtree(local_dir)
+        
+        mkdir(local_dir)
 
-    def cp_boilerplate_to_project(self, from_dir, to_dir):
-        pass
+        repo = Repo.init(local_dir)
+        origin = repo.create_remote('origin', url)
+        origin.fetch()
+        origin.pull(origin.refs[0].remote_head)
+         
+    def cp_clean_repo(self, from_path, to_path):
+        """Copy repo to dir without git"""
+        self.copytree(from_path, to_path, ignore=shutil.ignore_patterns('*.git', '.gitignore'))
 
 

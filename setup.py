@@ -59,7 +59,8 @@ setup(
         'boto3==1.4.2',
         'PyYAML==3.12',
         'jinja2==2.8',
-        'tqdm==4.10'
+        'tqdm==4.10',
+        'gitpython'
     ],
     extras_require={
         'test': ['coverage', 'pytest', 'pytest-cov'],

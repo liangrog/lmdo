@@ -14,31 +14,31 @@ def lmdo_output(func):
     return __wrapper
 
     
-class Oprint:
+class Oprint(object):
     """Printing class for output formatting"""
 
     # Colour codes
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = "\033[1m"
+    header = '\033[95m'
+    okblue = '\033[94m'
+    okgreen = '\033[92m'
+    warning = '\033[93m'
+    fail = '\033[91m'
+    endc = '\033[0m'
+    bold = "\033[1m"
 
     def disable(self):
-        HEADER = ''
-        OKBLUE = ''
-        OKGREEN = ''
-        WARNING = ''
-        FAIL = ''
-        ENDC = ''
+        header = ''
+        okblue = ''
+        okgreen = ''
+        warning = ''
+        fail = ''
+        endc = ''
 
     @classmethod
     @lmdo_output
     def infog(cls, msg):
         if type(msg) is str:
-            print(Oprint.OKGREEN + msg + Oprint.ENDC)
+            print(Oprint.okgreen + msg + Oprint.endc)
         else:
             print(msg)
 
@@ -46,7 +46,7 @@ class Oprint:
     @lmdo_output
     def info(cls, msg):
         if type(msg) is str:
-            print(Oprint.OKBLUE + msg + Oprint.ENDC)
+            print(Oprint.okblue + msg + Oprint.endc)
         else:
             print(msg)
     
@@ -54,21 +54,22 @@ class Oprint:
     @lmdo_output
     def warn(cls, msg):
         if type(msg) is str:
-            print(Oprint.WARNING + msg + Oprint.ENDC)
+            print(Oprint.warning + msg + Oprint.endc)
         else:
             print(msg)
     
     @classmethod
     @lmdo_output
-    def err(cls, msg):
+    def err(cls, msg, exit=True):
         if type(msg) is str:
-            print(Oprint.FAIL + msg + Oprint.ENDC)
+            print(Oprint.fail + msg + Oprint.endc)
         else:
             print(msg)
         
         # Exit if error. It's anti-pattern here (seperation
         # of responsibility) but hate to put this everywhere
         # in the code, so a compromise
-        sys.exit(0)
+        if exit:
+            sys.exit(0)
 
 

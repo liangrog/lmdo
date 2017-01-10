@@ -44,8 +44,8 @@ class Dispatcher(object):
     def run(self, command):
         try:
             command.run()
-        except Exception as e:
+        except Exception as exc:
             print "Unexpected error:", sys.exc_info()[0]
-            raise e
+            raise exc
 
 

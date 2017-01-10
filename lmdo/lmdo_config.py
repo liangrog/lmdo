@@ -4,7 +4,7 @@ import jinja2
 import yaml
 
 from lmdo.config_parser_interface import ConfigParserInterface
-from lmdo.config import project_config_file, project_config_template, config_mandatory_keys
+from lmdo.config import PROJECT_CONFIG_FILE, PROJECT_CONFIG_TEMPLATE, CONFIG_MANDATORY_KEYS
 from lmdo.oprint import Oprint
 from lmdo.utils import mkdir
 
@@ -13,37 +13,37 @@ class LmdoConfig(ConfigParserInterface):
     """lmdo project configuration Loader"""
     
     def __init__(self):
-        self._tmp_dir = '/tmp/lmdo/'
-        self.init_tmp_dir()
+        self._TMP_DIR = '/tmp/lmdo/'
+        self.init_TMP_DIR()
 
         self.template_to_config()
         self.load_config()
 
     @property
-    def tmp_dir(self):
-        return self._tmp_dir
+    def TMP_DIR(self):
+        return self._TMP_DIR
 
-    def init_tmp_dir(self):
+    def init_TMP_DIR(self):
         """Initialise temporary directory"""
-        return mkdir(self._tmp_dir)
+        return mkdir(self._TMP_DIR)
 
     def template_to_config(self):
         """translate jinja2 tempate into lmdo project config file"""
-        if os.path.isfile(project_config_template):
-            rendered = LmdoConfig.render_template(project_config_template, os.environ)
-            with open(project_config_file, 'wb') as fh:
+        if os.path.isfile(PROJECT_CONFIG_TEMPLATE):
+            rendered = LmdoConfig.render_template(PROJECT_CONFIG_TEMPLATE, os.environ)
+            with open(PROJECT_CONFIG_FILE, 'wb') as fh:
                 fh.write(rendered)
                 fh.close()
-            Oprint.info('{} has been overriden by {}'.format(project_config_file, project_config_template), 'config parser')
+            Oprint.info('{} has been overriden by {}'.format(PROJECT_CONFIG_FILE, PROJECT_CONFIG_TEMPLATE), 'config parser')
 
         # Check if config file exist and has content
         elif !LmdoConfig.if_lmdo_config_exist():
-            Oprint.err('{} file doesn\'t exist in current directory'.format(project_config_file), 'config parser')
+            Oprint.err('{} file doesn\'t exist in current directory'.format(PROJECT_CONFIG_FILE), 'config parser')
 
     @staticmethod
     def if_lmdo_config_exist():
-        return (os.path.isfile(project_config_file) and os.access(project_config_file, os.R_OK))
-            or (os.path.isfile(project_config_template) and os.access(project_config_template, os.R_OK))
+        return (os.path.isfile(PROJECT_CONFIG_FILE) and os.access(PROJECT_CONFIG_FILE, os.R_OK))
+            or (os.path.isfile(PROJECT_CONFIG_TEMPLATE) and os.access(PROJECT_CONFIG_TEMPLATE, os.R_OK))
 
     @staticmethod
     def render_template(template, context):
@@ -54,7 +54,7 @@ class LmdoConfig(ConfigParserInterface):
     def load_config(self):
         """Load YAML config data from project directory"""
         # Load yaml file
-        with open(project_config_file, 'r') as outfile:
+        with open(PROJECT_CONFIG_FILE, 'r') as outfile:
             try:
                 self._config = yaml.load(outfile)
             except yaml.YAMLError as e:
@@ -90,7 +90,7 @@ class LmdoConfig(ConfigParserInterface):
             self._config['Stage'] = 'dev'
       
         # Check if all keys available
-        for key in config_mandatory_keys:
+        for key in CONFIG_MANDATORY_KEYS:
             if key not in self._config:
                 Oprint.err('{} is missing from config file'.format(key), 'config parser')
 
