@@ -42,7 +42,8 @@ class LmdoConfig(ConfigParserInterface):
 
     @staticmethod
     def if_lmdo_config_exist():
-        return os.path.isfile(project_config_file) and os.access(project_config_file, os.R_OK)
+        return (os.path.isfile(project_config_file) and os.access(project_config_file, os.R_OK))
+            or (os.path.isfile(project_config_template) and os.access(project_config_template, os.R_OK))
 
     @staticmethod
     def render_template(template, context):
@@ -79,7 +80,15 @@ class LmdoConfig(ConfigParserInterface):
         # Set default user if doesn't exist
         if !self.get('User'):
             self._config['User'] = 'default'
-        
+ 
+        # Set default service if doesn't exist
+        if !self.get('Service'):
+            self._config['Service'] = 'default'
+   
+        # Set default stage if doesn't exist
+        if !self.get('Stage'):
+            self._config['Stage'] = 'dev'
+      
         # Check if all keys available
         for key in config_mandatory_keys:
             if key not in self._config:

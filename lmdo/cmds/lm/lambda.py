@@ -44,7 +44,7 @@ class Lambda(AWSBase):
             return True
 
         # Create all functions
-        for lm in self._config.get('Lambda').iteritem():
+        for lm in self._config.get('Lambda'):
             # Get function info before being deleted
             info = self.get_function(lm.get('FunctionName'))
             self.delete_function(lm.get('FunctionName'))
@@ -199,18 +199,19 @@ class Lambda(AWSBase):
         """Prepare function before creation/update"""
         # Dont run if doesn't exist
         if !self._config.get('Lambda'):
-            Oprint.info('No Lambda function configured, skip', 'lambda')
+            Oprint.info('No Lambda function configured, skip...', 'lambda')
             return True
 
         # Create all functions
-        for lm in self._config.get('Lambda').iteritem():
+        for lm in self._config.get('Lambda'):
             params = {
                 'FunctionName': self.get_function_name(lm.get('FunctionName')),
                 'S3Bucket': lm.get('S3Bucket'),
                 'Handler': lm.get('Handler'),
                 'MemorySize': lm.get('MemorySize') or lambda_memory_size,
                 'Runtime': lm.get('Runtime') or lambda_runtime,
-                'Timeout': lm.get('Timeout') or lambda_timeout
+                'Timeout': lm.get('Timeout') or lambda_timeout,
+                'Description': 'Function deployed for service {} by lmdo'.format(self._config.get('Service'))
             }
 
             if lm.get('VpcConfig'):                
@@ -229,7 +230,7 @@ class Lambda(AWSBase):
                     self.update_function_code(lm.get('FunctionName'), lm.get('S3Bucket'))
                 else:
                     # User configured role or create a new on based on policy document
-                    role = lm.get('Role') or self.create_role(lm.get('RolePolicyDocument'))
+                    role = lm.get('Role') or self.create_role(self.get_role_name(lm.get('FunctionName')), lm.get('RolePolicyDocument'))
                     params['Role'] = role
                     self.create_function(**params)
             # Clean up
@@ -239,7 +240,9 @@ class Lambda(AWSBase):
         """Create role for lambda from policy doc"""
         with open(policy_path, 'r') as outfile: 
             policy = outfile.read()
-            self._iam.create_role(role_name, policy)
+            role = self._iam.create_role(role_name, policy)
+
+        return role.get('Role').get('RoleName')
 
     def delete_role(self, role):
         """Delete role for lambda"""

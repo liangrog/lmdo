@@ -34,7 +34,6 @@ lambda_exclude = {
         'cloudformation',
         'swagger',
     ],
-
     'file': [
         'lmdo.yml',
         '*.pyc',
@@ -45,47 +44,63 @@ lambda_exclude = {
     ]
 }
 
-# Template file name
+# Apigateway
+swagger_dir = 'swagger'
 swagger_file = 'apigateway.json'
 
-# Template location
-cf_dir = './cloudformation/'
-swagger_dir = './swagger/'
+# S3
+s3_upload_exclude = {
+    'dir': [
+        '*.git*',
+        '.gitignore',
+        '*.md'
+    ],
+    'file': [
+        '.DS_Store'
+    ]
+}
 
 # Mandatory keys in the config file
 config_mandatory_keys = [
-    'Environment',
-    'LambdaBucketName', 
+    'User', 
     'Stage', 
-    'Service' 
+    'Service',
+    'Profile'
 ]
     
 
 
 """
-User
-Stage
-Service
-StackName
-CloudformationBucket
-                "EnvironmentVariables": {
-                        "MYSQL_HOST": {"Ref": "MysqlHost"},
-                        "MYSQL_PASSWORD": {"Ref": "MysqlPassword"},
-                        "MYSQL_USERNAME": {"Ref": "MysqlUsername"},
-                        "MYSQL_DATABASE": {"Ref": "MysqlDatabase"},
-                        "REGION": {"Ref": "AWS::Region"}
-                },
-                "Bucket"
-                "FunctionName"
-                "Handler"
-                "MemorySize" 128
-                "Role":
-                "RolePolicyDocument":
-                "Runtime"
-                "Timeout" 180
-                "VpcConfig": {
-                    "SecurityGroupIds"
-                    "SubnetIds"
-                }
-            }
+lmdo.yml:
+
+User: user
+Stage: dev
+Service: lmdo
+Profile: default
+
+CloudformationBucket: cloudformation.bucket.name
+
+StaticS3Bucket: static.bucket.name
+StaticDirectory: ./build
+
+Lambda:
+    - EnvironmentVariables:
+          MYSQL_HOST: localhost
+          MYSQL_PASSWORD: secret
+          MYSQL_USERNAME: admin
+          MYSQL_DATABASE: lmdo
+      S3Bucket: lambda.bucket.name
+      FunctionName: superman
+      Handler: handler.fly
+      MemorySize: 128
+      Role:
+      RolePolicyDocument:
+      Runtime:
+      Timeout:
+      VpcConfig: 
+          SecurityGroupIds:
+          SubnetIds:
+       
 """
+
+

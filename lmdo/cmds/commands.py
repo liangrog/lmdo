@@ -24,15 +24,20 @@ class DeleteCommand(CommandInterface):
     def run(self):
         self._obj.delete()
 
-class DeployCommand(CommandInterface):
-    """Command for deployment"""
+class InitCommand(CommandInterface):
+    """Command for initialisation"""
     def run(self):
-        self._obj.deploy()
+        self._obj.init()
 
-class TeardownCommand(CommandInterface):
-    """Commmand for tear down"""
+class SyncCommand(CommandInterface):
+    """Command for syncing"""
     def run(self):
-        self._obj.teardown()
+        self._obj.sync()
+
+class FetchCommand(CommandInterface):
+    """Command for fetch"""
+    def run(self):
+        self._obj.fetch()
 
 class Dispatcher(object):
     """Command invocation class"""

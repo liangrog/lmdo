@@ -1,18 +1,12 @@
 from __future__ import print_function
-import os
-import fnmatch
-import json
 
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.oprint import Oprint
 
 
 class IAM(AWSBase):
-    """
-    Class upload cloudformation template to S3
-    and create/update stack
-    Stack name is fixed with User-Stage-Servicename-Service
-    """
+    """create/update IAM properties"""
+
     def __init__(self):
         super(IAM, self).__init__()
         self._client = self.get_client('iam') 
@@ -22,9 +16,25 @@ class IAM(AWSBase):
         return self._client
  
     def create_role(self, role_name, policy):
-        pass
+        """Create an IAM role"""
+        try:
+            Oprint.info('Creating role {}'.format(role_name), 'iam')
+            response = self._client.create_role(RoleName=role_name, AssumeRolePolicyDocument=policy)
+            Oprint.info('Complete creating role {}'.format(role_name), 'iam')
+        except Exception as e:
+            Oprint.err(e, 'iam')
+
+        return response
 
     def delete_role(self, role_name):
-        pass
+        """Delete an IAM role"""
+        try:
+            Oprint.info('Deleting role {}'.format(role_name), 'iam')
+            response = self._client.delete_role(RoleName=role_name)
+            Oprint.info('Complete deleting role {}'.format(role_name), 'iam')
+        except Exception as e:
+            Oprint.err(e, 'iam')
+
+        return response
                    
 

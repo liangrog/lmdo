@@ -8,6 +8,11 @@ class ConfigParserInterface(object):
     so lmdo can understand it
     """
     def get(self, *args, **kwargs):
+        """Get value from config file"""
+        raise NotImplementedError
+
+    def validate(self, *args, **kwargs):
+        """Validate config file"""
         raise NotImplementedError
 
 

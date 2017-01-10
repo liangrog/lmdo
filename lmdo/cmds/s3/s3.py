@@ -8,6 +8,7 @@ from lmdo.cmds.aws_base import AWSBase
 from lmdo.oprint import Oprint
 from lmdo.utils import sys_pause
 from lmdo.waiters.s3_waiters import S3WaiterBucketCreate, S3WaiterBucketDelete 
+from lmdo.config import s3_upload_exclude
 
 class S3(AWSBase):
     """S3 handler"""
@@ -19,7 +20,16 @@ class S3(AWSBase):
     @property
     def client(self):
         return self._client
-                   
+
+    def sync(self):
+        """Sync local asset to s3"""
+        if !self._config.get('AssetDirectory') or !self._config.get('AssetS3Bucket')):
+            Oprint.err('Your AssetDirectory or AssetS3Bucket is missing from lmdo.yml', 's3')
+
+        files = self.prepare_files_for_upload('./{}'.format(self._config.get('AssetDirectory')), self._config.get('AssetDirectory'), s3_upload_exclude)
+        for f in files:
+            self.upload_file(self._config.get('AssetS3Bucket'), f.get('key'), f.get('path'),  ExtraArgs=f.get('extra_args'))
+
     def if_bucket_exist(self, bucket_name):
         """Check if bucket exist"""
         if self._resource.Bucket(bucket_name) in self._resource.buckets.all():
@@ -42,7 +52,7 @@ class S3(AWSBase):
         
         return True
 
-    def upload_file(self, bucket_name, key, file_path):
+    def upload_file(self, bucket_name, key, file_path, **kwargs):
         """Upload file to S3, provide network progress bar"""
         # Check if bucket exist, create one if user agrees
         if not self.if_bucket_exist(bucket_name):
@@ -53,7 +63,7 @@ class S3(AWSBase):
 
         progress = tqdm(total=float(os.stat(pkg_path).st_size), unit_scale=True, unit='B')
 
-        self.s3.upload_file(file_path, bucket_name, key, Callback=progress.update)
+        self.s3.upload_file(file_path, bucket_name, key, Callback=progress.update, **kwargs)
 
         Oprint.info('Complete uploading {} to S3 bucket {}'.format(key, bucket_name), 's3')
 
@@ -75,4 +85,57 @@ class S3(AWSBase):
         except Exception as e:
             Oprint.err(e, 's3')
                     
+    def prepare_files_for_upload(from_path, asset_dir, exclude=None):
+        """
+        Prepare files for uploading
+            exclude = {
+                'dir': [],
+                'file': []
+            }
+        """
+        output = []
+        for root, dirs, files in os.walk(from_path):
+            if not exclude:
+                for f in files:
+                    abs_path = os.path.join(root, f)
+                    data = {
+                        'path': abs_path,
+                        'key': os.path.relpath(abs_path, asset_dir)
+                    }
+
+                    if f.endswith('.svg'):
+                        data['extra_args'] = {'--content-type': 'image/svg+xml'}
+
+                    output.append(data)
+            else:
+                for f in files:
+                    excl = False
+
+                    #check if file/folder should be excluded
+                    if exclude['dir']:
+                        for ex_dir in exclude['dir']:
+                            if fnmatch.fnmatch(root, ex_dir):
+                                excl = True
+                                break
+
+                    if exclude['file']:
+                        for ex_file in exclude['file']:
+                            if fnmatch.fnmatch(f, ex_file):
+                                excl = True
+                                break
+
+                    if not excl:
+                        abs_path = os.path.join(root, f)
+                        data = {
+                            'path': abs_path,
+                            'key': os.path.relpath(abs_path, asset_dir)
+                        }
+
+                        if f.endswith('.svg'):
+                            data['extra_args'] = {'--content-type': 'image/svg+xml'}
+
+                        output.append(data)
+
+        return output
+
 

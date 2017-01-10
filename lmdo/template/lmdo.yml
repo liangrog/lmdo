@@ -1,14 +1,10 @@
 # @mandatory: true
 # @description: microservice name
-Service: user
-
-# @mandatory: true
-# @description: package environment
-Environment: development
+Service: superman
 
 # @mandatory: true
 # @description: microservice creator
-User: roger
+User: default
 
 # @mandatory: true
 # @description: AWS credential profile name, default to 'default'
@@ -19,43 +15,38 @@ Profile: default
 Stage: dev
 
 # @mandatory: false
-# @description: api name
-#API: LmdoTest
-
-# @mandatory: true
-# @description: global bucket name for storing Lambda functions
-LambdaBucketName: lambda-packages.merlingroup.co
-
-# @mandatory: true (since you need to use stack lookup everytime)
-# description: parameters mapping for your cloud formation
-Parameters:
-    StackLookupArn: arn:aws:lambda:ap-southeast-2:105594462793:function:utils-merlingroupco-LookupStackOutputs-JOK0L75VOG3H
-    LookupStackName: lambda-global-infra-merlingroupco
-    LambdaFunction1Name: Lambda-test-function
-    LambdaFunction1HandlerName: handler.test
+# @description: cloudformation files to upload to. If not set
+# will load from local but won't work for nested stack templates.
+CloudformationBucket: cloudformation.bucket.name
 
 # @mandatory: false
-# Description: By default when delete a stack,
-#              The associated bucket won't be
-#              deleted if it has objects. Specified
-#              here so the content will be deleted
-#              first before we can delete the bucket
-#BucketInStackToDestroy:
-#    - bucket1
-#    - bucket2
+# @description: static asset to deploy to given bucket
+AssetS3Bucket: static.bucket.name
+AseetDirectory: build
 
-# @mandatory: true
-# @description: Mapping between Lambda function ARN to
-#               API gateway that uses it
-#LambdaMapping:
-#    [Lambda function name]:
-#        [Lambda function ARN reference from cloudformation output, also required for code update]: [Regular expression in apigateway template for replacing the corresponding lambda function ARN, set it to 'False' if no related API]
-LambdaMapping:
-    Lambda-test-function:
-        LambdaFunctionArn: $lambdaArn
-        DefaultIamRoleAPIArn: $apiRoleArn
-
-# APITemplateMapping:
-#    [Template file name under swagger folder]: [Variable in apigateway template to be replaced]
-APITemplateMapping:
-    api_integration_request_template.json: $apiIntegrationRequestTemple
+# @mandatory: false
+# @description: lambda functions to deploy
+Lambda:
+    - EnvironmentVariables:              # optional
+          MYSQL_HOST: localhost
+          MYSQL_PASSWORD: secret
+          MYSQL_USERNAME: admin
+          MYSQL_DATABASE: lmdo
+      S3Bucket: lambda.bucket.name        # mandatory
+      FunctionName: superman              # mandatory
+      Handler: handler.fly                # mandatory 
+      MemorySize: 128                     # optional
+      Role: roleName                      #Either provide a role name or policy doc 
+      RolePolicyDocument: path/to/policy  #Policy takes preccedent
+      Runtime: python2.7                  # optional default to 'python2.7'
+      Timeout:                            # optional default to 180
+      VpcConfig:                          # optional
+          SecurityGroupIds:
+          SubnetIds:
+    # Second lambda function 
+    - S3Bucket: lambda.bucket.name        # mandatory
+      FunctionName: superman              # mandatory
+      Handler: handler.fly                # mandatory 
+      Role: roleName                      #Either provide a role name or policy doc 
+      RolePolicyDocument: path/to/policy  #Policy takes preccedent
+ 

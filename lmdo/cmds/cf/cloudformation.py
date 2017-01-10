@@ -18,6 +18,7 @@ class Cloudformation(AWSBase):
     and create/update stack
     Stack name is fixed with User-Stage-Servicename-Service
     """
+
     def __init__(self):
         super(Cloudformation, self).__init__()
         self._client = self.get_client('cloudformation') 

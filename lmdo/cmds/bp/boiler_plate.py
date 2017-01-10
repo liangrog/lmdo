@@ -4,22 +4,23 @@ import os
 import shutil
 import site
 
-from lmdo.config import config_file
+from lmdo.config import project_config_file
 from lmdo.oprint import Oprint
+from lmdo.utils import mkdir
 
-class Tpl:
-    """
-    Copy templates
-    """
+class BoilerPlate(object):
+    """Boiler plating handler"""
+   
+    def __init__(self, args):
+        self._args = args
 
-    def __init__(self, options):
-        pass
+    def init(self):
+        mkdir(self._args.get('project_name'))
 
-    def run(self):
+        """Copy lmdo.yml over"""
         # Do not copy over unless it's a clearn dir
-        if os.path.isfile('./' + config_file):
-            Oprint.warn('Your have existing templates already, exiting...', 'lmdo')
-            sys.exit(0)
+        if os.path.isfile('./{}'.format(project_config_file)):
+            Oprint.err('Your have existing lmdo.yml already, exiting...', 'lmdo')
 
         pkg_dir = site.getsitepackages()
         for pd in pkg_dir:
@@ -27,7 +28,12 @@ class Tpl:
                 src_dir = pd + '/lmdo/template'
                 break
         if src_dir:
-            self.copytree(src_dir, './')
+            self.copytree(src_dir, './{}'.format(self._args.get('project_name')))
+
+    def fetch(self):
+        pass
+        self.clone_boilerplate_to_tmp()
+        self.cp_boilerplate_to_project()
 
     def copytree(self, src, dst, symlinks=False, ignore=None):
         """
@@ -51,5 +57,11 @@ class Tpl:
                 shutil.copytree(s, d, symlinks, ignore)
             else:
                 shutil.copy2(s, d)
+
+    def clone_boilerplate_to_tmp(self):
+        pass
+
+    def cp_boilerplate_to_project(self, from_dir, to_dir):
+        pass
 
 
