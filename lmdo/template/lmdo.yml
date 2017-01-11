@@ -20,6 +20,16 @@ Stage: dev
 CloudformationBucket: cloudformation.bucket.name
 
 # @mandatory: false
+# @escription: where the python package installed to, default 'vendored'
+# Note: add below code to your handler so AWS Lambda container can find it
+# ------------------------------------------------------------------
+# file_path = os.path.dirname(os.path.realpath(__file__))
+# sys.path.append(os.path.join(file_path, "./"))
+# sys.path.append(os.path.join(file_path, "./vendored"))
+# ------------------------------------------------------------------
+VendorFolder: vendored
+
+# @mandatory: false
 # @description: static asset to deploy to given bucket
 AssetS3Bucket: static.bucket.name
 AseetDirectory: build
