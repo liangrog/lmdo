@@ -31,4 +31,4 @@ class Spinner(object):
         self.busy = False
         time.sleep(self.delay)
 
-
+spinner = Spinner()

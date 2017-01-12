@@ -4,10 +4,11 @@ from lmdo.cmds.commands import Dispatcher, InitCommand, FetchCommand
 from lmdo.cmds.client_factory_interface import ClientFactoryInterface
 
 
-class InitClient(ClientFactoryInterface):
+class BpClient(ClientFactoryInterface):
     """Init command client"""
     def __init__(self, args):
-        self._boilder_plate = BoilerPlate(args)
+        self._boiler_plate = BoilerPlate(args)
+        self._dispatcher = Dispatcher()
         self._args = args
 
     def execute(self):
@@ -16,6 +17,6 @@ class InitClient(ClientFactoryInterface):
 
         if self._args.get('bp'):
             if self._args.get('fetch'):
-            self._dispatcher.run(FetchCommand(self._boiler_plate))
+                self._dispatcher.run(FetchCommand(self._boiler_plate))
 
 

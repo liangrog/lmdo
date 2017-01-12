@@ -15,7 +15,7 @@ PIP_REQUIREMENTS_FILE = 'requirements.txt'
 
 # Cloudformations
 CLOUDFORMATION_DIRECTORY = 'cloudformation'
-CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX = ['json', 'template']
+CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX = ['json', 'template', '.yml']
 CLOUDFORMATION_TEMPLATE = 'main'
 CLOUDFORMATION_PARAMETER_FILE = 'params.json'
 

@@ -6,7 +6,7 @@ from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.s3.s3 import S3
 from lmdo.cmds.iam.iam import IAM
 from lmdo.oprint import Oprint
-from lmdo.config import TMP_DIR, LAMBDA_MEMORY_SIZE, LAMBDA_RUNTIME, LAMBDA_TIMEOUT, LAMBDA_EXCLUDE
+from lmdo.config import TMP_DIR, LAMBDA_MEMORY_SIZE, LAMBDA_RUNTIME, LAMBDA_TIMEOUT, LAMBDA_EXCLUDE, PIP_VENDOR_FOLDER, PIP_REQUIREMENTS_FILE 
 from lmdo.utils import zipper
 from lmdo.spinner import spinner
 
@@ -39,19 +39,22 @@ class Lambda(AWSBase):
     def delete(self):
         """Delete lambda functions"""
         # Dont run if doesn't exist
-        if !self._config.get('Lambda'):
+        if not self._config.get('Lambda'):
             Oprint.info('No Lambda function configured, skip', 'lambda')
             return True
 
         # Create all functions
         for lm in self._config.get('Lambda'):
             # Get function info before being deleted
-            info = self.get_function(lm.get('FunctionName'))
-            self.delete_function(lm.get('FunctionName'))
+            info = self.get_function(self.get_function_name(lm.get('FunctionName')))
+            if info:
+                self.delete_function(info.get('Configuration').get('FunctionName'))
 
-            # Delete role if it's created by lmdo
-            if !lm.get('Role'):
-                self.delete_role(info.get('Configuration').get('Role'))
+                # Delete role if it's created by lmdo
+                if not lm.get('RoleArn') or len(lm.get('RoleArn')) <= 0:
+                    self.delete_role(info.get('Configuration').get('Role'))
+            else:
+                Oprint.warn('Cannot find function {} to delete in AWS'.format(self.get_function_name(lm.get('FunctionName'))), 'lambda')
 
     def update(self):
         """Wrapper, same action as create"""
@@ -104,18 +107,18 @@ class Lambda(AWSBase):
 
         return response
 
-    def create_function(self, func_name, role, handler, code, runtime, **kwargs):
+    def create_function(self, FunctionName, Role, Handler, Code, Runtime, **kwargs):
         """Wrapper for create lambda function"""
         try:
             response = self._client.create_function(
-                FunctionName=self.get_function_name(func_name),
-                Runtime=runtime,
-                Role=role,
-                Handler=handler,
-                Code=code,
+                FunctionName=FunctionName,
+                Runtime=Runtime,
+                Role=Role,
+                Handler=Handler,
+                Code=Code,
                 **kwargs
             )
-            Oprint.info('Lambda function {} has been created'.format(self.get_function_name(func_name)), 'lambda')
+            Oprint.info('Lambda function {} has been created'.format(FunctionName), 'lambda')
         except Exception as e:
             Oprint.err(e, 'lambda')
 
@@ -124,8 +127,8 @@ class Lambda(AWSBase):
     def delete_function(self, func_name, **kwargs):
         """Wrapper to delete lambda function"""
         try:
-            response = self._client.delete_function(FunctionName=self.get_function_name(func_name), **kwargs)
-            Oprint.info('Lambda function {} has been deleted'.format(self.get_function_name(func_name)), 'lambda')
+            response = self._client.delete_function(FunctionName=func_name, **kwargs)
+            Oprint.info('Lambda function {} has been deleted'.format(func_name), 'lambda')
         except Exception as e:
             Oprint.err(e, 'lambda')
 
@@ -152,13 +155,13 @@ class Lambda(AWSBase):
 
         return response
 
-    def update_function_code(self, func_name, bucket_name):
+    def update_function_code(self, func_name, bucket_name, s3_key):
         """Update lambda code"""
         try:
             response = self._client.update_function_code(
-                FunctionName=self.get_function_name(func_name),
+                FunctionName=func_name,
                 S3Bucket=bucket_name,
-                S3Key=self.get_zip_name(func_name)
+                S3Key=s3_key
             )
             Oprint.info('Lambda function {} has been updated'.format(func_name), 'lambda')
         except Exception as e:
@@ -173,11 +176,12 @@ class Lambda(AWSBase):
     def get_function(self, func_name, **kwargs):
         """Get function info"""
         try:
-            response = self._client.get_function(FunctionName=func_name, **kwargs)
+            return self._client.get_function(FunctionName=func_name, **kwargs)
         except Exception as e:
-            Oprint.err(e, 'lambda')
+            pass
+            #Oprint.err(e, 'lambda')
 
-        return response if response.get('Configuration') else False
+        return False
 
     def zip_function(self, func_name):
         """Packaging lambda"""
@@ -198,7 +202,7 @@ class Lambda(AWSBase):
     def process(self):
         """Prepare function before creation/update"""
         # Dont run if doesn't exist
-        if !self._config.get('Lambda'):
+        if not self._config.get('Lambda'):
             Oprint.info('No Lambda function configured, skip...', 'lambda')
             return True
 
@@ -206,7 +210,10 @@ class Lambda(AWSBase):
         for lm in self._config.get('Lambda'):
             params = {
                 'FunctionName': self.get_function_name(lm.get('FunctionName')),
-                'S3Bucket': lm.get('S3Bucket'),
+                'Code': {
+                    'S3Bucket': lm.get('S3Bucket'),
+                    'S3Key': self.get_zip_name(lm.get('FunctionName'))
+                },
                 'Handler': lm.get('Handler'),
                 'MemorySize': lm.get('MemorySize') or LAMBDA_MEMORY_SIZE,
                 'Runtime': lm.get('Runtime') or LAMBDA_RUNTIME,
@@ -224,17 +231,19 @@ class Lambda(AWSBase):
             self.remove_zip(lm.get('FunctionName'))
             file_path = self.zip_function(lm.get('FunctionName'))
             
-            if file_path and self._s3.upload_file(lm.get('S3Bucket'), self.get_zip_name, file_path):
-                # If function exists
-                if self.get_function(lm.get('FunctionName')):
-                    self.update_function_code(lm.get('FunctionName'), lm.get('S3Bucket'))
-                else:
-                    # User configured role or create a new on based on policy document
-                    role = lm.get('Role') or self.create_role(self.get_role_name(lm.get('FunctionName')), lm.get('RolePolicyDocument'))
-                    params['Role'] = role
-                    self.create_function(**params)
-            # Clean up
-            self.remove_zip(lm.get('FunctionName'))
+            if file_path:
+                if self._s3.upload_file(lm.get('S3Bucket'), file_path, self.get_zip_name(lm.get('FunctionName'))):
+                    # If function exists
+                    info = self.get_function(self.get_function_name(lm.get('FunctionName')))
+                    if info:
+                        self.update_function_code(info.get('Configuration').get('FunctionName'), lm.get('S3Bucket'), self.get_zip_name(lm.get('FunctionName')))
+                    else:
+                        # User configured role or create a new on based on policy document
+                        role_arn = lm.get('RoleArn') or self.create_role(self.get_role_name(lm.get('FunctionName')), lm.get('RolePolicyDocument'))
+                        params['Role'] = role_arn
+                        self.create_function(**params)
+                # Clean up
+                self.remove_zip(lm.get('FunctionName'))
 
     def create_role(self, role_name, policy_path):
         """Create role for lambda from policy doc"""
@@ -242,7 +251,7 @@ class Lambda(AWSBase):
             policy = outfile.read()
             role = self._iam.create_role(role_name, policy)
 
-        return role.get('Role').get('RoleName')
+        return role.get('Role').get('Arn')
 
     def delete_role(self, role):
         """Delete role for lambda"""
@@ -251,13 +260,19 @@ class Lambda(AWSBase):
     def pip_install(self):
         """Install requirement"""
         if os.path.isfile('./{}'.format(os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE))):
-            Oprint.info('Installing python package dependancies if there is any missing', 'pip')
+            try:
+                Oprint.info('Installing python package dependancies if there is any missing', 'pip')
 
-            spinner.start()
-            pip.main(['install', '-t', os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER), '-r', os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE), '&>/dev/null'])
-            spinner.stop()
+                spinner.start()
+                #pip.main(['install', '-t', os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER), '-r', os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE), '&>/dev/null'])
+                os.system('pip install --upgrade -t {} -r {} &>/dev/null'.format(os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER), os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE)))
+                spinner.stop()
 
-            Oprint.info('Python package installation complete', 'pip')
+                Oprint.info('Python package installation complete', 'pip')
+            except Exception as e:
+                spinner.stop()
+                raise e
+
         else:
             Oprint.warn('{} could not be found, no dependencies will be installed'.format(os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE)), 'pip')
 

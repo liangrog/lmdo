@@ -8,7 +8,7 @@ from lmdo.spinner import spinner
 class S3WaiterBucketCreate(AWSWaiterBase, CliWaiterInterface):
     """S3 waiter for bucket creation"""
     def __init__(self, client=None, client_type='s3'):
-        super(CliS3WaiterBucketCreate, self).__init__(client=client, client_type=client_type)
+        super(S3WaiterBucketCreate, self).__init__(client=client, client_type=client_type)
         self._client_type = client_type
         self._bucket_exists = self._client.get_waiter('bucket_exists')
 
@@ -16,16 +16,20 @@ class S3WaiterBucketCreate(AWSWaiterBase, CliWaiterInterface):
         return self._bucket_exists
 
     def wait(self, bucket_name):
-        Oprint.info('Bucket {} creation starts'.format(bucket_name), self._client_type)
-        spinner.start()
-        self._bucket_exist.wait(Bucket=bucket_name)
-        spinner.stop()
-        Oprint.info('Bucket {} creation completed'.format(bucket_name), self._client_type)
+        try:
+            Oprint.info('Bucket {} creation starts'.format(bucket_name), self._client_type)
+            spinner.start()
+            self._bucket_exist.wait(Bucket=bucket_name)
+            spinner.stop()
+            Oprint.info('Bucket {} creation completed'.format(bucket_name), self._client_type)
+        except Exception as e:
+            spinner.stop()
 
-class S3WaiterBucketDelete(CliS3Waiter, CliWaiterInterface):
+
+class S3WaiterBucketDelete(AWSWaiterBase, CliWaiterInterface):
     """S3 waiter for bucket delete"""
     def __init__(self, client=None, client_type='s3'):
-        super(CliS3WaiterBucketDelete, self).__init__(client=client, client_type=client_type)
+        super(S3WaiterBucketDelete, self).__init__(client=client, client_type=client_type)
         self._client_type = client_type
         self._bucket_not_exists = self._client.get_waiter('bucket_not_exists')
 
@@ -33,16 +37,20 @@ class S3WaiterBucketDelete(CliS3Waiter, CliWaiterInterface):
         return self._bucket_not_exists
 
     def wait(self, bucket_name):
-        Oprint.info('Bucket {} delete starts'.format(bucket_name), self._client_type)
-        spinner.start()
-        self._bucket_not_exist.wait(Bucket=bucket_name)
-        spinner.stop()
-        Oprint.info('Bucket {} delete completed'.format(bucket_name), self._client_type)
+        try:
+            Oprint.info('Bucket {} delete starts'.format(bucket_name), self._client_type)
+            spinner.start()
+            self._bucket_not_exist.wait(Bucket=bucket_name)
+            spinner.stop()
+            Oprint.info('Bucket {} delete completed'.format(bucket_name), self._client_type)
+        except Exception as e:
+            spinner.stop()
 
-class S3WaiterObjectCreate(CliS3Waiter, CliWaiterInterface):
+
+class S3WaiterObjectCreate(AWSWaiterBase, CliWaiterInterface):
     """S3 waiter for object create"""
     def __init__(self, client=None, client_type='s3'):
-        super(CliS3WaiterObjectCreate, self).__init__(client=client, client_type=client_type)
+        super(S3WaiterObjectCreate, self).__init__(client=client, client_type=client_type)
         self._client_type = client_type
         self._object_exists = self._client.get_waiter('object_exists')
 
@@ -50,16 +58,20 @@ class S3WaiterObjectCreate(CliS3Waiter, CliWaiterInterface):
         return self._object_exists
 
     def wait(self, bucket_name, key, **kwargs):
-        Oprint.info('Object {} creation in bucket {} starts'.format(key, bucket_name), self._client_type)
-        spinner.start()
-        self._object_exist.wait(Bucket=bucket_name, key=key, ***kwargs)
-        spinner.stop()
-        Oprint.info('Object {} creation in bucket {} completed'.format(key, bucket_name), self._client_type)
+        try:
+            Oprint.info('Object {} creation in bucket {} starts'.format(key, bucket_name), self._client_type)
+            #spinner.start()
+            self._object_exist.wait(Bucket=bucket_name, key=key, **kwargs)
+            #spinner.stop()
+            Oprint.info('Object {} creation completed'.format(key), self._client_type)
+        except Exception as e:
+            spinner.stop()
 
-class S3WaiterObjectDelete(CliS3Waiter, CliWaiterInterface):
+
+class S3WaiterObjectDelete(AWSWaiterBase, CliWaiterInterface):
     """S3 waiter for object delete"""
     def __init__(self, client=None, client_type='s3'):
-        super(CliS3WaiterObjectDelete, self).__init__(client=client, client_type=client_type)
+        super(S3WaiterObjectDelete, self).__init__(client=client, client_type=client_type)
         self._client_type = client_type
         self._object_not_exists = self._client.get_waiter('object_not_exists')
 
@@ -67,10 +79,14 @@ class S3WaiterObjectDelete(CliS3Waiter, CliWaiterInterface):
         return self._object_not_exists
 
     def wait(self, bucket_name, key, **kwargs):
-        Oprint.info('Object {} delete in bucket {} starts'.format(key, bucket_name), self._client_type)
-        spinner.start()
-        self._object_not_exist.wait(Bucket=bucket_name, key=key, ***kwargs)
-        spinner.stop()
-        Oprint.info('Object {} delete in bucket {} completed'.format(key, bucket_name), self._client_type)
+        try:
+            Oprint.info('Object {} delete in bucket {} starts'.format(key, bucket_name), self._client_type)
+            spinner.start()
+            self._object_not_exist.wait(Bucket=bucket_name, key=key, **kwargs)
+            spinner.stop()
+            Oprint.info('Object {} delete in bucket {} completed'.format(key, bucket_name), self._client_type)
+        except Exception as e:
+            spinner.stop()
+
 
 

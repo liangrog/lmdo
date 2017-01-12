@@ -12,10 +12,8 @@ from lmdo.oprint import Oprint
 
 def mkdir(path, mode=0777):
     """Wrapper for mkdir"""
-    from lmdo.config import TMP_DIR
-
     try:
-        os.makedirs(TMP_DIR, mode)
+        os.makedirs(path, mode)
     except OSError as e:
         if e.errno != errno.EEXIST:
             Oprint.err(e, 'lmdo')
@@ -47,7 +45,7 @@ def zipper(from_path, target_file_name, exclude=None):
 
     zip_file = zipfile.ZipFile(target_file_name, 'w', zipfile.ZIP_DEFLATED)
    
-    Oprint.info(('Start packaging directory {}'.format(from_path), 'lmdo')
+    Oprint.info('Start packaging directory {}'.format(from_path), 'lmdo')
    
     for root, dirs, files in os.walk(from_path):
         if not exclude:
@@ -81,16 +79,25 @@ def zipper(from_path, target_file_name, exclude=None):
 
 def find_files_by_postfix(path, postfix):
     """Find files with given postfix in path"""
-    all_files = [files for root, dirs, files in os.walk(path)]
-    return [f for f in all_files if f.endswith(postfix)]
+    if type(postfix) == str:
+        postfix = [postfix]
+
+    all_files = []
+    for root, dirs, files in os.walk(path):
+        all_files += files
+
+    return [f for f in all_files if f.split('.').pop() in postfix]
 
 def find_files_by_name_only(path, file_name, allowed_postfix=None):
     """
     Find files in path given file name and filter by postfix if given
     allowed_postfix: []
     """
-    all_files = [files for root, dirs, files in os.walk(path)]
-    found_files = [f for f in all_files if fnmatch.fnmatch(f, "{}*".format(file_name))]
+    all_files = []
+    for root, dirs, files in os.walk(path):
+        all_files += files
+
+    found_files = [f for f in all_files if fnmatch.fnmatch(f, '{}*'.format(file_name))]
     if allowed_postfix:
         found_files = [f for f in found_files if f.split('.').pop() in allowed_postfix]
         
@@ -99,6 +106,6 @@ def find_files_by_name_only(path, file_name, allowed_postfix=None):
 def sys_pause(message, match):
     """pause program to catch user input"""
     name = raw_input(message)
-    if !fnmatch.fnmatch(name, match):
+    if not fnmatch.fnmatch(name, match):
         Oprint.err('Exit excecution', 'lmdo')
 

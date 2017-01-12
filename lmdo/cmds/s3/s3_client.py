@@ -3,6 +3,7 @@ from lmdo.cmds.s3.s3 import S3
 from lmdo.cmds.commands import Dispatcher, SyncCommand
 from lmdo.cmds.client_factory_interface import ClientFactoryInterface
 
+
 class S3Client(ClientFactoryInterface):
     """Cloudformation command client"""
     def __init__(self, args):

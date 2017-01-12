@@ -3,41 +3,54 @@ import os
 
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.oprint import Oprint
-from lmdo.config import SWAGGER_DIR, SWAGGER_FILE
+from lmdo.config import SWAGGER_DIR, SWAGGER_FILE, PROJECT_CONFIG_FILE
 
 
 class Apigateway(AWSBase):
     """create/update APIGateway"""
 
-    def __init__(self):
+    def __init__(self, args):
         super(Apigateway, self).__init__()
-        self._client = self.get_client('apigateway') 
+        self._client = self.get_client('apigateway')
+        self._args = args
 
     @property
     def client(self):
         return self._client
 
     def create(self):
-        self.create_api_by_swagger()
+        swagger_api = self.create_api_by_swagger()
+        self.create_deployment(swagger_api.get('id'), self._config.get('Stage'), swagger_api.get('name'))
 
     def update(self):
-        self.create_api_by_swagger()
+        self.create()
 
     def delete(self):
-        self.delete_rest_api(self.get_api_name())
+        self.delete_rest_api(self.get_swagger_api_name())
+
+    def create_stage(self):
+        self.create_stage_from_stage(self._args.get('<from_stage>'), self._args.get('<to_stage>'), self.get_swagger_api_name())
+
+    def delete_stage(self):
+        swagger_api = self.if_api_exist_by_name(self.get_swagger_api_name())
+        self.delete_api_stage(swagger_api.get('id'), self._args.get('<from_stage>'), swagger_api.get('name'))
 
     def get_swagger_template(self):
         """Return swagger template path"""
         return './{}/{}'.format(SWAGGER_DIR, SWAGGER_FILE)
     
+    def get_swagger_api_name(self):
+        """Return config for swagger api name"""
+        return self._config.get('SwaggerApiTitle')
+
     def get_api_name(self):
         """Create API name structure"""
         return '{}-{}'.format(self.get_name_id(), self._config.get('Service'))
 
-    def import_rest_api(self, body):
+    def import_rest_api(self, body, api_name=None):
         """Import rest api via Swagger"""
         try:
-            Oprint.info('Start creating rest api definition via Swagger file for API {}'.format(self.get_api_name()), 'apigateway')
+            Oprint.info('Start creating rest api definition via Swagger file for API {}'.format(api_name or self.get_api_name()), 'apigateway')
             response = self._client.import_rest_api(body=body)
             Oprint.info('Finish creating rest api', 'apigateway')
         except Exception as e:
@@ -45,10 +58,10 @@ class Apigateway(AWSBase):
 
         return response
 
-    def put_rest_api(self, api_id, body, mode='merge'):
+    def put_rest_api(self, api_id, body, mode='merge', api_name=None):
         """Update rest api via Swagger"""
         try:
-            Oprint.info('Start updating rest api definition via Swagger file for API {}'.format(self.get_api_name()), 'apigateway')
+            Oprint.info('Start updating rest api definition via Swagger file for API {}'.format(api_name or self.get_api_name()), 'apigateway')
             response = self._client.put_rest_api(restApiId=api_id, mode=mode, body=body)
             Oprint.info('Finish updating rest api', 'apigateway')
         except Exception as e:
@@ -59,7 +72,7 @@ class Apigateway(AWSBase):
     def delete_rest_api(self, api_name):
         """Delete rest api by name"""
         api = self.if_api_exist_by_name(api_name)
-        if !api:
+        if not api:
             Oprint.err('API {} doesn\'t exist, nothing to delete'.format(api_name), 'apigateway')
 
         try:
@@ -80,68 +93,90 @@ class Apigateway(AWSBase):
         APIs, hence return the first item which should be unique
         """
         try:
-            response = self._client.get_api_keys(nameQuery=api_name)
+            limit = 100
+            found = False
+            pos = None
+            while True:
+                if pos:
+                    response = self._client.get_rest_apis(position=pos, limit=limit)
+                else: 
+                    response = self._client.get_rest_apis(limit=limit)
+
+                pos = response.get('position')
+                if len(response.get('items')) > 0:
+                    for api in response.get('items'):
+                        if api_name == api.get('name'):
+                            found = api
+                            break
+
+                if not pos:
+                    break
+
+            return found
         except Exception as e:
             Oprint.err(e, 'apigateway')
     
-        return response.get('items').pop(0) if response.get('items') and len(response.get('items')) > 0 else False
+        return False
 
     def create_api_by_swagger(self):
         """Create/Update api definition by swagger"""
         # Exist if no swagger definition
-        if !os.path.isfile(self.get_swagger_template()):
+        if not os.path.isfile(self.get_swagger_template()):
             return True
 
-        api = self.if_api_exist_by_name(self.get_api_name())
+        if not self.get_swagger_api_name():
+            Oprint.err('Cannot create API using swagger template because you have not setup SwaggerApiTitle in {}'.format(PROJECT_CONFIG_FILE), 'apigateway')
+
+        api = self.if_api_exist_by_name(self.get_swagger_api_name())
         with open(self.get_swagger_template(), 'r') as outfile:
             body = outfile.read()
-            if !api:
-                self.import_rest_api(body)
+            if not api:
+                return self.import_rest_api(body)
             else:
                 # Always overwrite for update
-                self.put_rest_api(api.get('id'), body, 'overwrite')
+                return self.put_rest_api(api.get('id'), body, 'overwrite')
 
-        return True
+        return False
             
-    def create_deployment(self, api_id, stage_name='dev', **kwargs):
+    def create_deployment(self, api_id, stage_name='dev', api_name=None, **kwargs):
         """Create a stage deployment to internet"""
         try:
-            Oprint.info('Deploying {} stage: {} to internet'.format(self.get_api_name(), stage_name), 'apigateway')
+            Oprint.info('Deploying {} stage: {} to internet'.format(api_name or self.get_api_name(), stage_name), 'apigateway')
             response = self._client.create_deployment(restApiId=api_id, stageName=stage_name, **kwargs)
-            Oprint.info('Complete deploying {} stage: {}'.format(self.get_api_name(), stage_name), 'apigateway')
+            Oprint.info('Complete deploying {} stage: {}'.format(api_name or self.get_api_name(), stage_name), 'apigateway')
         except Exception as e:
             Oprint.err(e, 'apigateway')
 
         return response
 
-    def delete_deployment(self, api_id, deployment_id):
+    def delete_deployment(self, api_id, deployment_id, api_name=None):
         """Delete a deployments of an API"""
         try:
-            Oprint.info('Deleting stage: {} deployment for API {}'.format(stage_name, self.get_api_name()), 'apigateway')
+            Oprint.info('Deleting stage: {} for API {}'.format(stage_name, api_name or self.get_api_name()), 'apigateway')
             response = self._client.delete_deployment(restApiId=api_id, deploymentId=deployment_id)
-            Oprint.info('Complete deleting stage: {} deployment for API {}'.format(stage_name, self.get_api_name()), 'apigateway')
+            Oprint.info('Complete deleting stage: {} for API {}'.format(stage_name, api_name or self.get_api_name()), 'apigateway')
         except Exception as e:
             Oprint.err(e, 'apigateway')
 
         return response
 
-    def create_stage(self, api_id, stage_name, deployment_id, **kwargs):
+    def create_api_stage(self, api_id, stage_name, deployment_id, api_name=None, **kwargs):
         """Create a stage"""
         try:
-            Oprint.info('Creating stage: {} deployment for API {}'.format(stage_name, self.get_api_name()), 'apigateway')
-            response = self._client.create_stage(restApiId=api_id, stageName=stage_name, deployment_id=deployment_id, **kwargs)
-            Oprint.info('Complete creating stage: {} deployment for API {}'.format(stage_name, self.get_api_name()), 'apigateway')
+            Oprint.info('Creating stage: {} for API {}'.format(stage_name, api_name or self.get_api_name()), 'apigateway')
+            response = self._client.create_stage(restApiId=api_id, stageName=stage_name, deploymentId=deployment_id, **kwargs)
+            Oprint.info('Complete creating stage: {} for API {}'.format(stage_name, api_name or self.get_api_name()), 'apigateway')
         except Exception as e:
             Oprint.err(e, 'apigateway')
 
         return response
 
-    def delete_stage(self, api_id, stage_name):
+    def delete_api_stage(self, api_id, stage_name, api_name=None):
         """delete a stage"""
         try:
-            Oprint.info('Deleting stage: {} deployment for API {}'.format(stage_name, self.get_api_name()), 'apigateway')
+            Oprint.info('Deleting stage: {} deployment for API {}'.format(stage_name, api_name or self.get_api_name()), 'apigateway')
             response = self._client.delete_stage(restApiId=api_id, stageName=stage_name)
-            Oprint.info('Complete deleting stage: {} deployment for API {}'.format(stage_name, self.get_api_name()), 'apigateway')
+            Oprint.info('Complete deleting stage: {} deployment for API {}'.format(stage_name, api_name or self.get_api_name()), 'apigateway')
         except Exception as e:
             Oprint.err(e, 'apigateway')
 
@@ -152,21 +187,22 @@ class Apigateway(AWSBase):
         try:
             response = self._client.get_stage(restApiId=api_id, stageName=stage_name)
         except Exception as e:
-            Oprint.err(e, 'apigateway')
+            return False
+            #Oprint.err(e, 'apigateway')
 
         return response
 
-    def create_stage_from_stage(self, from_stage, new_stage):
+    def create_stage_from_stage(self, from_stage, new_stage, api_name=None):
         """Create a new stage by given existing stage"""
         # Get api_id 
-        api = self.if_api_exist_by_name(self.get_api_name())
-        if !api:
-            Oprint.err('API {} hasn\'t been created yet. Please create it first.'.format(self.get_api_name()), 'apigateway')
-
+        api = self.if_api_exist_by_name(api_name or self.get_api_name())
+        if not api:
+            Oprint.err('API {} hasn\'t been created yet. Please create it first.'.format(api_name or self.get_api_name()), 'apigateway')
+        
         # Get deployment ID from source stage
         from_stage_info = self.get_stage(api.get('id'), from_stage)
         if len(from_stage_info.get('deploymentId')) <= 0:
-            Oprint.warn('Stage: {} for API {} hasn\'t been deployed to internet yet, deploying...'.format(from_stage, self.get_api_name()), 'apigateway')
+            Oprint.warn('Stage: {} for API {} hasn\'t been deployed to internet yet, deploying...'.format(from_stage, api_name or self.get_api_name()), 'apigateway')
             deployment_id = self.create_deployment(api.get('id'), from_stage)
         else:
             deployment_id = from_stage_info.get('deploymentId')
@@ -174,11 +210,11 @@ class Apigateway(AWSBase):
         to_stage_info = self.get_stage(api.get('id'), new_stage)
         if to_stage_info:
             # Delete new stage if exist
-            Oprint.warn('Stage {} exists for API {}. Removing it now...'.format(new_stage, self.get_api_name()), 'apigateway')
-            self.delete_stage(api.get('id'), new_stage)
-        else:
-            # Create new stage
-            self.create_stage(api.get('id'), new_stage, deployment_id)
+            Oprint.warn('Stage {} exists for API {}. Removing it now...'.format(new_stage, api_name or self.get_api_name()), 'apigateway')
+            self.delete_api_stage(api.get('id'), new_stage, api.get('name'))
+        
+        # Create new stage
+        self.create_api_stage(api.get('id'), new_stage, deployment_id)
 
     def create_domain_name(self, domain_name, cert_name, cert_body, cert_private_key, cert_chain):
         """Create API custom domain name"""
@@ -201,7 +237,7 @@ class Apigateway(AWSBase):
                     certificateChain=cert_chain_str
             )
             Oprint.info('Complete creating custom domain {}'.format(domain_name), 'apigateway')
-        except Exception as e
+        except Exception as e:
             Oprint.err(e, 'apigateway')
 
     def delete_domain_name(self, domain_name):
@@ -219,7 +255,7 @@ class Apigateway(AWSBase):
         """Create API mapping to customer domain"""
         # Get API id
         api = self.if_api_exist_by_name(api_name)
-        if !api:
+        if not api:
             Oprint.err('API {} hasn\'t been created yet. Please create it first.'.format(api_name), 'apigateway')
 
         try:

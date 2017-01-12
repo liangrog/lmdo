@@ -6,7 +6,7 @@ from lmdo.cmds.aws_base import AWSBase
 class AWSWaiterBase(AWSBase):
     """Cloudformation waiter base"""
     def __init__(self, client_type, client=None):
-        super(CliCloudformation, cls).__init__()
+        super(AWSWaiterBase, self).__init__()
         if client:
             self._client = client
         else:

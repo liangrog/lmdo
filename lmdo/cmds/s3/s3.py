@@ -7,7 +7,7 @@ from tqdm import tqdm
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.oprint import Oprint
 from lmdo.utils import sys_pause
-from lmdo.waiters.s3_waiters import S3WaiterBucketCreate, S3WaiterBucketDelete 
+from lmdo.waiters.s3_waiters import S3WaiterBucketCreate, S3WaiterBucketDelete, S3WaiterObjectCreate
 from lmdo.config import S3_UPLOAD_EXCLUDE
 
 class S3(AWSBase):
@@ -23,12 +23,12 @@ class S3(AWSBase):
 
     def sync(self):
         """Sync local asset to s3"""
-        if !self._config.get('AssetDirectory') or !self._config.get('AssetS3Bucket')):
+        if not self._config.get('AssetDirectory') or not self._config.get('AssetS3Bucket'):
             Oprint.err('Your AssetDirectory or AssetS3Bucket is missing from lmdo.yml', 's3')
 
         files = self.prepare_files_for_upload('./{}'.format(self._config.get('AssetDirectory')), self._config.get('AssetDirectory'), S3_UPLOAD_EXCLUDE)
         for f in files:
-            self.upload_file(self._config.get('AssetS3Bucket'), f.get('key'), f.get('path'),  ExtraArgs=f.get('extra_args'))
+            self.upload_file(self._config.get('AssetS3Bucket'), f.get('path'), f.get('key'), ExtraArgs=f.get('extra_args'))
 
     def if_bucket_exist(self, bucket_name):
         """Check if bucket exist"""
@@ -52,7 +52,7 @@ class S3(AWSBase):
         
         return True
 
-    def upload_file(self, bucket_name, key, file_path, **kwargs):
+    def upload_file(self, bucket_name, file_path, key, **kwargs):
         """Upload file to S3, provide network progress bar"""
         # Check if bucket exist, create one if user agrees
         if not self.if_bucket_exist(bucket_name):
@@ -60,18 +60,19 @@ class S3(AWSBase):
             self.create_bucket(bucket_name)
 
         Oprint.info('Start uploading {} to S3 bucket {}'.format(key, bucket_name), 's3')
-
-        progress = tqdm(total=float(os.stat(pkg_path).st_size), unit_scale=True, unit='B')
-
-        self.s3.upload_file(file_path, bucket_name, key, Callback=progress.update, **kwargs)
-
-        Oprint.info('Complete uploading {} to S3 bucket {}'.format(key, bucket_name), 's3')
+        #waiter = S3WaiterObjectCreate(self._client)
+        
+        progress = tqdm(total=float(os.stat(file_path).st_size), unit_scale=True, unit='B')
+        self._client.upload_file(file_path, bucket_name, key, Callback=progress.update, **kwargs)
+        
+        #waiter.wait(bucket_name, key)
+        Oprint.info('Complete uploading {}'.format(key), 's3')
 
         return True
 
     def get_bucket_url(self, bucket_name):
         """fetch s3 bucket url"""
-        return '{}.s3.amazonaws.com'.format(bucket_name)
+        return 'https://s3.amazonaws.com/{}'.format(bucket_name)
 
     def delete_bucket_object(self, bucket_name):
         """
@@ -85,7 +86,7 @@ class S3(AWSBase):
         except Exception as e:
             Oprint.err(e, 's3')
                     
-    def prepare_files_for_upload(from_path, asset_dir, exclude=None):
+    def prepare_files_for_upload(self, from_path, asset_dir, exclude=None):
         """
         Prepare files for uploading
             exclude = {
@@ -104,7 +105,7 @@ class S3(AWSBase):
                     }
 
                     if f.endswith('.svg'):
-                        data['extra_args'] = {'--content-type': 'image/svg+xml'}
+                        data['extra_args'] = {'ContentType': 'image/svg+xml'}
 
                     output.append(data)
             else:
@@ -132,7 +133,7 @@ class S3(AWSBase):
                         }
 
                         if f.endswith('.svg'):
-                            data['extra_args'] = {'--content-type': 'image/svg+xml'}
+                            data['extra_args'] = {'ContentType': 'image/svg+xml'}
 
                         output.append(data)
 

@@ -1,5 +1,5 @@
 
-from lmdo.cmds.lm.lambda import Lambda
+from lmdo.cmds.lm.lambdaa import Lambda
 from lmdo.cmds.commands import Dispatcher, CreateCommand, UpdateCommand, DeleteCommand
 from lmdo.cmds.client_factory_interface import ClientFactoryInterface
 

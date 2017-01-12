@@ -6,8 +6,7 @@ import json
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.s3.s3 import S3
 from lmdo.oprint import Oprint
-from lmdo.config import CLOUDFORMATION_DIRECTORY, CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX, 
-    CLOUDFORMATION_TEMPLATE, CLOUDFORMATION_PARAMETER_FILE
+from lmdo.config import CLOUDFORMATION_DIRECTORY, CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX, CLOUDFORMATION_TEMPLATE, CLOUDFORMATION_PARAMETER_FILE
 from lmdo.utils import find_files_by_postfix, find_files_by_name_only
 from lmdo.waiters.cloudformation_waiters import CloudformationWaiterStackCreate, CloudformationWaiterStackUpdate, CloudformationWaiterStackDelete
 
@@ -40,7 +39,7 @@ class Cloudformation(AWSBase):
     def create(self):
         """Create/Update stack"""
         # Don't run if we don't have templates
-        if !self._template:
+        if not self._template:
             return True
         
         self.process(self.prepare())
@@ -53,13 +52,17 @@ class Cloudformation(AWSBase):
         """Wrapper, same action as create"""
         self.create()
 
+    def find_main_template(self):
+        """Get the main template file"""
+        return find_files_by_name_only("./{}".format(CLOUDFORMATION_DIRECTORY), CLOUDFORMATION_TEMPLATE, CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX)
+
     def find_template_files(self):
         """find all files end with .json or .templates"""
-        return find_files_by_name_only("./{}".format(CLOUDFORMATION_DIRECTORY), CLOUDFORMATION_TEMPLATE, CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX)
+        return find_files_by_postfix("./{}".format(CLOUDFORMATION_DIRECTORY), CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX)
 
     def if_main_template_exist(self):
         """Check if we have only one main template defined, allow .json or .template"""
-        found_files = self.find_template_files()
+        found_files = self.find_main_template()
         if len(found_files) > 1:
             Oprint.err("You cannot define more than one {} template".format(CLOUDFORMATION_TEMPLATE))
         
@@ -85,8 +88,9 @@ class Cloudformation(AWSBase):
         # all templates into the subfolder 
         if bucket_name:
             # Don't upload parameter file
-            for f in templatesi if fnmatch.fnmatch(f, CLOUDFORMATION_PARAMETER_FILE):
-                self._s3.upload_file(bucket_name, "./{}/{}".format(CLOUDFORMATION_DIRECTORY, f), "{}/{}".format(self.get_stack_name(), f))
+            for f in templates:
+                if not fnmatch.fnmatch(f, CLOUDFORMATION_PARAMETER_FILE):
+                    self._s3.upload_file(bucket_name, "./{}/{}".format(CLOUDFORMATION_DIRECTORY, f), "{}/{}".format(self.get_stack_name(), f))
         else:
             # Put local prepare here
             is_local = True
@@ -114,10 +118,12 @@ class Cloudformation(AWSBase):
         """Creating/updating stack"""
         to_update = False
         stack_info = self.get_stack(self.get_stack_name())
+
         if stack_info:
             # You cannot update a stack with status ROLLBACK_COMPLETE during creation
             if stack_info['Stacks'][0]['StackStatus'] == 'ROLLBACK_COMPLETE':
-                self.delete_stack(stack_name)
+                Oprint.warn('Stack {} exits with bad state ROLLBACK_COMPLETE. Required to be removed first'.format(self.get_stack_name()), 'cloudformation')
+                self.delete_stack(self.get_stack_name())
             else:
                 to_update = True
 
@@ -141,9 +147,9 @@ class Cloudformation(AWSBase):
                 func_params['Parameters'] = json.loads(outfile.read())
        
         if to_update:
-            self.create_stack(StackName=self.get_stack_name(), **func_params)
+            self.update_stack(self.get_stack_name(), **func_params)
         else:
-            self.update_stack(StackName=self.get_stack_name(), **func_params)
+            self.create_stack(self.get_stack_name(), **func_params)
 
     def create_stack(self, stack_name, capabilities=['CAPABILITY_NAMED_IAM', 'CAPABILITY_IAM'], **kwargs):
         """Create stack""" 
@@ -184,7 +190,8 @@ class Cloudformation(AWSBase):
     def delete_stack(self, stack_name):
         """Remove a stack by given name"""
         # Don't do anything if doesn't exist
-        if not self.get_stack(stack_name):
+        stack_info = self.get_stack(stack_name)
+        if not stack_info:
             return True
 
         try:
@@ -195,12 +202,12 @@ class Cloudformation(AWSBase):
             Oprint.err(e, 'cloudformation')
             return False
 
-        self.verify_stack('delete') 
+        self.verify_stack('delete', stack_info['Stacks'][0]['StackId']) 
         return True
 
-    def verify_stack(self, mode):
-        """Check if stack action successful"""
-        stack_info = self.get_stack(self.get_stack_name())
+    def verify_stack(self, mode, stack_id=None):
+        """Check if stack action successful, deleted stack must provide stack id"""
+        stack_info = self.get_stack(stack_id or self.get_stack_name())
         status = stack_info['Stacks'][0]['StackStatus']
 
         if mode == 'create':

@@ -34,15 +34,15 @@ class LmdoConfig(ConfigParserInterface):
             with open(PROJECT_CONFIG_FILE, 'wb') as fh:
                 fh.write(rendered)
                 fh.close()
-            Oprint.info('{} has been overriden by {}'.format(PROJECT_CONFIG_FILE, PROJECT_CONFIG_TEMPLATE), 'config parser')
+            Oprint.info('{} has been overriden by {}'.format(PROJECT_CONFIG_FILE, PROJECT_CONFIG_TEMPLATE), 'lmdo')
 
         # Check if config file exist and has content
-        elif !LmdoConfig.if_lmdo_config_exist():
-            Oprint.err('{} file doesn\'t exist in current directory'.format(PROJECT_CONFIG_FILE), 'config parser')
+        elif not LmdoConfig.if_lmdo_config_exist():
+            Oprint.err('{} file doesn\'t exist in current directory'.format(PROJECT_CONFIG_FILE), 'lmdo')
 
     @staticmethod
     def if_lmdo_config_exist():
-        return (os.path.isfile(PROJECT_CONFIG_FILE) and os.access(PROJECT_CONFIG_FILE, os.R_OK))
+        return (os.path.isfile(PROJECT_CONFIG_FILE) and os.access(PROJECT_CONFIG_FILE, os.R_OK)) \
             or (os.path.isfile(PROJECT_CONFIG_TEMPLATE) and os.access(PROJECT_CONFIG_TEMPLATE, os.R_OK))
 
     @staticmethod
@@ -58,7 +58,7 @@ class LmdoConfig(ConfigParserInterface):
             try:
                 self._config = yaml.load(outfile)
             except yaml.YAMLError as e:
-                Oprint.err(e, 'config parser')
+                Oprint.err(e, 'lmdo')
 
         self.validate()
 
@@ -74,27 +74,24 @@ class LmdoConfig(ConfigParserInterface):
         Set default value and check if mandatory keys exist
         """
         # Set default profile if doesn't exist
-        if !self.get('Profile'):
+        if not self.get('Profile'):
             self._config['Profile'] = 'default'
 
         # Set default user if doesn't exist
-        if !self.get('User'):
+        if not self.get('User'):
             self._config['User'] = 'default'
  
         # Set default service if doesn't exist
-        if !self.get('Service'):
+        if not self.get('Service'):
             self._config['Service'] = 'default'
    
         # Set default stage if doesn't exist
-        if !self.get('Stage'):
+        if not self.get('Stage'):
             self._config['Stage'] = 'dev'
       
         # Check if all keys available
         for key in CONFIG_MANDATORY_KEYS:
             if key not in self._config:
-                Oprint.err('{} is missing from config file'.format(key), 'config parser')
-
-# Singleton global
-lmdo_config = Lmdo_Config()
+                Oprint.err('{} is missing from config file'.format(key), 'lmdo')
 
 

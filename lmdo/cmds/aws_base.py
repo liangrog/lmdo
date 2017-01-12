@@ -1,13 +1,13 @@
 import boto3
 
-from lmdo.lmdo_config import lmdo_config
+from lmdo.lmdo_config import LmdoConfig
 
 
 class AWSBase(object):
     """base AWS delegator class"""
 
     def __init__(self):
-        self._config = lmdo_config
+        self._config = LmdoConfig()
 
     @classmethod
     def init_with_parser(cls, config_parser):

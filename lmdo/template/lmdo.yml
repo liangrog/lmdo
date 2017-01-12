@@ -35,28 +35,33 @@ AssetS3Bucket: static.bucket.name
 AseetDirectory: build
 
 # @mandatory: false
+# @description: let lmdo know what the api name will be if using swagger
+SwaggerApiTitle: swagger-info-title
+
+# @mandatory: false
 # @description: lambda functions to deploy
 Lambda:
-    - EnvironmentVariables:              # optional
-          MYSQL_HOST: localhost
-          MYSQL_PASSWORD: secret
-          MYSQL_USERNAME: admin
-          MYSQL_DATABASE: lmdo
-      S3Bucket: lambda.bucket.name        # mandatory
+    - S3Bucket: lambda.bucket.name        # mandatory
       FunctionName: superman              # mandatory
       Handler: handler.fly                # mandatory 
       MemorySize: 128                     # optional
-      Role: roleName                      #Either provide a role name or policy doc 
+      RoleArn: roleName                      #Either provide a role name or policy doc 
       RolePolicyDocument: path/to/policy  #Policy takes preccedent
       Runtime: python2.7                  # optional default to 'python2.7'
       Timeout:                            # optional default to 180
       VpcConfig:                          # optional
           SecurityGroupIds:
           SubnetIds:
+      EnvironmentVariables:              # optional
+          MYSQL_HOST: localhost
+          MYSQL_PASSWORD: secret
+          MYSQL_USERNAME: admin
+          MYSQL_DATABASE: lmdo
+      
     # Second lambda function 
     - S3Bucket: lambda.bucket.name        # mandatory
       FunctionName: superman              # mandatory
       Handler: handler.fly                # mandatory 
-      Role: roleName                      #Either provide a role name or policy doc 
+      RoleArn: roleName                      #Either provide a role name or policy doc 
       RolePolicyDocument: path/to/policy  #Policy takes preccedent
  

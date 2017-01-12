@@ -1,4 +1,3 @@
-import sys
 
 
 class CommandInterface(object):
@@ -39,13 +38,22 @@ class FetchCommand(CommandInterface):
     def run(self):
         self._obj.fetch()
 
+class CreateStageCommand(CommandInterface):
+    """Command for fetch"""
+    def run(self):
+        self._obj.create_stage()
+
+class DeleteStageCommand(CommandInterface):
+    """Command for fetch"""
+    def run(self):
+        self._obj.delete_stage()
+
 class Dispatcher(object):
     """Command invocation class"""
     def run(self, command):
-        try:
+        #try:
             command.run()
-        except Exception as exc:
-            print "Unexpected error:", sys.exc_info()[0]
-            raise exc
+        #except Exception as exc:
+        #    raise exc
 
 
