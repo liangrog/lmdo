@@ -23,6 +23,7 @@ CloudformationBucket: cloudformation.bucket.name
 # @escription: where the python package installed to, default 'vendored'
 # Note: add below code to your handler so AWS Lambda container can find it
 # ------------------------------------------------------------------
+# sys.path.append('/var/task')
 # file_path = os.path.dirname(os.path.realpath(__file__))
 # sys.path.append(os.path.join(file_path, "./"))
 # sys.path.append(os.path.join(file_path, "./vendored"))
@@ -42,11 +43,12 @@ SwaggerApiTitle: swagger-info-title
 # @description: lambda functions to deploy
 Lambda:
     - S3Bucket: lambda.bucket.name        # mandatory
+      Type: default                       # Optional, other types is wsgi
       FunctionName: superman              # mandatory
       Handler: handler.fly                # mandatory 
       MemorySize: 128                     # optional
-      RoleArn: roleName                      #Either provide a role name or policy doc 
-      RolePolicyDocument: path/to/policy  #Policy takes preccedent
+      RoleArn: roleName                   # Either provide a role name or policy doc 
+      RolePolicyDocument: path/to/policy  # Policy takes preccedent
       Runtime: python2.7                  # optional default to 'python2.7'
       Timeout:                            # optional default to 180
       VpcConfig:                          # optional
@@ -64,4 +66,24 @@ Lambda:
       Handler: handler.fly                # mandatory 
       RoleArn: roleName                      #Either provide a role name or policy doc 
       RolePolicyDocument: path/to/policy  #Policy takes preccedent
+
+    # django lambda function
+    - S3Bucket: lambda.bucket.name        # mandatory
+      Type: wsgi                          # Other types are wsgi
+      FunctionName: superman              # mandatory
+      MemorySize: 128                     # optional
+      RoleArn: roleName                   # Either provide a role name or policy doc 
+      RolePolicyDocument: path/to/policy  # Policy takes preccedent
+      Runtime: python2.7                  # optional default to 'python2.7'
+      Timeout:                            # optional default to 180
+      VpcConfig:                          # optional
+          SecurityGroupIds:
+          SubnetIds:
+      EnvironmentVariables:                       # mandatory
+          DJANGO_SETTINGS_MODULE: mysite.settings # mandatory
+          MYSQL_HOST: localhost                   
+          MYSQL_PASSWORD: secret
+          MYSQL_USERNAME: admin
+          MYSQL_DATABASE: lmdo
+ 
  

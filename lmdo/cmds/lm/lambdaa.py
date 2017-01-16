@@ -34,6 +34,9 @@ class Lambda(AWSBase):
     def create(self):
         """Create/Update Lambda functions"""
         self.pip_install()
+        if self.if_wsgi_exist():
+            self.pip_wsgi_install()
+
         self.process()
 
     def delete(self):
@@ -110,6 +113,7 @@ class Lambda(AWSBase):
     def create_function(self, FunctionName, Role, Handler, Code, Runtime, **kwargs):
         """Wrapper for create lambda function"""
         try:
+            Oprint.info('Start creating Lambda function {}'.format(func_name), 'lambda')
             response = self._client.create_function(
                 FunctionName=FunctionName,
                 Runtime=Runtime,
@@ -127,6 +131,7 @@ class Lambda(AWSBase):
     def delete_function(self, func_name, **kwargs):
         """Wrapper to delete lambda function"""
         try:
+            Oprint.info('Start deleting Lambda function {}'.format(func_name), 'lambda')
             response = self._client.delete_function(FunctionName=func_name, **kwargs)
             Oprint.info('Lambda function {} has been deleted'.format(func_name), 'lambda')
         except Exception as e:
@@ -183,11 +188,17 @@ class Lambda(AWSBase):
 
         return False
 
-    def zip_function(self, func_name):
+    def zip_function(self, func_name, func_type='default'):
         """Packaging lambda"""
         target = TMP_DIR + self.get_zip_name(func_name)
-        if zipper('./', target, LAMBDA_EXCLUDE):
+        if zipper('./', target, LAMBDA_EXCLUDE) \
+            and (not func_type or func_type == 'default'):
             return target
+
+        # zip lmdo wsgi function
+        if func_type == 'wsgi':
+            if zipper(self.get_wsgi_dir(), target, LAMBDA_EXCLUDE):
+                return target
 
         return False
 
@@ -198,6 +209,24 @@ class Lambda(AWSBase):
             os.remove(target)
         except OSError:
             pass
+
+    def get_wsgi_dir(self):
+        pkg_dir = site.getsitepackages()
+        for pd in pkg_dir:
+            if os.path.isdir(pd + '/lmdo'):
+                wsgi_dir = pd + '/lmdo/wsgi/'
+                break
+
+        return wsgi_dir
+
+    def if_wsgi_exist(self):
+        """Checking if wsgi lambda exist in config"""
+        exist = False
+        for lm in self._config.get('Lambda'):
+            if lm.get('Type') == 'wsgi':
+                exist = True
+                break
+        return exist
 
     def process(self):
         """Prepare function before creation/update"""
@@ -221,6 +250,9 @@ class Lambda(AWSBase):
                 'Description': 'Function deployed for service {} by lmdo'.format(self._config.get('Service'))
             }
 
+            if lm.get('Type') == 'wsgi':
+                params['Handler'] = 'wsgi.lambda_handler.handler'
+
             if lm.get('VpcConfig'):                
                 params['VpcConfig'] = lm.get('VpcConfig')
 
@@ -229,7 +261,7 @@ class Lambda(AWSBase):
 
             # Clean up before create a new one
             self.remove_zip(lm.get('FunctionName'))
-            file_path = self.zip_function(lm.get('FunctionName'))
+            file_path = self.zip_function(lm.get('FunctionName'), lm.get('Type'))
             
             if file_path:
                 if self._s3.upload_file(lm.get('S3Bucket'), file_path, self.get_zip_name(lm.get('FunctionName'))):
@@ -276,4 +308,18 @@ class Lambda(AWSBase):
         else:
             Oprint.warn('{} could not be found, no dependencies will be installed'.format(os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE)), 'pip')
 
-                   
+     def pip_wsgi_install(self):
+        """Install requirement for wsgi"""
+        try:
+            Oprint.info('Installing python package dependancies for wsgi', 'pip')
+
+            spinner.start()
+            os.system('pip install werkzeug --upgrade -t {} &>/dev/null'.format(os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER)))
+            spinner.stop()
+
+            Oprint.info('Wsgi python package installation complete', 'pip')
+        except Exception as e:
+            spinner.stop()
+            raise e
+
+                  
