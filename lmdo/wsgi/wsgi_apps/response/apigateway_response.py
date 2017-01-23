@@ -1,7 +1,9 @@
-
+import os
+import importlib
 from werkzeug.wrappers import Response
 
 from .response_interface import ResponseInterface
+
 
 class ApigatewayResponse(ResponseInterface):
     def run_app(self, app, environ):
@@ -14,11 +16,18 @@ class ApigatewayResponse(ResponseInterface):
         result = {}
         if from_data.data:
             result['body'] = from_data.data
-            result['statusCode'] = from_data.status_code
+            result['statusCode'] = from_data._status_code
             result['headers'] = {}
             for key, value in from_data.headers:
                 result['headers'][key] = value
+        
+        settings = importlib.import_module(os.environ["SETTINGS_MODULE"])
+        if settings.CORS_ENABLED:
+            result['headers']['Access-Control-Allow-Headers'] = 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-requested-with'
+            result['headers']['Access-Control-Allow-Methods'] = 'DELETE,GET,OPTIONS,PUT,POST'
+            result['headers']['Access-Control-Allow-Origin'] = '*'
 
+        return result
         return result
 
 

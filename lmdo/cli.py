@@ -18,9 +18,9 @@ Usage:
     lmdo --version
 
 Options:
-    -h --help     Show this screen.
-    --version     Show version.
-    --to          Relative Path installed to [default: ./]
+    -h --help        Show this screen.
+    --version        Show version.
+    --function-name  Lambda function name
 
 """
 

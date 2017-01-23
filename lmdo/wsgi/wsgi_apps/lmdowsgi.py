@@ -1,4 +1,5 @@
 import logging
+import json
 from urllib import urlencode
 from requestlogger import ApacheFormatter
 from StringIO import StringIO
@@ -6,17 +7,18 @@ from StringIO import StringIO
 from werkzeug import urls
 
 
-class WSGI(object):
+class LmdoWSGI(object):
     """Processing lambda event object to wsgi"""
 
     def __init__(self, event=None, context=None):
-        self._environ = self.translate(event, context)
+        if event:
+            self._environ = self.translate(event, context)
 
     @property
     def environ(self):
         return self._environ
 
-    def translate(self, event, context):
+    def translate(self, event, context=None):
         """Translating lambda event to wsgi dict"""
         environ = {}
 
@@ -31,18 +33,27 @@ class WSGI(object):
 
         environ['REMOTE_PORT'] = event['headers'].get('X-Forwarded-Port', '')
 
-        environ['PATH_INFO'] = urls.url_unquote(event['path']) 
-
-        environ['QUERY_STRING'] = urlencode(event.get('queryStringParameters', ''))
+        environ['PATH_INFO'] = urls.url_unquote('/' + str(event['path'].split('/', 2).pop())) 
+        
+        if event.get('queryStringParameters'):
+            environ['QUERY_STRING'] = urlencode(event.get('queryStringParameters'))
+        else:
+            environ['QUERY_STRING'] = ''
 
         environ['SCRIPT_NAME'] = ''
         environ['SERVER_NAME'] = 'lmdo'
         environ['SERVER_PORT'] = '80'
         environ['SERVER_PROTOCOL'] = str('HTTP/1.1')
-        environ['CONTENT_LENGTH'] = str(len(event.get('body', '')))
+
+        if event.get('body'):
+            environ['CONTENT_LENGTH'] = str(len(event.get('body')))
+            environ['wsgi.input'] = StringIO(event.get('body'))
+        else:
+            environ['CONTENT_LENGTH'] = '0'
+            environ['wsgi.input'] = StringIO('')
+
         environ['wsgi.version'] = (1, 0)
         environ['wsgi.url_scheme'] = 'https'
-        environ['wsgi.input'] = StringIO(event.get('body', ''))
         environ['wsgi.errors'] = ''
         environ['wsgi.multiprocess'] = False
         environ['wsgi.multithread'] = False
@@ -53,7 +64,7 @@ class WSGI(object):
 
 
         for header in event['headers']:
-            wsgi_name = "HTTP_" + header.upper().replace('-', '_')
+            wsgi_name = "HTTP_" + str(header.upper().replace('-', '_'))
             environ[wsgi_name] = str(event['headers'].get(header))
 
         # API Gateway params

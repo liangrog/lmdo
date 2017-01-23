@@ -37,13 +37,13 @@ AseetDirectory: build
 
 # @mandatory: false
 # @description: let lmdo know what the api name will be if using swagger
-SwaggerApiTitle: swagger-info-title
+ApiGatewayName: swagger-info-title
 
 # @mandatory: false
 # @description: lambda functions to deploy
 Lambda:
     - S3Bucket: lambda.bucket.name        # mandatory
-      Type: default                       # Optional, other types is wsgi
+      Type: default                       # Optional, other types is django
       FunctionName: superman              # mandatory
       Handler: handler.fly                # mandatory 
       MemorySize: 128                     # optional
@@ -69,7 +69,9 @@ Lambda:
 
     # django lambda function
     - S3Bucket: lambda.bucket.name        # mandatory
-      Type: wsgi                          # Other types are wsgi
+      Type: wsgi                          # Other types
+      DisableApiGateway: False            # Optional, default to False
+      ApiBasePath: /path                  # Base path for django app
       FunctionName: superman              # mandatory
       MemorySize: 128                     # optional
       RoleArn: roleName                   # Either provide a role name or policy doc 

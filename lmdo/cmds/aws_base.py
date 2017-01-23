@@ -51,3 +51,16 @@ class AWSBase(object):
 
     def get_name_id(self):
         return "{}-{}-{}".format(self._config.get('User'), self._config.get('Stage'), self._config.get('Service'))
+
+    def get_policy_arn(self, policy_name):
+        """Fetch policy arn"""
+        return 'arn:aws:iam::{}:policy/{}'.format(self.get_account_id(), policy_name)
+    
+    def get_role_arn(self, role_name):
+        """Fetch role arn"""
+        return 'arn:aws:iam::{}:role/{}'.format(self.get_account_id(), role_name)
+
+    def get_lambda_arn(self, func_name):
+        """Return invokeable function url"""
+        return 'arn:aws:lambda:{}:{}:function:{}'.format(self.get_region(), self.get_account_id(), func_name)
+

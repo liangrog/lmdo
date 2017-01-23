@@ -1,6 +1,7 @@
 from __future__ import print_function
 import os
 import fnmatch
+import mimetypes
 
 from tqdm import tqdm
 
@@ -104,8 +105,7 @@ class S3(AWSBase):
                         'key': os.path.relpath(abs_path, asset_dir)
                     }
 
-                    if f.endswith('.svg'):
-                        data['extra_args'] = {'ContentType': 'image/svg+xml'}
+                    data['extra_args'] = {'ContentType': self.guess_mime_type(os.path.relpath(abs_path, asset_dir))}
 
                     output.append(data)
             else:
@@ -132,11 +132,25 @@ class S3(AWSBase):
                             'key': os.path.relpath(abs_path, asset_dir)
                         }
 
-                        if f.endswith('.svg'):
-                            data['extra_args'] = {'ContentType': 'image/svg+xml'}
+                        data['extra_args'] = {'ContentType': self.guess_mime_type(os.path.relpath(abs_path, asset_dir))}
 
                         output.append(data)
 
         return output
+
+    def guess_mime_type(self, file_path):
+        """Return file mime type"""
+        mime_type, file_encoding = mimetypes.guess_type(file_path)
+        if not mime_type:
+            if file_path.endswith('.svg'):
+                return 'image/svg+xml'
+
+            if file_path.endswith('.json'):
+                return 'binary/octet-stream'
+          
+            # Default S3 type
+            return 'binary/octet-stream'
+       
+        return mime_type
 
 

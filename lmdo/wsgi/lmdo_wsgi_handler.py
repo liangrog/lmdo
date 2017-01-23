@@ -1,20 +1,20 @@
-import datetime
-import logging
-import traceback
-
 import os
 import sys
-import logging
 
-sys.path.append('/var/task')
 file_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(file_path, "./"))
 sys.path.append(os.path.join(file_path, "./vendored"))
 
 
-from .response.apigateway_response import ApigatewayResponse
-from .apps.django import get_django
+import json
+import datetime
+import logging
+import traceback
+import logging
 
+from wsgi_apps.response.apigateway_response import ApigatewayResponse
+from wsgi_apps.apps.django_app import get_django
+from wsgi_apps.lmdowsgi import LmdoWSGI
 
 # Set up logging
 logging.basicConfig()
@@ -27,20 +27,20 @@ class LambdaHandler(object):
     """
     
     def __init__(self):
-       self._wsgi = WSGI()
+       self._wsgi = LmdoWSGI()
 
     def apigateway(self, event, context):
         """Handle reqeust from api gateway"""
         apigateway_response = ApigatewayResponse()
-        
+        logger.info(event) 
         try:
             time_start = datetime.datetime.now()
 
-            environ = self._wsgi.translate(event)
-            response = apigateway_response.run_app(self.get_app, environ)
+            environ = self._wsgi.translate(event, context)
+            response = apigateway_response.run_app(get_django(), environ)
 
             response_time_ms = (datetime.datetime.now() - time_start).total_seconds() * 1000
-            common_log(environ, response, response_time=response_time_ms)
+            #self._wsgi.log(environ, response, response_time=response_time_ms)
 
             return response
         except Exception as e:
@@ -49,7 +49,7 @@ class LambdaHandler(object):
             exc_info = sys.exc_info()
 
             # Return this unspecified exception as a 500, using template that API Gateway expects.
-            content = collections.OrderedDict()
+            content = {}
             content['statusCode'] = 500
             body = {'message': 'django error'}
             #if settings.DEBUG:  # only include traceback if debug is on.
@@ -58,6 +58,7 @@ class LambdaHandler(object):
             return content
 
 
-def handler(event, context):  # pragma: no cover
+def handler(event, context):
     return LambdaHandler().apigateway(event, context)
+
 

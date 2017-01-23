@@ -1,6 +1,7 @@
 from __future__ import print_function
 import os
 import pip
+import site
 
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.s3.s3 import S3
@@ -67,6 +68,14 @@ class Lambda(AWSBase):
         """get defined function name"""
         return "{}-{}".format(self.get_name_id(), func_name)
 
+    @classmethod
+    def fetch_function_name(cls, prefix, postfix):
+        """
+        Wrapper for access outside object context
+        Uggly, but quick work around...
+        """
+        return "{}-{}".format(prefix, postfix)
+
     def get_role_name(self, func_name):
         """get defined function name"""
         return "lmdo-{}-{}".format(self.get_name_id(), func_name)
@@ -113,7 +122,7 @@ class Lambda(AWSBase):
     def create_function(self, FunctionName, Role, Handler, Code, Runtime, **kwargs):
         """Wrapper for create lambda function"""
         try:
-            Oprint.info('Start creating Lambda function {}'.format(func_name), 'lambda')
+            Oprint.info('Start creating Lambda function {}'.format(FunctionName), 'lambda')
             response = self._client.create_function(
                 FunctionName=FunctionName,
                 Runtime=Runtime,
@@ -174,10 +183,6 @@ class Lambda(AWSBase):
                 
         return response
 
-    def get_arn(self, func_name):
-        """Return invokeable function url"""
-        return 'arn:aws:lambda:{}:{}:function:{}'.format(self.get_region(), self.get_account_id(), self.get_function_name(func_name))
-
     def get_function(self, func_name, **kwargs):
         """Get function info"""
         try:
@@ -197,7 +202,20 @@ class Lambda(AWSBase):
 
         # zip lmdo wsgi function
         if func_type == 'wsgi':
-            if zipper(self.get_wsgi_dir(), target, LAMBDA_EXCLUDE):
+            # Don't load lmdo __init__.py
+            if LAMBDA_EXCLUDE.get('LAMBDA_EXCLUDE'):
+                LAMBDA_EXCLUDE['file_with_path'].append('*wsgi/__init__.py')
+            else:
+                LAMBDA_EXCLUDE['file_with_path'] = ['*wsgi/__init__.py']
+
+            replace_path = [
+                {
+                   'from_path': '/usr/lib/python2.7/site-packages/lmdo/wsgi',
+                   'to_path': '.'
+                }
+            ]
+
+            if zipper(self.get_wsgi_dir(), target, LAMBDA_EXCLUDE, False, replace_path):
                 return target
 
         return False
@@ -214,9 +232,9 @@ class Lambda(AWSBase):
         pkg_dir = site.getsitepackages()
         for pd in pkg_dir:
             if os.path.isdir(pd + '/lmdo'):
-                wsgi_dir = pd + '/lmdo/wsgi/'
+                wsgi_dir = pd + '/lmdo/wsgi'
                 break
-
+        
         return wsgi_dir
 
     def if_wsgi_exist(self):
@@ -251,7 +269,7 @@ class Lambda(AWSBase):
             }
 
             if lm.get('Type') == 'wsgi':
-                params['Handler'] = 'wsgi.lambda_handler.handler'
+                params['Handler'] = 'lmdo_wsgi_handler.handler'
 
             if lm.get('VpcConfig'):                
                 params['VpcConfig'] = lm.get('VpcConfig')
@@ -275,7 +293,7 @@ class Lambda(AWSBase):
                         params['Role'] = role_arn
                         self.create_function(**params)
                 # Clean up
-                self.remove_zip(lm.get('FunctionName'))
+                #self.remove_zip(lm.get('FunctionName'))
 
     def create_role(self, role_name, policy_path):
         """Create role for lambda from policy doc"""
@@ -308,13 +326,13 @@ class Lambda(AWSBase):
         else:
             Oprint.warn('{} could not be found, no dependencies will be installed'.format(os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE)), 'pip')
 
-     def pip_wsgi_install(self):
+    def pip_wsgi_install(self):
         """Install requirement for wsgi"""
         try:
             Oprint.info('Installing python package dependancies for wsgi', 'pip')
 
             spinner.start()
-            os.system('pip install werkzeug --upgrade -t {} &>/dev/null'.format(os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER)))
+            os.system('pip install werkzeug base58 wsgi-request-logger --upgrade -t {} &>/dev/null'.format(os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER)))
             spinner.stop()
 
             Oprint.info('Wsgi python package installation complete', 'pip')
