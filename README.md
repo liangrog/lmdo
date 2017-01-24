@@ -1,7 +1,7 @@
 lmdo
 =========
 
-*A simple CLI tool for developing microservices using AWS Lambda*
+*A simple CLI tool for developing microservices using AWS Lambda function (python2.7) and managing logistic of AWS resources*
 
 
 Purpose
@@ -10,22 +10,22 @@ Purpose
 The existing open source tool sets such as
 [Apex](https://github.com/apex/apex) and
 [Serverless](https://github.com/serverless/serverless) have all sorts
-of limitations and too many abstractions, preventing the flexibility
-of utilising AWS CloudFormation and other resources.
+of limitations and too many abstractions. I understand tools are often opinionated but flexibility should be allowed. 
 
 lmdo allows:
-
-- Customizing cloud formation templates
-- Utilising Lambda functions for queries to other AWS resources
-- Working in a team environment
-- Passing in parameters to CloudFormation templates
+- Use cloud formation templates
+- Use swagger for API Gateway
+- Individually managing AWS resources
+- Manage life cycles of AWS Lambda functions
+- Bridge Django framework
+- Tail Cloudwatch logs
 
 Usage
 -----
 
 Installation
 
-    $ pip install .
+    $ sudo pip install lmdo
 
 Create skeleton
     
