@@ -48,6 +48,31 @@ class DeleteStageCommand(CommandInterface):
     def run(self):
         self._obj.delete_stage()
 
+class CreateDomainCommand(CommandInterface):
+    """Command for fetch"""
+    def run(self):
+        self._obj.create_domain()
+
+class DeleteDomainCommand(CommandInterface):
+    """Command for fetch"""
+    def run(self):
+        self._obj.delete_domain()
+
+class CreateMappingCommand(CommandInterface):
+    """Command for fetch"""
+    def run(self):
+        self._obj.create_mapping()
+
+class DeleteMappingCommand(CommandInterface):
+    """Command for fetch"""
+    def run(self):
+        self._obj.delete_mapping()
+
+class TailCommand(CommandInterface):
+    """Command for tail"""
+    def run(self):
+        self._obj.tail()
+
 class Dispatcher(object):
     """Command invocation class"""
     def run(self, command):

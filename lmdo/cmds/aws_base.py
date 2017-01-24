@@ -26,12 +26,18 @@ class AWSBase(object):
 
     def get_session(self):
         """Fetch AWS session based on AWS CLI credential setup"""
-        # User 'default' if no specified profile
-        profile = 'default'
-        if self._config.get('Profile'):
-            profile = self._config.get('Profile')
+        kw = {}
+        if self._config.get('AWSKey') and self._config.get('AWSSecret'):
+            kw['aws_access_key_id'] = self._config.get('AWSKey')
+            kw['aws_secret_access_key'] = self._config.get('AWSSecret')
+        else:
+            # User 'default' if no specified profile
+            profile = 'default'
+            if self._config.get('Profile'):
+                profile = self._config.get('Profile')
+            kw['profile_name'] = profile
 
-        return boto3.Session(profile_name=profile)
+        return boto3.Session(**kw)
 
     def get_region(self):
         """Get region name from AWS profile"""

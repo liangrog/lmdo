@@ -64,11 +64,26 @@ class IAM(AWSBase):
 
                 response = self.create_role(role_name, assume_policy)
 
-            policy_name = '{}-{}-{}'.format(role_name, 'policy', 'lambda-invoke')
-
             policy = self.create_lambda_invoke_policy(self.create_policy_name(role_name, 'lambda-invoke'))
 
             self._client.attach_role_policy(RoleName=response['Role'].get('RoleName'), PolicyArn=policy['Policy'].get('Arn'))
+        except Exception as e:
+            Oprint.err(e, 'apigateway')
+
+        return response
+
+    def delete_apigateway_lambda_role(self, role_name):
+        """Delete APIGateway role that can invoke lambda"""
+        try: 
+            policy_name = self.create_policy_name(role_name, 'lambda-invoke')    
+            response = self.get_policy(policy_name)
+            if response.get('Policy'):
+                Oprint.info('Deleting IAM policy {}'.format(policy_name), 'iam')
+                self._client.detach_role_policy(RoleName=role_name, PolicyArn=response['Policy'].get('Arn'))
+                self._client.delete_policy(PolicyArn=response['Policy'].get('Arn'))
+                Oprint.info('IAM policy {} has been deleted'.format(policy_name), 'iam')
+            
+            response = self.delete_role(role_name)
         except Exception as e:
             Oprint.err(e, 'apigateway')
 

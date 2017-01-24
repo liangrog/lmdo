@@ -38,6 +38,7 @@ class Apigateway(AWSBase):
 
     def delete(self):
         self.delete_rest_api(self.get_apigateway_name())
+        self.delete_wsgi_api_roles()
 
     def create_stage(self):
         self.create_stage_from_stage(self._args.get('<from_stage>'), self._args.get('<to_stage>'), self.get_apigateway_name())
@@ -46,6 +47,18 @@ class Apigateway(AWSBase):
         swagger_api = self.if_api_exist_by_name(self.get_apigateway_name())
         self.delete_api_stage(swagger_api.get('id'), self._args.get('<from_stage>'), swagger_api.get('name'))
 
+    def create_domain(self):
+        self.create_domain_name(self._args.get('<domain_name>'), self._args.get('<cert_name>'), self._args.get('<cert_path>'), self._args.get('<cert_private_key_path>'), self._args.get('<cert_chain_path>'))
+
+    def delete_domain(self):
+        self.delete_domain_name(self._args.get('<domain_name>'))
+
+    def create_mapping(self):
+        self.create_base_path_mapping(self._args.get('<domain_name>'), self._args.get('<base_path>'), self._args.get('<api_name>'), self._args.get('<stage>'))
+
+    def delete_mapping(self):
+        self.delete_base_path_mapping(self._args.get('<domain_name>'), self._args.get('<base_path>'))
+ 
     def get_swagger_template(self):
         """Return swagger template path"""
         return './{}/{}'.format(SWAGGER_DIR, SWAGGER_FILE)
@@ -341,3 +354,13 @@ class Apigateway(AWSBase):
 
     def get_apigateway_lambda_role_name(self, function_name):
         return "APIGateway-{}".format(function_name)
+
+    def delete_wsgi_api_roles(self):
+        """Remove IAM roles for wsgi"""
+        iam = IAM()
+        for lm_func in self._config.get('Lambda'):
+            if lm_func.get('Type') == 'wsgi' and not lm_func.get('DisableApiGateway'):
+                function_name = Lambda.fetch_function_name(self.get_name_id(), lm_func.get('FunctionName'))
+                role = iam.delete_apigateway_lambda_role(self.get_apigateway_lambda_role_name(function_name))
+
+

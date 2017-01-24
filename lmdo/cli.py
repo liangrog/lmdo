@@ -5,22 +5,30 @@ Usage:
     lmdo init <project_name>
     lmdo bp fetch <url>
     lmdo cf (create|update|delete) 
-    lmdo lm (create|update|delete)
+    lmdo lm (create|update|delete) [--function-name=<functionName>]
     lmdo api (create|update|delete)
     lmdo api create-stage <from_stage> <to_stage>
     lmdo api delete-stage <from_stage>
-    lmdo api (create-domain|delete-domain) <domain_name> <cert_name> <cert_path> <cert_private_key_path> <cert_chain_path>
-    lmdo api (create-mapping|delete-mapping) <base_path> <api_name> <stage>
+    lmdo api create-domain <domain_name> <cert_name> <cert_path> <cert_private_key_path> <cert_chain_path>
+    lmdo api delete-domain <domain_name>
+    lmdo api create-mapping <domain_name> <base_path> <api_name> <stage>
+    lmdo api delete-mapping <domain_name> <base_path>
     lmdo s3 sync 
+    lmdo logs tail [--function-name=<functionName>] [--group-name=<groupName>] [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>]
     lmdo deploy
     lmdo destroy
     lmdo (-h | --help)
     lmdo --version
 
 Options:
-    -h --help        Show this screen.
-    --version        Show version.
-    --function-name  Lambda function name
+    -h --help                      Show this screen.
+    --version                      Show version.
+    --day=<int>                    Day to search e.g. 5, -10
+    --start-date=<datetime>        Start date in format 1970-01-01
+    --end-date=<datetime>          End date in format 1970-01-01
+    -f --follow                    Follow entry
+    --function-name=<functioName>  Lambda function name
+    --group-name=<groupName>       Cloudwatch log group name
 
 """
 
@@ -37,8 +45,9 @@ from lmdo.cmds.s3.s3_client import S3Client
 from lmdo.cmds.deploy.deploy_client import DeployClient
 from lmdo.cmds.destroy.destroy_client import DestroyClient
 from lmdo.cmds.bp.bp_client import BpClient
+from lmdo.cmds.logs.logs_client import LogsClient
 
-import sys
+
 def main():
     """Call Commands"""   
 
@@ -64,6 +73,8 @@ def main():
         client_factory = LmClient(args)
     elif args.get('api'):
         client_factory = ApiClient(args)
+    elif args.get('logs'):
+        client_factory = LogsClient(args)
     elif args.get('deploy'):
         client_factory = DeployClient(args)
     elif args.get('destroy'):

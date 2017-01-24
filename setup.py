@@ -38,10 +38,10 @@ setup(
     version=__version__,
     description='CLI tools for microservices automation using AWS Lambda function',
     long_description=long_description,
-    url='https://github.com/liangrog/lmdauto',
+    url='https://github.com/MerlinTechnology/lmdo.git',
     author='Roger Liang',
-    author_email='pinguroger@gmail.com',
-    license='APACHE',
+    author_email='roger@merlinshift.com.au',
+    license='MIT',
     classifiers=[
         'Intended Audience :: Developers',
         'Topic :: Utilities',

@@ -9,6 +9,9 @@ User: default
 # @mandatory: true
 # @description: AWS credential profile name, default to 'default'
 Profile: default
+# Or
+AWSKey: aws_access_key_id
+AWSSecret: aws_secret_access_key
 
 # @mandatory: true
 # @description: API stage
@@ -28,7 +31,6 @@ CloudformationBucket: cloudformation.bucket.name
 # sys.path.append(os.path.join(file_path, "./"))
 # sys.path.append(os.path.join(file_path, "./vendored"))
 # ------------------------------------------------------------------
-VendorFolder: vendored
 
 # @mandatory: false
 # @description: static asset to deploy to given bucket

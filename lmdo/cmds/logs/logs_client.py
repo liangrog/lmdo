@@ -13,7 +13,7 @@ class LogsClient(ClientFactoryInterface):
 
     def execute(self):
         if self._args.get('tail'):
-            self._dispatcher.run(SyncCommand(self._logs))
+            self._dispatcher.run(TailCommand(self._logs))
         else:
             Oprint.err('Command option is required', 'lmdo')
 
