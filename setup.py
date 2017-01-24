@@ -39,7 +39,7 @@ setup(
     description='CLI tools for microservices automation using AWS Lambda function',
     long_description=long_description,
     url='https://github.com/MerlinTechnology/lmdo.git',
-    download_url = 'https://github.com/MerlinTechnology/lmdo/tarball/2.0'
+    download_url = 'https://github.com/MerlinTechnology/lmdo/tarball/2.0',
     author='Roger Liang',
     author_email='pinguroger@gmail.com',
     license='MIT',
