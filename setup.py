@@ -38,10 +38,11 @@ setup(
     version=__version__,
     description='CLI tools for microservices automation using AWS Lambda function',
     long_description=long_description,
-    url='https://github.com/liangrog/lmdauto',
+    url='https://github.com/MerlinTechnology/lmdo.git',
+    download_url = 'https://github.com/MerlinTechnology/lmdo.git/tarball/2.0'
     author='Roger Liang',
     author_email='pinguroger@gmail.com',
-    license='APACHE',
+    license='MIT',
     classifiers=[
         'Intended Audience :: Developers',
         'Topic :: Utilities',
@@ -59,7 +60,8 @@ setup(
         'boto3==1.4.2',
         'PyYAML==3.12',
         'jinja2==2.8',
-        'tqdm==4.10'
+        'tqdm==4.10',
+        'gitpython'
     ],
     extras_require={
         'test': ['coverage', 'pytest', 'pytest-cov'],

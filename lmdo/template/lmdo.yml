@@ -1,61 +1,93 @@
 # @mandatory: true
 # @description: microservice name
-Service: user
-
-# @mandatory: true
-# @description: package environment
-Environment: development
+Service: superman
 
 # @mandatory: true
 # @description: microservice creator
-User: roger
+User: default
 
 # @mandatory: true
 # @description: AWS credential profile name, default to 'default'
 Profile: default
+# Or
+AWSKey: aws_access_key_id
+AWSSecret: aws_secret_access_key
 
 # @mandatory: true
 # @description: API stage
 Stage: dev
 
 # @mandatory: false
-# @description: api name
-#API: LmdoTest
-
-# @mandatory: true
-# @description: global bucket name for storing Lambda functions
-LambdaBucketName: lambda-packages.merlingroup.co
-
-# @mandatory: true (since you need to use stack lookup everytime)
-# description: parameters mapping for your cloud formation
-Parameters:
-    StackLookupArn: arn:aws:lambda:ap-southeast-2:105594462793:function:utils-merlingroupco-LookupStackOutputs-JOK0L75VOG3H
-    LookupStackName: lambda-global-infra-merlingroupco
-    LambdaFunction1Name: Lambda-test-function
-    LambdaFunction1HandlerName: handler.test
+# @description: cloudformation files to upload to. If not set
+# will load from local but won't work for nested stack templates.
+CloudformationBucket: cloudformation.bucket.name
 
 # @mandatory: false
-# Description: By default when delete a stack,
-#              The associated bucket won't be
-#              deleted if it has objects. Specified
-#              here so the content will be deleted
-#              first before we can delete the bucket
-#BucketInStackToDestroy:
-#    - bucket1
-#    - bucket2
+# @escription: where the python package installed to, default 'vendored'
+# Note: add below code to your handler so AWS Lambda container can find it
+# ------------------------------------------------------------------
+# sys.path.append('/var/task')
+# file_path = os.path.dirname(os.path.realpath(__file__))
+# sys.path.append(os.path.join(file_path, "./"))
+# sys.path.append(os.path.join(file_path, "./vendored"))
+# ------------------------------------------------------------------
 
-# @mandatory: true
-# @description: Mapping between Lambda function ARN to
-#               API gateway that uses it
-#LambdaMapping:
-#    [Lambda function name]:
-#        [Lambda function ARN reference from cloudformation output, also required for code update]: [Regular expression in apigateway template for replacing the corresponding lambda function ARN, set it to 'False' if no related API]
-LambdaMapping:
-    Lambda-test-function:
-        LambdaFunctionArn: $lambdaArn
-        DefaultIamRoleAPIArn: $apiRoleArn
+# @mandatory: false
+# @description: static asset to deploy to given bucket
+AssetS3Bucket: static.bucket.name
+AseetDirectory: build
 
-# APITemplateMapping:
-#    [Template file name under swagger folder]: [Variable in apigateway template to be replaced]
-APITemplateMapping:
-    api_integration_request_template.json: $apiIntegrationRequestTemple
+# @mandatory: false
+# @description: let lmdo know what the api name will be if using swagger
+ApiGatewayName: swagger-info-title
+
+# @mandatory: false
+# @description: lambda functions to deploy
+Lambda:
+    - S3Bucket: lambda.bucket.name        # mandatory
+      Type: default                       # Optional, other types is django
+      FunctionName: superman              # mandatory
+      Handler: handler.fly                # mandatory 
+      MemorySize: 128                     # optional
+      RoleArn: roleName                   # Either provide a role name or policy doc 
+      RolePolicyDocument: path/to/policy  # Policy takes preccedent
+      Runtime: python2.7                  # optional default to 'python2.7'
+      Timeout:                            # optional default to 180
+      VpcConfig:                          # optional
+          SecurityGroupIds:
+          SubnetIds:
+      EnvironmentVariables:              # optional
+          MYSQL_HOST: localhost
+          MYSQL_PASSWORD: secret
+          MYSQL_USERNAME: admin
+          MYSQL_DATABASE: lmdo
+      
+    # Second lambda function 
+    - S3Bucket: lambda.bucket.name        # mandatory
+      FunctionName: superman              # mandatory
+      Handler: handler.fly                # mandatory 
+      RoleArn: roleName                      #Either provide a role name or policy doc 
+      RolePolicyDocument: path/to/policy  #Policy takes preccedent
+
+    # django lambda function
+    - S3Bucket: lambda.bucket.name        # mandatory
+      Type: wsgi                          # Other types
+      DisableApiGateway: False            # Optional, default to False
+      ApiBasePath: /path                  # Base path for django app
+      FunctionName: superman              # mandatory
+      MemorySize: 128                     # optional
+      RoleArn: roleName                   # Either provide a role name or policy doc 
+      RolePolicyDocument: path/to/policy  # Policy takes preccedent
+      Runtime: python2.7                  # optional default to 'python2.7'
+      Timeout:                            # optional default to 180
+      VpcConfig:                          # optional
+          SecurityGroupIds:
+          SubnetIds:
+      EnvironmentVariables:                       # mandatory
+          DJANGO_SETTINGS_MODULE: mysite.settings # mandatory
+          MYSQL_HOST: localhost                   
+          MYSQL_PASSWORD: secret
+          MYSQL_USERNAME: admin
+          MYSQL_DATABASE: lmdo
+ 
+ 

@@ -1,37 +1,31 @@
 """
-lmdo system wide configuration
+lmdo system configuration
 """
 
-# File for all config data
-config_template = 'lmdo.yml.j2'
-config_file = 'lmdo.yml'
-
-# Template file name
-cf_file = 'cf.template'
-swagger_file = 'apigateway.json'
-
 # Where temporary files saved to
-tmp_dir = '/tmp/lmdo/'
+TMP_DIR = '/tmp/lmdo/'
 
-# Template location
-cf_dir = './cloudformation/'
-swagger_dir = './swagger/'
+# File for lmdo project config data
+PROJECT_CONFIG_TEMPLATE = 'lmdo.yml.j2'
+PROJECT_CONFIG_FILE = 'lmdo.yml'
 
-# Mandatory keys in the config file
-config_mandatory_keys = [
-    'Profile',
-    'Environment',
-    'User',
-    'LambdaBucketName', 
-    'Stage', 
-    'Service' 
-    ]
-    
-# Default AWS credential profile
-profile = 'default'
+# PIP
+PIP_VENDOR_FOLDER = 'vendored'
+PIP_REQUIREMENTS_FILE = 'requirements.txt'
+
+# Cloudformations
+CLOUDFORMATION_DIRECTORY = 'cloudformation'
+CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX = ['json', 'template', '.yml']
+CLOUDFORMATION_TEMPLATE = 'main'
+CLOUDFORMATION_PARAMETER_FILE = 'params.json'
+
+# Lambda
+LAMBDA_MEMORY_SIZE = 128
+LAMBDA_RUNTIME= 'python2.7'
+LAMBDA_TIMEOUT = 180
 
 # Files and directories excluding from packaging
-exclude = {
+LAMBDA_EXCLUDE= {
     'dir': [
         'tests',
         '*boto*',
@@ -40,7 +34,6 @@ exclude = {
         'cloudformation',
         'swagger',
     ],
-
     'file': [
         'lmdo.yml',
         '*.pyc',
@@ -50,5 +43,64 @@ exclude = {
         'requirement.txt',
     ]
 }
+
+# Apigateway
+SWAGGER_DIR = 'swagger'
+SWAGGER_FILE = 'apigateway.json'
+
+# S3
+S3_UPLOAD_EXCLUDE = {
+    'dir': [
+        '*.git*',
+        '.gitignore',
+        '*.md'
+    ],
+    'file': [
+        '.DS_Store'
+    ]
+}
+
+# Mandatory keys in the config file
+CONFIG_MANDATORY_KEYS= [
+    'User', 
+    'Stage', 
+    'Service',
+    'Profile'
+]
+    
+
+
+"""
+lmdo.yml:
+
+User: user
+Stage: dev
+Service: lmdo
+Profile: default
+
+CloudformationBucket: cloudformation.bucket.name
+
+StaticS3Bucket: static.bucket.name
+StaticDirectory: ./build
+
+Lambda:
+    - EnvironmentVariables:
+          MYSQL_HOST: localhost
+          MYSQL_PASSWORD: secret
+          MYSQL_USERNAME: admin
+          MYSQL_DATABASE: lmdo
+      S3Bucket: lambda.bucket.name
+      FunctionName: superman
+      Handler: handler.fly
+      MemorySize: 128
+      Role:
+      RolePolicyDocument:
+      Runtime:
+      Timeout:
+      VpcConfig: 
+          SecurityGroupIds:
+          SubnetIds:
+       
+"""
 
 

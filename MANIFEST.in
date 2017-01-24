@@ -11,3 +11,4 @@ prune dist
 recursive-exclude *.egg-info *
 recursive-include tests *
 recursive-include lmdo/template *
+recursive-include lmdo/local_template *
