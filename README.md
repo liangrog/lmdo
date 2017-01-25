@@ -62,7 +62,7 @@ To initiate your project, run
 
     $ lmdo init <project_name>
     
-This will create a project folder and the sample lmdo configuration file lmdo.yml for you.
+This will create a project folder and the sample lmdo configuration file `lmdo.yml` for you.
 
 **Note**: Apart from the init command, all other lmdo commands need to be run at the same directory of the lmdo.yml file
 
@@ -70,7 +70,7 @@ AWS credentials
 -----
 You can either use session (`Profile`) or configure AWS key and secret (`AWSKey, AWSSecret`) in lmdo.yml
 
-To use session, you will need to create two files:
+If using session, you will need to create two files:
 
     ~/.aws/config and ~/.aws/credentials
 
@@ -88,20 +88,20 @@ AWS Cloudformation
 -----
 To use cloudformation, you need to 
 
-1. create a folder named 'cloudformation' in your project folder, so it looks like:
+1. create a folder named `cloudformation` in your project folder, so it looks like:
 
         <your-project>/cloudformation
    The cloudformation template can be in any of `.yml`, `.json` or `.template` format as per AWS requirements. 
     
 2. there has to be one master template and named `main.*` regardless you are using single template or nested stacks. 
    
-   If using nested stacks, you must provide S3 bucket in your lmdo.yml file under 'CloudformationBucket' as per AWS requirements.
+   If using nested stacks, you must provide S3 bucket in your lmdo.yml file under `CloudformationBucket` as per AWS requirements.
 
     For single template, if no S3 bucket provided, the template will be loaded from your local. 
 
-3. If there are parameters, all parameters with their values must be provided in the file named 'params.json'. This file however won't be uploaded to S3 under all scenarios for security reasons.
+3. If there are parameters, all parameters with their values must be provided in the file named `params.json`. This file however won't be uploaded to S3 under all scenarios for security reasons.
 
-4. If 'StackName' is provided in lmdo.yml, it'll be used to create the stack. Otherwise lmdo will use `<user>-<stage>-<service-name>-service` to name your stack
+4. If `StackName` is provided in lmdo.yml, it'll be used to create the stack. Otherwise lmdo will use `<user>-<stage>-<service-name>-service` to name your stack
 
 To manage your cloudformation resource, run:
 
