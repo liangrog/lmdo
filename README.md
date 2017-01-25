@@ -193,14 +193,13 @@ AWS API Gateway
     **Requirements**
     
     * A folder named 'swagger' under your project folder
-    * Name your swagger template as 'apigateway.json'
+    * Name your swagger template as `apigateway.json`
 
     **lmdo.yml configuration**
     
     `ApiGatewayName: Your unique Apigateway name`
     
-    
-    **NOTE:** Please name your version as '$version' and your title as '$title' so that Lmdo can update it during creation using the value of `ApiGatewayName` in your lmdo.yml.
+    **NOTE:** Please name your version as `$version` and your title as `$title` so that Lmdo can update it during creation using the value of `ApiGatewayName` in your lmdo.yml.
 
 2. WSGI(Django) API
    Lmdo automatically create a API Gateway resource if you have Django Lambda function configured using proxy unless you have `DisableApiGateway` set to `True` in your Lambda function config in `lmdo.yml`. There will only be one API gateway created. Django api will be appended as part of the resource
