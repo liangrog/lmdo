@@ -93,6 +93,10 @@ To use cloudformation, you need to
 
 4. If 'StackName' is provided in lmdo.yml, it'll be used to create the stack. Otherwise lmdo will use `<user>-<stage>-<service-name>-service` to name your stack
 
+To manage your cloudformation resource, run:
+
+    $ lmdo cf (create|update|delete)
+    
 AWS Lambda
 -----
 You can create standard lambda function and or use a bridging lambda function provided by lmdo to connect to your django app. Lmdo allows you to create any number of lambda functions.
@@ -112,10 +116,9 @@ You can create standard lambda function and or use a bridging lambda function pr
         import os
         import sys
 
-        sys.path.append('/var/task')
-        file_path = os.path.dirname(os.path.realpath(__file__))
-        sys.path.append(os.path.join(file_path, "./"))
-        sys.path.append(os.path.join(file_path, "./vendored"))
+        module_path = os.path.dirname(os.path.realpath(__file__))
+        sys.path.append(os.path.join(module_path, "./"))
+        sys.path.append(os.path.join(module_path, "./vendored"))
 
     **lmdo.yml configuration**
     
@@ -174,28 +177,38 @@ You can create standard lambda function and or use a bridging lambda function pr
              DJANGO_SETTINGS_MODULE: mysite.settings # mandatory
  
  
-3. To deploy all the functions, run
+To deploy all the functions, run
 
     $ lmdo lm (create|update|delete)
 
-4. To only deploy one function, run
+To only deploy one function, run
     
     $ lmdo lm (create|update|delete) --function-name=blah
-
-
 
 AWS API Gateway
 -----
 1. Standard API Gateway
-Swagger template is used to create API Gateway, you will need to create a folder named 'swagger' under your project folder and name your swagger template as 'apigateway.json'.
+   Swagger template is used to create API Gateway
 
-In your swagger template, please name your version as '$version' and your title as '$title' so that Lmdo can update it during creation using the value of 'ApiGatewayName' in your lmdo.yml.
+    **Requirements**
+    
+    * A folder named 'swagger' under your project folder
+    * Name your swagger template as 'apigateway.json'
+
+    **lmdo.yml configuration**
+    
+    `ApiGatewayName: Your unique Apigateway name`
+    
+    
+    **NOTE:** Please name your version as '$version' and your title as '$title' so that Lmdo can update it during creation using the value of `ApiGatewayName` in your lmdo.yml.
 
 2. WSGI(Django) API
-Lmdo automatically create a API Gateway resource if you have Django Lambda function configured using proxy. 
+   Lmdo automatically create a API Gateway resource if you have Django Lambda function configured using proxy unless you have `DisableApiGateway` set to `True` in your Lambda function config in `lmdo.yml`. There will only be one API gateway created. Django api will be appended as part of the resource
 
-There will only be one API gateway created. Django api will be appended as part of the resource
+To manage your APIGateway resource, run:
 
+    $ lmdo api (create|update|delete)
+    
 You can create or delete a stage by running
 
     $ lmdo api create-stage <from_stage> <to_stage>
@@ -204,31 +217,31 @@ You can create or delete a stage by running
 
 AWS S3
 -----
-Lmdo offers a simple command line to upload your local static asset into a S3 bucket. All you need to do is to configure 'AssetS3Bucket' and 'AseetDirectory' in your lmdo.yml, then run
+Lmdo offers a simple command line to upload your local static asset into a S3 bucket. All you need to do is to configure `AssetS3Bucket` and `AseetDirectory` in your lmdo.yml, then run
 
     $ lmdo s3 sync
 
     
 AWS Cloudwatch Logs
 -----
-You can tail any AWS cloudwatch group logs by running:
+1. You can tail any AWS cloudwatch group logs by running:
 
-    $ lmdo logs tail <log_group_name> [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>]
+        $ lmdo logs tail <log_group_name> [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>]
 
---day value defines how many days ago the logs need to be retrieved or you specify a start date and/or end date for the log entries using format 'YYYY-MM-DD'
+    `--day` value defines how many days ago the logs need to be retrieved or you specify a start date and/or end date for the log entries using format `YYYY-MM-DD`
 
-You can also tail logs of your lambda function in your project by running:
+2. You can also tail logs of your lambda function in your project by running:
 
-    $ lmdo logs tail function <function_name> [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>]
+        $ lmdo logs tail function <function_name> [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>]
 
-The <function_name> is the name you configure in your lmdo.yml
+  The `<function_name>` is the name you configure in your lmdo.yml
 
-One step deploy
-------
+One step deployment
+-----
 Alternatively, you can deploy and delete your entire service by running
-
+    
     $ lmdo deloy 
-    or
+        or
     $ lmdo destroy
 
 
