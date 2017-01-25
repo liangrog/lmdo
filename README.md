@@ -216,7 +216,7 @@ You can create or delete a stage by running
 
 AWS S3
 -----
-Lmdo offers a simple command line to upload your local static asset into a S3 bucket. All you need to do is to configure `AssetS3Bucket` and `AseetDirectory` in your lmdo.yml, then run
+Lmdo offers a simple command line to upload your local static asset into a S3 bucket. All you need to do is to configure `AssetS3Bucket` and `AssetDirectory` in your lmdo.yml, then run
 
     $ lmdo s3 sync
 
