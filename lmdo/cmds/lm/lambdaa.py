@@ -14,7 +14,7 @@ from lmdo.spinner import spinner
 class Lambda(AWSBase):
     """Class  create/update lambda function"""
 
-    def __init__(self, args=None):
+    def __init__(self, args={}):
         super(Lambda, self).__init__()
         self._client = self.get_client('lambda') 
         self._s3 = S3()

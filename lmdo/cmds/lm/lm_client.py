@@ -6,7 +6,7 @@ from lmdo.cmds.client_factory_interface import ClientFactoryInterface
 class LmClient(ClientFactoryInterface):
     """Lambda command client"""
     def __init__(self, args):
-        self._lambda = Lambda()
+        self._lambda = Lambda(args)
         self._dispatcher = Dispatcher()
         self._args = args
 
