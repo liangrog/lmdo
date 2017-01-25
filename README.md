@@ -66,6 +66,16 @@ This will create a project folder and the sample lmdo configuration file lmdo.ym
 
 **Note**: Apart from the init command, all other lmdo commands need to be run at the same directory of the lmdo.yml file
 
+AWS credentials
+-----
+You can either use session (`Profile`) or configure AWS key and secret (`AWSKey, AWSSecret`) in lmdo.yml
+
+To use session, you will need to create two files:
+
+    ~/.aws/config and ~/.aws/credentials
+
+Details pleae ref to [AWS CLI](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
+
 Boiler plating
 -----
 To get a boiler plate repo from somewhere in github, run
