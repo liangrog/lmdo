@@ -81,7 +81,7 @@ To use cloudformation, you need to
 1. create a folder named 'cloudformation' in your project folder, so it looks like:
 
         <your-project>/cloudformation
-   The cloudformation template can be in any of .yml, .json or .template format as per AWS requirements. 
+   The cloudformation template can be in any of `.yml`, `.json` or `.template` format as per AWS requirements. 
     
 2. there has to be one master template and named `main.*` regardless you are using single template or nested stacks. 
    
@@ -99,7 +99,7 @@ You can create standard lambda function and or use a bridging lambda function pr
 
 1. Standard Python Lambda function
 
-   **Requirement**
+   **Requirements**
    
    * The invokable lambda function files need to be placed on the top level of the project folder. 
    * The `requirements.txt` file and `vendored` folder are required under the project folder. 
@@ -118,9 +118,10 @@ You can create standard lambda function and or use a bridging lambda function pr
         sys.path.append(os.path.join(file_path, "./vendored"))
 
     **lmdo.yml configuration**
+    
     To configure your lambda, enter an entry under `Lambda`:
 
-        - S3Bucket: lambda.bucket.name        # mandatory, the bucket to load your package to
+          S3Bucket: lambda.bucket.name        # mandatory, the bucket to load your package to
           Type: default                       # Optional, other types is django
           FunctionName: superman              # mandatory, the actual function name in AWS will have the format of <user>-<stage>-<service-name>-<FunctionName>
           Handler: handler.fly                # mandatory, define the handler function
@@ -144,16 +145,16 @@ You can create standard lambda function and or use a bridging lambda function pr
  
 2. Django app
 
-   **Requirement**
+   **Requirements**
    
    * The `requirements.txt` file and `vendored` folder are required under the project folder. 
    * All the pip installations will be installed in the `vendored` folder.
    
    **lmdo.yml configuration**
    
-   To config, add below entry in 'Lambda':
-
-       - S3Bucket: lambda.bucket.name        # mandatory
+   To config, add below entry in `Lambda`:
+   
+         S3Bucket: lambda.bucket.name        # mandatory
          Type: django                        # Other types
          DisableApiGateway: False            # Optional, if set to True, the apigateway for Django app won't be created
          ApiBasePath: /path                  # Mandatory if apigateway to be created. Base resource path for django app
@@ -164,13 +165,14 @@ You can create standard lambda function and or use a bridging lambda function pr
          Runtime: python2.7                  # optional default to 'python2.7'
          Timeout: 180                        # optional default to 180
          VpcConfig:                          # optional
-            SecurityGroupIds:
-                - string
-                - string
-            SubnetIds:
-                - string
-          EnvironmentVariables:                       # mandatory
-              DJANGO_SETTINGS_MODULE: mysite.settings # mandatory
+             SecurityGroupIds:
+                 - string
+                 - string
+             SubnetIds:
+                 - string
+         EnvironmentVariables:                       # mandatory
+             DJANGO_SETTINGS_MODULE: mysite.settings # mandatory
+ 
  
 3. To deploy all the functions, run
 
