@@ -7,9 +7,8 @@ sys.path.append(os.path.join(file_path, "./vendored"))
 
 
 import json
+import importlib
 import datetime
-import logging
-import traceback
 import logging
 
 from wsgi_apps.response.apigateway_response import ApigatewayResponse
@@ -23,37 +22,33 @@ logger.setLevel(logging.INFO)
 
 
 class LambdaHandler(object):
-    """
-    """
+    """Handler class"""
     
     def __init__(self):
        self._wsgi = LmdoWSGI()
+       self._settings = importlib.import_module(os.environ["DJANGO_SETTINGS_MODULE"])
 
     def apigateway(self, event, context):
         """Handle reqeust from api gateway"""
         apigateway_response = ApigatewayResponse()
-        logger.info(event) 
+
+        if self._settings.DEBUG:
+            logger.info(event) 
+
         try:
             time_start = datetime.datetime.now()
 
             environ = self._wsgi.translate(event, context)
             response = apigateway_response.run_app(get_django(), environ)
 
-            response_time_ms = (datetime.datetime.now() - time_start).total_seconds() * 1000
-            #self._wsgi.log(environ, response, response_time=response_time_ms)
-
             return response
         except Exception as e:
-
-            print(e)
             exc_info = sys.exc_info()
 
             # Return this unspecified exception as a 500, using template that API Gateway expects.
             content = {}
             content['statusCode'] = 500
-            body = {'message': 'django error'}
-            #if settings.DEBUG:  # only include traceback if debug is on.
-            #    body['traceback'] = traceback.format_exception(*exc_info)  # traceback as a list for readability.
+            body = {'message': 'application error'}
             content['body'] = json.dumps(body, sort_keys=True, indent=4).encode('utf-8')
             return content
 

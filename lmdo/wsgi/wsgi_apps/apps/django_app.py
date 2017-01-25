@@ -5,7 +5,6 @@ from wsgi_apps.middleware import Middleware
 def get_django():
     from django.core.wsgi import get_wsgi_application
     """Bootstrap Django app"""
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", os.environ["SETTINGS_MODULE"])
 
     import django
     if django.VERSION[0] <= 1 and django.VERSION[1] < 7:
