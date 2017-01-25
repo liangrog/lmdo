@@ -1,16 +1,14 @@
 lmdo
 =========
-
-*A simple CLI tool for developing microservices using AWS Lambda function (python2.7) and managing logistic of AWS resources*
+A simple CLI tool for developing microservices using AWS Lambda function (python2.7) and managing logistic of AWS resources
 
 
 Purpose
 -------
 
-The existing open source tool sets such as
-[Apex](https://github.com/apex/apex) and
-[Serverless](https://github.com/serverless/serverless) have all sorts
-of limitations and too many abstractions. I understand tools are often opinionated but flexibility should be allowed. 
+The existing open source tool sets such as [Apex](https://github.com/apex/apex) and [Serverless](https://github.com/serverless/serverless) have all sorts of limitations and too much abstractions. Understandably tools are often opinionated but flexibility should be allowed.
+
+In our case, we want to use cloudformation and swagger tempalte to manage our AWS resource and also we want to be able to build standard Lambda function or use Django in Lambda. 
 
 lmdo allows:
 - Use cloud formation templates
@@ -23,33 +21,40 @@ lmdo allows:
 Usage
 -----
 
-Installation
+    lmdo init <project_name>
+    lmdo bp fetch <url>
+    lmdo cf (create|update|delete)
+    lmdo lm (create|update|delete) [--function-name=<functionName>]
+    lmdo api (create|update|delete)
+    lmdo api create-stage <from_stage> <to_stage>
+    lmdo api delete-stage <from_stage>
+    lmdo api create-domain <domain_name> <cert_name> <cert_path> <cert_private_key_path> <cert_chain_path>
+    lmdo api delete-domain <domain_name>
+    lmdo api create-mapping <domain_name> <base_path> <api_name> <stage>
+    lmdo api delete-mapping <domain_name> <base_path>
+    lmdo s3 sync
+    lmdo logs tail function <function_name> [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>]
+    lmdo logs tail <log_group_name> [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>]
+    lmdo deploy
+    lmdo destroy
+    lmdo (-h | --help)
+    lmdo --version
 
+    Options:
+    -h --help                      Show this screen.
+    --version                      Show version.
+    --day=<int>                    Day to search e.g. 5, -10
+    --start-date=<datetime>        Start date in format 1970-01-01
+    --end-date=<datetime>          End date in format 1970-01-01
+    -f --follow                    Follow entry
+    --function-name=<functioName>  Lambda function name
+    --group-name=<groupName>       Cloudwatch log group name
+    
+    
+Installation
+-----
     $ sudo pip install lmdo
 
-Create skeleton
-    
-    $ lmdo tpl
-
-Package and upload Lambda function to S3
-
-    $ lmdo lm
-
-Create/Update CloudFormation and create Lambda function
-
-    $ lmdo cf
-
-Create/update API gateway and deploy stage
-
-    $ lmdo api
-
-Deploy the service in one step
-    
-    $ lmdo deploy
-
-Delete the service and associated AWS assets
-
-    $ lmdo destroy
 
 
 Initiation
