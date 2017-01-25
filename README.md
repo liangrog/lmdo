@@ -205,11 +205,10 @@ AWS API Gateway
     * A folder named 'swagger' under your project folder
     * Name your swagger template as `apigateway.json`
 
-    **lmdo.yml configuration**
+    **lmdo.yml configuration**
     
-        `ApiGatewayName: Your unique Apigateway name`
+        ApiGatewayName: Your unique Apigateway name
     
-    
     **NOTE:** Please name your version as `$version` and your title as `$title` so that Lmdo can update it during creation using the value of `ApiGatewayName` in your lmdo.yml.
 
 2. WSGI(Django) API
