@@ -7,6 +7,7 @@ from werkzeug.wsgi import ClosingIterator
 
 
 class Middleware(object):
+    """Borrow from Zappa"""
 
     # Unpacked / Before Packed Cookies
     decoded_zappa = None

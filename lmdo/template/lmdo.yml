@@ -1,93 +1,96 @@
-# @mandatory: true
+#********************************
+# @mandatory
 # @description: microservice name
+#********************************
 Service: superman
 
-# @mandatory: true
+#***********************************
+# @mandatory
 # @description: microservice creator
+#***********************************
 User: default
 
-# @mandatory: true
+#****************************************************************
+# @mandatory
 # @description: AWS credential profile name, default to 'default'
+#****************************************************************
 Profile: default
 # Or
-AWSKey: aws_access_key_id
-AWSSecret: aws_secret_access_key
+# AWSKey: aws_access_key_id
+# AWSSecret: aws_secret_access_key
 
-# @mandatory: true
-# @description: API stage
+#************************************
+# @mandatory
+# @description: stage of your service
+#************************************
 Stage: dev
 
-# @mandatory: false
+#****************************************************************
+# @optional
 # @description: cloudformation files to upload to. If not set
-# will load from local but won't work for nested stack templates.
-CloudformationBucket: cloudformation.bucket.name
+# will load from local but won't work for nested stack templates
+#****************************************************************
+#CloudformationBucket: cloudformation.bucket.name
 
-# @mandatory: false
-# @escription: where the python package installed to, default 'vendored'
-# Note: add below code to your handler so AWS Lambda container can find it
-# ------------------------------------------------------------------
-# sys.path.append('/var/task')
-# file_path = os.path.dirname(os.path.realpath(__file__))
-# sys.path.append(os.path.join(file_path, "./"))
-# sys.path.append(os.path.join(file_path, "./vendored"))
-# ------------------------------------------------------------------
-
-# @mandatory: false
+#*****************************************************
+# @optional
 # @description: static asset to deploy to given bucket
-AssetS3Bucket: static.bucket.name
-AseetDirectory: build
+#*****************************************************
+# AssetS3Bucket: static.bucket.name
+# AssetDirectory: build
 
-# @mandatory: false
+#***********************************************************************
+# @mandatory if having APIGateway
 # @description: let lmdo know what the api name will be if using swagger
-ApiGatewayName: swagger-info-title
+#***********************************************************************
+# ApiGatewayName: api-title
 
-# @mandatory: false
+#*****************************************
+# @optional
 # @description: lambda functions to deploy
-Lambda:
-    - S3Bucket: lambda.bucket.name        # mandatory
-      Type: default                       # Optional, other types is django
-      FunctionName: superman              # mandatory
-      Handler: handler.fly                # mandatory 
-      MemorySize: 128                     # optional
-      RoleArn: roleName                   # Either provide a role name or policy doc 
-      RolePolicyDocument: path/to/policy  # Policy takes preccedent
-      Runtime: python2.7                  # optional default to 'python2.7'
-      Timeout:                            # optional default to 180
-      VpcConfig:                          # optional
-          SecurityGroupIds:
-          SubnetIds:
-      EnvironmentVariables:              # optional
-          MYSQL_HOST: localhost
-          MYSQL_PASSWORD: secret
-          MYSQL_USERNAME: admin
-          MYSQL_DATABASE: lmdo
-      
-    # Second lambda function 
-    - S3Bucket: lambda.bucket.name        # mandatory
-      FunctionName: superman              # mandatory
-      Handler: handler.fly                # mandatory 
-      RoleArn: roleName                      #Either provide a role name or policy doc 
-      RolePolicyDocument: path/to/policy  #Policy takes preccedent
+#*****************************************
+#Lambda:
+    #*** Standard lambda function
+#    - S3Bucket: lambda.bucket.name        # mandatory, the bucket to load your package to
+#      Type: default                       # Optional, other types is django
+#      FunctionName: superman              # mandatory, the actual function name in AWS will have the format of <user>-<stage>-<service-name>-<FunctionName>
+#      Handler: handler.fly                # mandatory, define the handler function
+#      MemorySize: 128                     # optional, default to 128
+#      RoleArn: rolearn                    # Either provide a role arn or assume role policy doc, the RolePolicyDocument takes preccedent
+#      RolePolicyDocument: path/to/policy  # Assume role Policy
+#      Runtime: python2.7                  # optional default to 'python2.7'
+#      Timeout: 180                        # optional default to 180
+#      VpcConfig:                          # optional, Lambda VPC configuration
+#          SecurityGroupIds:
+#              - string
+#              - string
+#          SubnetIds:
+#              - string
+#              - string
+#      EnvironmentVariables:              # optional, runtime environment variable
+#          MYSQL_HOST: localhost
+#          MYSQL_PASSWORD: secret
+#          MYSQL_USERNAME: admin
+#          MYSQL_DATABASE: lmdo
 
-    # django lambda function
-    - S3Bucket: lambda.bucket.name        # mandatory
-      Type: wsgi                          # Other types
-      DisableApiGateway: False            # Optional, default to False
-      ApiBasePath: /path                  # Base path for django app
-      FunctionName: superman              # mandatory
-      MemorySize: 128                     # optional
-      RoleArn: roleName                   # Either provide a role name or policy doc 
-      RolePolicyDocument: path/to/policy  # Policy takes preccedent
-      Runtime: python2.7                  # optional default to 'python2.7'
-      Timeout:                            # optional default to 180
-      VpcConfig:                          # optional
-          SecurityGroupIds:
-          SubnetIds:
-      EnvironmentVariables:                       # mandatory
-          DJANGO_SETTINGS_MODULE: mysite.settings # mandatory
-          MYSQL_HOST: localhost                   
-          MYSQL_PASSWORD: secret
-          MYSQL_USERNAME: admin
-          MYSQL_DATABASE: lmdo
- 
+    #*** Django bridged lambda function
+#    - S3Bucket: lambda.bucket.name        # mandatory
+#      Type: django                        # Other types
+#      DisableApiGateway: False            # Optional, if set to True, the apigateway for Django app won't be created
+#      ApiBasePath: /path                  # Mandatory if apigateway to be created. Base resource path for django app
+#      FunctionName: superman              # mandatory
+#      MemorySize: 128                     # optional, default to 128
+#      RoleArn: rolearn                    # Either provide a role arn or assume role policy doc, the RolePolicyDocument takes preccedent
+#      RolePolicyDocument: path/to/policy  # Assume role Policy
+#      Runtime: python2.7                  # optional default to 'python2.7'
+#      Timeout: 180                        # optional default to 180
+#      VpcConfig:                          # optional
+#          SecurityGroupIds:
+#              - string
+#              - string
+#          SubnetIds:
+#              - string
+#      EnvironmentVariables:                       # mandatory
+#          DJANGO_SETTINGS_MODULE: mysite.settings # mandatory     
+
  
