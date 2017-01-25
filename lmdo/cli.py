@@ -14,7 +14,8 @@ Usage:
     lmdo api create-mapping <domain_name> <base_path> <api_name> <stage>
     lmdo api delete-mapping <domain_name> <base_path>
     lmdo s3 sync 
-    lmdo logs tail [--function-name=<functionName>] [--group-name=<groupName>] [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>]
+    lmdo logs tail function <function_name> [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>]
+    lmdo logs tail <log_group_name> [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>]
     lmdo deploy
     lmdo destroy
     lmdo (-h | --help)

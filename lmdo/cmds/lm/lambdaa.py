@@ -14,11 +14,12 @@ from lmdo.spinner import spinner
 class Lambda(AWSBase):
     """Class  create/update lambda function"""
 
-    def __init__(self):
+    def __init__(self, args=None):
         super(Lambda, self).__init__()
         self._client = self.get_client('lambda') 
         self._s3 = S3()
         self._iam = IAM()
+        self._args = args
 
     @property
     def client(self):
@@ -255,6 +256,12 @@ class Lambda(AWSBase):
 
         # Create all functions
         for lm in self._config.get('Lambda'):
+
+            # If user specify a function
+            specify_function = self.if_specify_function()
+            if specify_function and specify_function != lm.get('FunctionName'):
+                continue
+
             params = {
                 'FunctionName': self.get_function_name(lm.get('FunctionName')),
                 'Code': {
@@ -340,4 +347,8 @@ class Lambda(AWSBase):
             spinner.stop()
             raise e
 
+    def if_specify_function(self):
+        """If user specify a function to process"""
+        return False if not self._args.get('--function-name') else self._args.get('--function-name')
+           
                   

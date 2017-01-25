@@ -74,8 +74,6 @@ class Middleware(object):
 
     def encode_response(self, status, headers, exc_info=None):
         """
-        Zappa-ify our application response!
-
         This means:
             - Updating any existing cookies.
             - Packing all our cookies into a single ZappaCookie.
@@ -108,7 +106,6 @@ class Middleware(object):
         pack_s = json.dumps(self.request_cookies)
         encoded = base58.b58encode(pack_s)
 
-        # Set the result as the zappa cookie
         new_headers.append(
             (
                 'Set-Cookie',

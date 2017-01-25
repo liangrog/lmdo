@@ -7,7 +7,6 @@ import os
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.lm.lambdaa import Lambda
 from lmdo.oprint import Oprint
-from lmdo.waiters.s3_waiters import S3WaiterBucketCreate, S3WaiterBucketDelete, S3WaiterObjectCreate
 
 
 class Logs(AWSBase):
@@ -31,11 +30,11 @@ class Logs(AWSBase):
 
     def get_logs(self):
         """Fetch cloudwatch logs"""
-        if self._args.get('--function-name'):
-            function_name = Lambda.fetch_function_name(self.get_name_id(), self._args.get('--function-name'))
+        if self._args.get('function'):
+            function_name = Lambda.fetch_function_name(self.get_name_id(), self._args.get('<function_name>'))
             log_group_name = '/aws/lambda/{}'.format(function_name)
         else:
-            log_group_name = self._args.get('--group-name')
+            log_group_name = self._args.get('<log_group_name>')
         
         for event in self.generate_logs(log_group_name):
             if event is self._wait:
@@ -84,7 +83,6 @@ class Logs(AWSBase):
 
     def print_to_console(self, event):
         """Out put logs"""
-        #print(json.loads(event['message']))
         print(event['message'])
         #Oprint.warn(event['message'], 'logs')
 
