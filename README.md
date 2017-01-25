@@ -98,12 +98,15 @@ AWS Lambda
 You can create standard lambda function and or use a bridging lambda function provided by lmdo to connect to your django app. Lmdo allows you to create any number of lambda functions.
 
 1. Standard Python Lambda function
-   ***Requirement***
+
+   **Requirement**
+   
    * The invokable lambda function files need to be placed on the top level of the project folder. 
    * The `requirements.txt` file and `vendored` folder are required under the project folder. 
    * All the pip installations will be installed in the `vendored` folder.
    
-   ***Writting your Lambda function***
+   **Writting your Lambda function**
+   
    Add below lines at the beginning of your lambda function file so all your modules can be found by AWS Lambda runtime:
 
         import os
@@ -114,7 +117,7 @@ You can create standard lambda function and or use a bridging lambda function pr
         sys.path.append(os.path.join(file_path, "./"))
         sys.path.append(os.path.join(file_path, "./vendored"))
 
-    ***lmdo.yml configuration***
+    **lmdo.yml configuration**
     To configure your lambda, enter an entry under `Lambda`:
 
         - S3Bucket: lambda.bucket.name        # mandatory, the bucket to load your package to
@@ -140,11 +143,14 @@ You can create standard lambda function and or use a bridging lambda function pr
               MYSQL_DATABASE: lmdo
  
 2. Django app
-   ***Requirement***
+
+   **Requirement**
+   
    * The `requirements.txt` file and `vendored` folder are required under the project folder. 
    * All the pip installations will be installed in the `vendored` folder.
    
-   ***lmdo.yml***
+   **lmdo.yml configuration**
+   
    To config, add below entry in 'Lambda':
 
        - S3Bucket: lambda.bucket.name        # mandatory
