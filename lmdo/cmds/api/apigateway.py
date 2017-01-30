@@ -351,7 +351,8 @@ class Apigateway(AWSBase):
             # Enable cognito user pool as authorizer
             if lm_func.get('CognitoUserPoolId'):
                 to_replace["$userPoolId"] = lm_func.get('CognitoUserPoolId')
-                to_replace["$authorizer"] = '{"CognitoUserPool":[]}'
+                to_replace['$CognitoUserPool'] = 'CognitoUserPool-{}'.format(lm_func.get('FunctionName'))
+                to_replace["$authorizer"] = '{"' + str(to_replace['$CognitoUserPool'])+'":[]}'
             else:
                 to_replace["$authorizer"] = ''
 
