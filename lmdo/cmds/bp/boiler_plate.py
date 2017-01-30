@@ -2,13 +2,12 @@ from __future__ import print_function
 import sys
 import os
 import shutil
-import site
 import fnmatch
 from git import Repo
 
 from lmdo.config import PROJECT_CONFIG_FILE, TMP_DIR
 from lmdo.oprint import Oprint
-from lmdo.utils import mkdir
+from lmdo.utils import mkdir, get_sitepackage_dirs
 from lmdo.spinner import spinner
 
 class BoilerPlate(object):
@@ -26,7 +25,7 @@ class BoilerPlate(object):
         if os.path.isfile('./{}'.format(PROJECT_CONFIG_FILE)):
             Oprint.err('Your have existing lmdo.yml already, exiting...', 'lmdo')
 
-        pkg_dir = site.getsitepackages()
+        pkg_dir = get_sitepackage_dirs()
         for pd in pkg_dir:
             if os.path.isdir(pd + '/lmdo'):
                 src_dir = pd + '/lmdo/template'

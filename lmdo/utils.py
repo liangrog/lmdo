@@ -134,7 +134,7 @@ def update_template(content, to_replace):
 def get_template(name):
     """Find template from package"""
     found_dir = False
-    pkg_dir = site.getsitepackages()
+    pkg_dir = get_sitepackage_dirs()
     for pd in pkg_dir:
         if os.path.isdir(pd + '/lmdo'):
             found_dir = '{}/lmdo/local_template/{}'.format(pd, name)
@@ -148,4 +148,10 @@ def get_template(name):
 
     return found_dir
 
-
+def get_sitepackage_dirs():
+    """Find site packages, work with virtualenv 2.7"""
+    if 'getsitepackages' in dir(site):
+        return site.getsitepackages()
+    else:
+        # workaround for https://github.com/pypa/virtualenv/issues/355
+        return sys.path
