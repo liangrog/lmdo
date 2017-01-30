@@ -74,7 +74,7 @@ If using session, you will need to create two files:
 
     ~/.aws/config and ~/.aws/credentials
 
-Details pleae ref to [AWS CLI](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
+Details please ref to [AWS CLI](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
 
 Boiler plating
 -----
