@@ -168,7 +168,8 @@ You can create standard lambda function and or use a bridging lambda function pr
    To config, add below entry in `Lambda`:
    
          S3Bucket: lambda.bucket.name        # mandatory
-         Type: django                        # Other types
+         Type: django                        # mandatory Other types
+         CognitoUserPoolId: user_pool_id     # Optional, your AWS user pool authorizer id
          DisableApiGateway: False            # Optional, if set to True, the apigateway for Django app won't be created
          ApiBasePath: /path                  # Mandatory if apigateway to be created. Base resource path for django app
          FunctionName: superman              # mandatory
@@ -208,7 +209,9 @@ AWS API Gateway
     **lmdo.yml configuration**
     
         ApiGatewayName: Your unique Apigateway name
-    
+        ApiVarMapToFile:                    #Optional for replacement of variable in your swagger with another file (usually reusable template)
+            $mappingKey: file_name               
+   
     **NOTE:** Please name your version as `$version` and your title as `$title` so that Lmdo can update it during creation using the value of `ApiGatewayName` in your lmdo.yml.
 
 2. WSGI(Django) API
@@ -249,7 +252,7 @@ One step deployment
 -----
 Alternatively, you can deploy and delete your entire service by running
     
-    $ lmdo deloy 
+    $ lmdo deploy 
         or
     $ lmdo destroy
 

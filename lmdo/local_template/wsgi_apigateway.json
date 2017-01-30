@@ -17,6 +17,7 @@
                 "produces": [
                     "application/json"
                 ],
+                "security": [$authorizer],
                 "responses": {
                     "200": {
                         "description": "200 response",
@@ -59,6 +60,7 @@
                 "produces": [
                     "application/json"
                 ],
+                "security": [$authorizer],
                 "responses": {
                     "200": {
                         "description": "200 response",
@@ -73,7 +75,7 @@
                             "statusCode": "200"
                         }
                     },
-                    "uri": "arn:aws:apigateway:$apiRegion:lambda:path/2015-03-31/functions/arn:aws:lambda:$functionRegion:105594462793:function:$functionName/invocations",
+                    "uri": "arn:aws:apigateway:$apiRegion:lambda:path/2015-03-31/functions/arn:aws:lambda:$functionRegion:$accountId:function:$functionName/invocations",
                     "passthroughBehavior": "when_no_match",
                     "httpMethod": "POST",
                     "contentHandling": "CONVERT_TO_TEXT",
@@ -148,7 +150,7 @@
                             "statusCode": "200"
                         }
                     },
-                    "uri": "arn:aws:apigateway:$apiRegion:lambda:path/2015-03-31/functions/arn:aws:lambda:$functionRegion:105594462793:function:$functionName/invocations",
+                    "uri": "arn:aws:apigateway:$apiRegion:lambda:path/2015-03-31/functions/arn:aws:lambda:$functionRegion:$accountId:function:$functionName/invocations",
                     "passthroughBehavior": "when_no_match",
                     "httpMethod": "POST",
                     "cacheKeyParameters": [
@@ -164,6 +166,21 @@
     "definitions": {
         "Empty": {
             "type": "object"
+        }
+    },
+
+    "securityDefinitions": {
+        "CognitoUserPool": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "x-amazon-apigateway-authtype": "cognito_user_pools",
+            "x-amazon-apigateway-authorizer": {
+                "type": "cognito_user_pools",
+                "providerARNs": [
+                    "arn:aws:cognito-idp:$apiRegion:$accountId:userpool/$userPoolId"
+                ]
+            }
         }
     }
 }

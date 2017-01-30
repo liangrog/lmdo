@@ -151,7 +151,16 @@ class Apigateway(AWSBase):
                 "$version": str(datetime.datetime.utcnow())
             }
 
+            # Replace variable in swagger template with content in a file.
+            var_to_file = self._config.get('ApiVarMapToFile')
+            if (var_to_file):
+                for var_name, file_name in var_to_file.items():
+                    with open('{}/{}'.format(SWAGGER_DIR, file_name), 'r') as ofile:
+                        file_content = ofile.read()
+                        to_replace[var_name] = file_content.replace('\n', '\\n').replace('"', '\\"')
+
             body = update_template(outfile.read(), to_replace)
+
             if not api:
                 return self.import_rest_api(body)
             else:
@@ -334,9 +343,17 @@ class Apigateway(AWSBase):
                 "$basePath": lm_func.get('ApiBasePath') or '/res',
                 "$apiRegion": self.get_region(),
                 "$functionRegion": self.get_region(),
+                "$accountId": self.get_account_id(),
                 "$functionName": function_name,
                 "$credentials": role['Role'].get('Arn')
             }
+
+            # Enable cognito user pool as authorizer
+            if lm_func.get('CognitoUserPoolId'):
+                to_replace["$userPoolId"] = lm_func.get('CognitoUserPoolId')
+                to_replace["$authorizer"] = '{"CognitoUserPool":[]}'
+            else:
+                to_replace["$authorizer"] = ''
 
             template_dir = get_template('wsgi_apigateway.json')
             if not template_dir:
