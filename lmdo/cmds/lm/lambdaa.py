@@ -1,14 +1,13 @@
 from __future__ import print_function
 import os
 import pip
-import site
 
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.s3.s3 import S3
 from lmdo.cmds.iam.iam import IAM
 from lmdo.oprint import Oprint
 from lmdo.config import TMP_DIR, LAMBDA_MEMORY_SIZE, LAMBDA_RUNTIME, LAMBDA_TIMEOUT, LAMBDA_EXCLUDE, PIP_VENDOR_FOLDER, PIP_REQUIREMENTS_FILE 
-from lmdo.utils import zipper
+from lmdo.utils import zipper, get_sitepackage_dirs
 from lmdo.spinner import spinner
 
 class Lambda(AWSBase):
@@ -230,7 +229,7 @@ class Lambda(AWSBase):
             pass
 
     def get_wsgi_dir(self):
-        pkg_dir = site.getsitepackages()
+        pkg_dir = get_sitepackage_dirs()
         for pd in pkg_dir:
             if os.path.isdir(pd + '/lmdo'):
                 wsgi_dir = pd + '/lmdo/wsgi'
