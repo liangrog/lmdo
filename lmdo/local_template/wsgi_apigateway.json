@@ -170,7 +170,7 @@
     },
 
     "securityDefinitions": {
-        "CognitoUserPool": {
+        "$CognitoUserPool": {
             "type": "apiKey",
             "name": "Authorization",
             "in": "header",
