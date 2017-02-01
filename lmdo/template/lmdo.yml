@@ -1,54 +1,65 @@
-#********************************
+# ******************************
 # @mandatory
 # @description: microservice name
-#********************************
+# *******************************
 Service: superman
 
-#***********************************
+# **********************************
 # @mandatory
 # @description: microservice creator
-#***********************************
+# **********************************
 User: default
 
-#****************************************************************
+# ***************************************************************
 # @mandatory
 # @description: AWS credential profile name, default to 'default'
-#****************************************************************
+# ***************************************************************
 Profile: default
 # Or
 # AWSKey: aws_access_key_id
 # AWSSecret: aws_secret_access_key
 
-#************************************
+# ***********************************
 # @mandatory
 # @description: stage of your service
-#************************************
+# ***********************************
 Stage: dev
 
-#****************************************************************
+# ***************************************************************
 # @optional
 # @description: cloudformation files to upload to. If not set
 # will load from local but won't work for nested stack templates
-#****************************************************************
-#CloudformationBucket: cloudformation.bucket.name
+# ***************************************************************
+# CloudformationBucket: cloudformation.bucket.name
 
-#*****************************************************
+# ***********************************************************************
+# @optional
+# If enabled, it will be used otherwise lmdo
+# will create a stack name with format  {User}-{Stage}-{Service}-service
+# ***********************************************************************
+# StackName: blah
+
+
+# ****************************************************
 # @optional
 # @description: static asset to deploy to given bucket
-#*****************************************************
+# ****************************************************
 # AssetS3Bucket: static.bucket.name
 # AssetDirectory: build
 
-#***********************************************************************
+# **********************************************************************
 # @mandatory if having APIGateway
 # @description: let lmdo know what the api name will be if using swagger
-#***********************************************************************
+# **********************************************************************
 # ApiGatewayName: api-title
+# ApiVarMapToFile:  #optional. replacement of string in swagger to template content
+#     $apiIntegrationRequestTemple: api_integration_request_template.json
 
-#*****************************************
+
+# ****************************************
 # @optional
 # @description: lambda functions to deploy
-#*****************************************
+# ****************************************
 #Lambda:
     #*** Standard lambda function
 #    - S3Bucket: lambda.bucket.name        # mandatory, the bucket to load your package to
@@ -79,6 +90,7 @@ Stage: dev
 #      DisableApiGateway: False            # Optional, if set to True, the apigateway for Django app won't be created
 #      ApiBasePath: /path                  # Mandatory if apigateway to be created. Base resource path for django app
 #      FunctionName: superman              # mandatory
+#      CognitoUserPoolId: ap-southeast-2_blahblah    #Optional, AWS congnito user pool authorizer
 #      MemorySize: 128                     # optional, default to 128
 #      RoleArn: rolearn                    # Either provide a role arn or assume role policy doc, the RolePolicyDocument takes preccedent
 #      RolePolicyDocument: path/to/policy  # Assume role Policy
