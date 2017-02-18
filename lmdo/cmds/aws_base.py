@@ -66,6 +66,10 @@ class AWSBase(object):
         """Fetch role arn"""
         return 'arn:aws:iam::{}:role/{}'.format(self.get_account_id(), role_name)
 
+    def get_role_name_by_arn(self, role_arn):
+        """Fetch role name"""
+        return role_arn.split('/').pop()
+
     def get_lambda_arn(self, func_name):
         """Return invokeable function url"""
         return 'arn:aws:lambda:{}:{}:function:{}'.format(self.get_region(), self.get_account_id(), func_name)

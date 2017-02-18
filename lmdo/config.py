@@ -68,39 +68,10 @@ CONFIG_MANDATORY_KEYS= [
     'Profile'
 ]
     
-
-
-"""
-lmdo.yml:
-
-User: user
-Stage: dev
-Service: lmdo
-Profile: default
-
-CloudformationBucket: cloudformation.bucket.name
-
-StaticS3Bucket: static.bucket.name
-StaticDirectory: ./build
-
-Lambda:
-    - EnvironmentVariables:
-          MYSQL_HOST: localhost
-          MYSQL_PASSWORD: secret
-          MYSQL_USERNAME: admin
-          MYSQL_DATABASE: lmdo
-      S3Bucket: lambda.bucket.name
-      FunctionName: superman
-      Handler: handler.fly
-      MemorySize: 128
-      Role:
-      RolePolicyDocument:
-      Runtime:
-      Timeout:
-      VpcConfig: 
-          SecurityGroupIds:
-          SubnetIds:
-       
-"""
-
+# Template
+IAM_ROLE_APIGATEWAY_LAMBDA = 'apigateway_lambda_role.json'
+IAM_POLICY_APIGATEWAY_LAMBDA_INVOKE = 'iam_policy_lambda_invoke.json'
+IAM_ROLE_LAMBDA_ASSUME = 'default_lambda_assume_role.json'
+IAM_POLICY_LAMBDA_DEFAULT = 'default_lambda_role_policy.json'
+APIGATEWAY_SWAGGER_WSGI = 'wsgi_apigateway.json'
 

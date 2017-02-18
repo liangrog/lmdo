@@ -8,7 +8,7 @@ from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.lm.lambdaa import Lambda
 from lmdo.cmds.iam.iam import IAM
 from lmdo.oprint import Oprint
-from lmdo.config import SWAGGER_DIR, SWAGGER_FILE, PROJECT_CONFIG_FILE
+from lmdo.config import SWAGGER_DIR, SWAGGER_FILE, PROJECT_CONFIG_FILE, APIGATEWAY_SWAGGER_WSGI
 from lmdo.utils import update_template, get_template
 
 
@@ -30,8 +30,9 @@ class Apigateway(AWSBase):
             sys.exit(0)
 
         swagger_api = self.create_api_by_swagger()
-        self.create_wsgi_api()
-        self.create_deployment(swagger_api.get('id'), self._config.get('Stage'), swagger_api.get('name'))
+        swagger_api = self.create_wsgi_api()
+        if swagger_api and swagger_api is dict:
+            self.create_deployment(swagger_api.get('id'), self._config.get('Stage'), swagger_api.get('name'))
 
     def update(self):
         self.create()
@@ -93,14 +94,14 @@ class Apigateway(AWSBase):
         """Delete rest api by name"""
         api = self.if_api_exist_by_name(api_name)
         if not api:
-            Oprint.err('API {} doesn\'t exist, nothing to delete'.format(api_name), 'apigateway')
-
-        try:
-            Oprint.info('Deleting rest API {}'.format(api_name), 'apigateway')
-            response = self._client.delete_rest_api(restApiId=api.get('id'))
-            Oprint.info('Complete deleting rest API {}'.format(api_name), 'apigateway')
-        except Exception as e:
-            Oprint.err(e, 'apigateway')
+            Oprint.warn('API {} doesn\'t exist, nothing to delete'.format(api_name), 'apigateway')
+        else: 
+            try:
+                Oprint.info('Deleting rest API {}'.format(api_name), 'apigateway')
+                response = self._client.delete_rest_api(restApiId=api.get('id'))
+                Oprint.info('Complete deleting rest API {}'.format(api_name), 'apigateway')
+            except Exception as e:
+                Oprint.err(e, 'apigateway')
 
         return True
 
@@ -356,9 +357,9 @@ class Apigateway(AWSBase):
             else:
                 to_replace["$authorizer"] = ''
 
-            template_dir = get_template('wsgi_apigateway.json')
+            template_dir = get_template(APIGATEWAY_SWAGGER_WSGI)
             if not template_dir:
-                Oprint.err('Template wsgi_apigateway.json for creating wsgi APIGateway hasn\'t been installed or missing', 'apigateway')
+                Oprint.err('Template {} for creating wsgi APIGateway hasn\'t been installed or missing'.format(APIGATEWAY_SWAGGER_WSGI), 'apigateway')
 
             with open(template_dir, 'r') as outfile:
                 body = update_template(outfile.read(), to_replace)
@@ -368,7 +369,7 @@ class Apigateway(AWSBase):
                     # Always overwrite for update
                     self.put_rest_api(swagger_api.get('id'), body, 'merge')
 
-        return True
+        return swagger_api
 
     def get_apigateway_lambda_role_name(self, function_name):
         return "APIGateway-{}".format(function_name)
@@ -379,6 +380,6 @@ class Apigateway(AWSBase):
         for lm_func in self._config.get('Lambda'):
             if lm_func.get('Type') == 'wsgi' and not lm_func.get('DisableApiGateway'):
                 function_name = Lambda.fetch_function_name(self.get_name_id(), lm_func.get('FunctionName'))
-                role = iam.delete_apigateway_lambda_role(self.get_apigateway_lambda_role_name(function_name))
+                iam.delete_role_and_associated_policies(self.get_apigateway_lambda_role_name(function_name))
 
 

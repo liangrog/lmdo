@@ -67,8 +67,13 @@ Stage: dev
 #      FunctionName: superman              # mandatory, the actual function name in AWS will have the format of <user>-<stage>-<service-name>-<FunctionName>
 #      Handler: handler.fly                # mandatory, define the handler function
 #      MemorySize: 128                     # optional, default to 128
-#      RoleArn: rolearn                    # Either provide a role arn or assume role policy doc, the RolePolicyDocument takes preccedent
-#      RolePolicyDocument: path/to/policy  # Assume role Policy
+#      RoleArn: rolearn                    # Provide a role arn or assume role policy doc. If neither provided,
+#      RolePolicy:                         # the default will have apigateway role and allow logging    
+#        AssumeRoles:                      # optional
+#          - apigateway.amazonaws.com      # optional Assume rols
+#        PolicyDocument: policy.json       # optional path/to/policy role Policy
+#        ManagedPolicyArns:                # optional manage policy arns
+#          - arn:aws:blah
 #      Runtime: python2.7                  # optional default to 'python2.7'
 #      Timeout: 180                        # optional default to 180
 #      VpcConfig:                          # optional, Lambda VPC configuration
@@ -92,8 +97,13 @@ Stage: dev
 #      FunctionName: superman              # mandatory
 #      CognitoUserPoolId: ap-southeast-2_blahblah    #Optional, AWS congnito user pool authorizer
 #      MemorySize: 128                     # optional, default to 128
-#      RoleArn: rolearn                    # Either provide a role arn or assume role policy doc, the RolePolicyDocument takes preccedent
-#      RolePolicyDocument: path/to/policy  # Assume role Policy
+#      RoleArn: rolearn                    # Provide a role arn or assume role policy doc. If neither provided,
+#      RolePolicy:                         # optional the default will have apigateway role and allow logging    
+#        AssumeRoles:                      # optional
+#          - apigateway.amazonaws.com      # optional Assume rols
+#        PolicyDocument: policy.json       # optional path/to/policy  role Policy
+#        ManagedPolicyArns:                # optional manage policy arns
+#          - arn:aws:blah
 #      Runtime: python2.7                  # optional default to 'python2.7'
 #      Timeout: 180                        # optional default to 180
 #      VpcConfig:                          # optional

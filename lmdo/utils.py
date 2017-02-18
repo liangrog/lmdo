@@ -5,6 +5,9 @@ import fnmatch
 import zipfile
 import re
 import site
+import time
+from functools import wraps
+from botocore.exceptions import ClientError
 
 from lmdo.oprint import Oprint
 
@@ -155,3 +158,36 @@ def get_sitepackage_dirs():
     else:
         # workaround for https://github.com/pypa/virtualenv/issues/355
         return sys.path
+
+def class_function_retry(aws_retry_condition=False, tries=3, delay=1, backoff=2):
+    def retry(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            c_tries = tries
+            c_delay = delay
+            c_backoff = backoff
+            while c_tries > 1:
+                try:
+                    return func(self, *args, **kwargs)
+                except ClientError as ce:
+                    Oprint.warn(str(ce.response['Error']['Message']), 'aws')
+                    if aws_retry_condition:
+                        code = ce.response['Error']['Code']
+                        # If it's not in the retry condition set tries to 1 so to stop the while loop
+                        if (type(aws_retry_condition) is str and aws_retry_condition != code) or \
+                            (type(aws_retry_condition) is list and code not in aws_retry_condition):
+                                c_tries = 1
+                except Exception as e:
+                    Oprint.warn(e, 'lmdo')
+
+                c_tries -= 1
+                if c_tries > 1:
+                    Oprint.warn('Retrying in {} seconds'.format(c_delay), 'lmdo')
+                    time.sleep(c_delay)
+                    
+                c_delay *= c_backoff
+
+        return wrapper
+    return retry
+
+ 

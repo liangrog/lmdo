@@ -1,0 +1,26 @@
+{
+    "Version":"2012-10-17",
+    "Statement":[
+        {
+            "Effect":"Allow",
+            "Action":[
+                "lambda:InvokeFunction",
+                "lambda:AddPermission",
+                "lambda:RemovePermission"
+            ],
+            "Resource": "arn:aws:lambda:$region:$accountId:function:*"
+        },
+        {
+            "Effect":"Allow",
+            "Action":[
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "ec2:DescribeNetworkInterfaces", 
+                "ec2:CreateNetworkInterface",
+                "ec2:DeleteNetworkInterface"
+            ],
+            "Resource": "*"          
+        }$more
+    ]
+}
