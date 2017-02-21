@@ -1,15 +1,10 @@
 import os
 import sys
-
-file_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(file_path, "./"))
-sys.path.append(os.path.join(file_path, "./vendored"))
-
-
 import json
 import importlib
 import datetime
 import logging
+import traceback
 
 from wsgi_apps.response.apigateway_response import ApigatewayResponse
 from wsgi_apps.apps.django_app import get_django
@@ -43,7 +38,8 @@ class LambdaHandler(object):
 
             return response
         except Exception as e:
-            exc_info = sys.exc_info()
+            if self._settings.DEBUG:
+                traceback.print_exc(file=sys.stdout)
 
             # Return this unspecified exception as a 500, using template that API Gateway expects.
             content = {}

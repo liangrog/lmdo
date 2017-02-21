@@ -1,5 +1,7 @@
 from __future__ import print_function
+
 import os
+
 import jinja2
 import yaml
 
@@ -13,19 +15,8 @@ class LmdoConfig(ConfigParserInterface):
     """lmdo project configuration Loader"""
     
     def __init__(self):
-        self._TMP_DIR = '/tmp/lmdo/'
-        self.init_TMP_DIR()
-
         self.template_to_config()
         self.load_config()
-
-    @property
-    def TMP_DIR(self):
-        return self._TMP_DIR
-
-    def init_TMP_DIR(self):
-        """Initialise temporary directory"""
-        return mkdir(self._TMP_DIR)
 
     def template_to_config(self):
         """translate jinja2 tempate into lmdo project config file"""
@@ -94,4 +85,4 @@ class LmdoConfig(ConfigParserInterface):
             if key not in self._config:
                 Oprint.err('{} is missing from config file'.format(key), 'lmdo')
 
-
+lmdo_config = LmdoConfig()

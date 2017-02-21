@@ -83,6 +83,7 @@ class Logs(AWSBase):
 
     def print_to_console(self, event):
         """Out put logs"""
+        print('log entry --------------------------------------------')
         print(event['message'])
         #Oprint.warn(event['message'], 'logs')
 

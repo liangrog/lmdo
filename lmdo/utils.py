@@ -6,7 +6,9 @@ import zipfile
 import re
 import site
 import time
+import shutil
 from functools import wraps
+
 from botocore.exceptions import ClientError
 
 from lmdo.oprint import Oprint
@@ -120,7 +122,58 @@ def find_files_by_name_only(path, file_name, allowed_postfix=None):
         found_files = [f for f in found_files if f.split('.').pop() in allowed_postfix]
         
     return found_files
-        
+ 
+def copytree(src, dst, symlinks=False, ignore=None):
+    """Copy content to new destination"""
+    names = os.listdir(src)
+
+    if ignore is not None:
+        ignored_names = ignore(src, names)
+    else:
+        ignored_names = set()
+
+    errors = []
+    for name in names:
+        if name.endswith('.pyc'):
+            continue
+
+        if name in ignored_names:
+            continue
+
+        srcname = os.path.join(src, name)
+        dstname = os.path.join(dst, name)
+
+        # Delete if exists
+        if os.path.exists(dstname):
+            try:
+                shutil.rmtree(dstname)
+            except Exception as e:
+                os.unlink(dstname)
+
+        try:
+            if symlinks and os.path.islink(srcname):
+                linkto = os.readlink(srcname)
+                os.symlink(linkto, dstname)
+            elif os.path.isdir(srcname):
+                shutil.copytree(srcname, dstname, symlinks, ignore)
+            else:
+                shutil.copy2(srcname, dstname)
+        except (IOError, os.error) as why:
+            errors.append((srcname, dstname, str(why)))
+        # catch the Error from the recursive copytree so that we can
+        # continue with other files
+        except Exception as err:
+            errors.extend(str(err))
+    try:
+        shutil.copystat(src, dst)
+    except WindowsError:
+        # can't copy file access times on Windows
+        pass
+    except OSError as why:
+        errors.extend((src, dst, str(why)))
+    if errors:
+        raise Exception(errors)
+       
 def sys_pause(message, match):
     """pause program to catch user input"""
     name = raw_input(message)

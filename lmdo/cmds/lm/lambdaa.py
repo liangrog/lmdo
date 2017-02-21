@@ -3,6 +3,7 @@ import os
 import pip
 import tarfile
 import shutil
+import tempfile
 
 from lambda_packages import lambda_packages
 
@@ -10,8 +11,8 @@ from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.s3.s3 import S3
 from lmdo.cmds.iam.iam import IAM
 from lmdo.oprint import Oprint
-from lmdo.config import TMP_DIR, LAMBDA_MEMORY_SIZE, LAMBDA_RUNTIME, LAMBDA_TIMEOUT, LAMBDA_EXCLUDE, PIP_VENDOR_FOLDER, PIP_REQUIREMENTS_FILE 
-from lmdo.utils import zipper, get_sitepackage_dirs, class_function_retry
+from lmdo.config import LAMBDA_MEMORY_SIZE, LAMBDA_RUNTIME, LAMBDA_TIMEOUT, LAMBDA_EXCLUDE, PIP_VENDOR_FOLDER, PIP_REQUIREMENTS_FILE 
+from lmdo.utils import zipper, get_sitepackage_dirs, class_function_retry, copytree
 from lmdo.spinner import spinner
 
 class Lambda(AWSBase):
@@ -37,11 +38,6 @@ class Lambda(AWSBase):
         return self._iam
 
     def create(self):
-        """Create/Update Lambda functions"""
-        #self.pip_install()
-        #if self.if_wsgi_exist():
-        #    self.pip_wsgi_install()
-
         self.process()
 
     def delete(self):
@@ -198,12 +194,29 @@ class Lambda(AWSBase):
             #Oprint.err(e, 'lambda')
 
         return False
+    
+    def add_init_file_to_root(self, tmp_path):
+        """Make sure we have a __init__.py"""
+        init_file = os.path.join(tmp_path, '__init__.py')
+        if not os.path.isfile(init_file):
+            open(init_file, 'a').close()
 
-    def zip_function(self, func_name, func_type='default'):
+    def get_zipped_package(self, func_name, func_type='default'):
         """Packaging lambda"""
-        target = TMP_DIR + self.get_zip_name(func_name)
-        if zipper('./', target, LAMBDA_EXCLUDE) \
+        # Copy project file to temp
+        lambda_temp_dir = tempfile.gettempdir()
+        copytree(os.getcwd(), lambda_temp_dir)
+        self.add_init_file_to_root(lambda_temp_dir)
+
+        # Installing packages
+        self.pip_install(lambda_temp_dir)
+        if self.if_wsgi_exist():
+            self.pip_wsgi_install(lambda_temp_dir)
+
+        target = '{}/{}'.format(tempfile.gettempdir(), self.get_zip_name(func_name))
+        if zipper(lambda_temp_dir, target, LAMBDA_EXCLUDE) \
             and (not func_type or func_type == 'default'):
+            shutil.rmtree(lambda_temp_dir)
             return target
 
         # zip lmdo wsgi function
@@ -217,22 +230,15 @@ class Lambda(AWSBase):
             replace_path = [
                 {
                    'from_path': '/usr/lib/python2.7/site-packages/lmdo/wsgi',
-                   'to_path': '.'
+                   'to_path': lambda_temp_dir
                 }
             ]
 
             if zipper(self.get_wsgi_dir(), target, LAMBDA_EXCLUDE, False, replace_path):
+                shutil.rmtree(lambda_temp_dir)
                 return target
 
         return False
-
-    def remove_zip(self, func_name):
-        """Remove lambda package from local"""
-        try:
-            target = TMP_DIR + self.get_zip_name(func_name)
-            os.remove(target)
-        except OSError:
-            pass
 
     def get_wsgi_dir(self):
         pkg_dir = get_sitepackage_dirs()
@@ -252,7 +258,7 @@ class Lambda(AWSBase):
                 break
         return exist
 
-    def process(self):
+    def process(self, package_only=False):
         """Prepare function before creation/update"""
         # Dont run if doesn't exist
         if not self._config.get('Lambda'):
@@ -289,12 +295,14 @@ class Lambda(AWSBase):
             if lm.get('EnvironmentVariables'):
                 params['Environment'] = {'Variables': lm.get('EnvironmentVariables')}
 
-            # Clean up before create a new one
-            self.remove_zip(lm.get('FunctionName'))
-            file_path = self.zip_function(lm.get('FunctionName'), lm.get('Type'))
+            zip_package = self.get_zipped_package(lm.get('FunctionName'), lm.get('Type'))
             
-            if file_path:
-                if self._s3.upload_file(lm.get('S3Bucket'), file_path, self.get_zip_name(lm.get('FunctionName'))):
+            if zip_package:
+                if package_only:
+                    Oprint.info('Generated zipped lambda package {}'.format(zip_package), 'lambda')
+                    continue
+
+                if self._s3.upload_file(lm.get('S3Bucket'), zip_package, self.get_zip_name(lm.get('FunctionName'))):
                     # If function exists
                     info = self.get_function(self.get_function_name(lm.get('FunctionName')))
                     if info:
@@ -304,8 +312,9 @@ class Lambda(AWSBase):
                         role_arn = lm.get('RoleArn') or self.create_role(self.get_role_name(lm.get('FunctionName')), lm.get('RolePolicy'))
                         params['Role'] = role_arn
                         self.create_function(**params)
+
                 # Clean up
-                self.remove_zip(lm.get('FunctionName'))
+                shutil.rmtree(zip_package)
 
     def create_role(self, role_name, role_policy):
         """Create role for lambda from policy doc"""
@@ -318,10 +327,10 @@ class Lambda(AWSBase):
         """Delete role for lambda"""
         self._iam.delete_lambda_role(self.get_role_name_by_arn(role_arn))
 
-    def pip_install(self):
+    def pip_install(self, tmp_path):
         """Install requirement"""
-        if os.path.isfile('./{}'.format(os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE))):
-            with open('./{}'.format(os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE))) as f:
+        if os.path.isfile('{}/{}'.format(tmp_path, os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE))):
+            with open('{}/{}'.format(tmp_path, os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE))) as f:
                 requirements = f.read().splitlines()
 
             try:
@@ -332,10 +341,11 @@ class Lambda(AWSBase):
                         tar = tarfile.open(detail['path'], mode="r:gz")
                         for member in tar.getmembers():
                             if member.isdir():
-                                shutil.rmtree(os.path.join(os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER), member.name), ignore_errors=True)
+                                shutil.rmtree(tmp_path, member.name), ignore_errors=True)
                                 continue
 
-                            tar.extract(member, os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER))
+                            #tar.extract(member, os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER))
+                            tar.extract(member, tmp_path)
                         
                         Oprint.info('Complete installing Amazon Linux AMI bianry package{}'.format(name), 'pip')
                         requirements.remove(name.lower())
@@ -346,7 +356,7 @@ class Lambda(AWSBase):
 
                 spinner.start()
                 #pip.main(['install', '-t', os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER), '-r', os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE), '&>/dev/null'])
-                os.system('pip install --upgrade -t {} {} &>/dev/null'.format(os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER), requirements))
+                os.system('pip install --upgrade -t {} {} &>/dev/null'.format(tmp_path, requirements))
                 spinner.stop()
 
                 Oprint.info('Python package installation complete', 'pip')
@@ -359,13 +369,13 @@ class Lambda(AWSBase):
         else:
             Oprint.warn('{} could not be found, no dependencies will be installed'.format(os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE)), 'pip')
 
-    def pip_wsgi_install(self):
+    def pip_wsgi_install(self, tmp_path):
         """Install requirement for wsgi"""
         try:
             Oprint.info('Installing python package dependancies for wsgi', 'pip')
 
             spinner.start()
-            os.system('pip install werkzeug base58 wsgi-request-logger --upgrade -t {} &>/dev/null'.format(os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER)))
+            os.system('pip install werkzeug base58 wsgi-request-logger --upgrade -t {} &>/dev/null'.format(tmp_path))
             spinner.stop()
 
             Oprint.info('Wsgi python package installation complete', 'pip')

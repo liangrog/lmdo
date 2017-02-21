@@ -1,13 +1,13 @@
 import boto3
 
-from lmdo.lmdo_config import LmdoConfig
+from lmdo.lmdo_config import lmdo_config
 
 
 class AWSBase(object):
     """base AWS delegator class"""
 
     def __init__(self):
-        self._config = LmdoConfig()
+        self._config = lmdo_config
 
     @classmethod
     def init_with_parser(cls, config_parser):
@@ -56,7 +56,7 @@ class AWSBase(object):
         return self.get_session().resource(resource_type)
 
     def get_name_id(self):
-        return "{}-{}-{}".format(self._config.get('User'), self._config.get('Stage'), self._config.get('Service'))
+        return "{}-{}-{}".format(self._config.get('User'), self._config.get('Stage'), self._config.get('Service')).lower()
 
     def get_policy_arn(self, policy_name):
         """Fetch policy arn"""

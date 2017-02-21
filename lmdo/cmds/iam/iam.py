@@ -3,7 +3,7 @@ from __future__ import print_function
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.oprint import Oprint
 from lmdo.utils import get_template, update_template 
-from lmdo.config import IAM_ROLE_APIGATEWAY_LAMBDA, IAM_POLICY_APIGATEWAY_LAMBDA_INVOKE, IAM_ROLE_LAMBDA_ASSUME, IAM_POLICY_LAMBDA_DEFAULT
+from lmdo.config import IAM_ROLE_APIGATEWAY_LAMBDA, IAM_POLICY_APIGATEWAY_LAMBDA_INVOKE, IAM_ROLE_LAMBDA_ASSUME, IAM_POLICY_LAMBDA_DEFAULT, LAMBDA_DEFAULT_ASSUME_ROLES 
 
 class IAM(AWSBase):
     """create/update IAM properties"""
@@ -151,15 +151,16 @@ class IAM(AWSBase):
         """
         try:
             Oprint.info('Start creating role {} and policie for Lambda'.format(role_name), 'iam')
+            
+            # Default assum roles
+            assume_roles = '"{}"'.format('","'.join(LAMBDA_DEFAULT_ASSUME_ROLES))
 
             if role_policy and role_policy is dict and role_policy.get('AssumeRoles') and len(roles.get('AssumeRoles')) > 0:
                 roles = role_policy.get('AssumeRoles')
                 if len(roles) == 1:
-                    assume_roles = '"{}"'.format(roles[0])
+                    assume_roles += '"{}"'.format(roles[0])
                 else:
-                    assume_roles = '"{}"'.format('","'.join(roles))
-            else:
-                assume_roles = '"apigateway.amazonaws.com", "lambda.amazonaws.com", "events.amazonaws.com", "ec2.amazonaws.com"' 
+                    assume_roles += '"{}"'.format('","'.join(roles))
 
             assume_template = get_template(IAM_ROLE_LAMBDA_ASSUME)
             

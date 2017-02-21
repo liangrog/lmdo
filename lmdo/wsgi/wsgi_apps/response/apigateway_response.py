@@ -21,11 +21,11 @@ class ApigatewayResponse(ResponseInterface):
             for key, value in from_data.headers:
                 result['headers'][key] = value
         
-        settings = importlib.import_module(os.environ["DJANGO_SETTINGS_MODULE"])
-        if settings.CORS_ENABLED:
-            result['headers']['Access-Control-Allow-Headers'] = 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-requested-with'
-            result['headers']['Access-Control-Allow-Methods'] = 'DELETE,GET,OPTIONS,PUT,POST'
-            result['headers']['Access-Control-Allow-Origin'] = '*'
+            settings = importlib.import_module(os.environ["DJANGO_SETTINGS_MODULE"])
+            if settings.CORS_ENABLED:
+                result['headers']['Access-Control-Allow-Headers'] = 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-requested-with'
+                result['headers']['Access-Control-Allow-Methods'] = 'DELETE,GET,OPTIONS,PUT,POST'
+                result['headers']['Access-Control-Allow-Origin'] = '*'
 
         return result
 
