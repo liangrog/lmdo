@@ -160,6 +160,7 @@ You can create standard lambda function and or use a bridging lambda function pr
               MYSQL_DATABASE: lmdo
     
     Note:
+
         1. `PolicyDocument` format:
 
             ```
