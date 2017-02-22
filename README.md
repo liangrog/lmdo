@@ -161,33 +161,33 @@ You can create standard lambda function and or use a bridging lambda function pr
     
     Note:
 
-        1. `PolicyDocument` format:
+    1. `PolicyDocument` format:
 
-            ```
-            {
-                "Effect":"Allow",
-                "Action":[
-                    "lambda:InvokeFunction",
-                    "lambda:AddPermission",
-                    "lambda:RemovePermission"
-                ],
-                "Resource": "arn:aws:lambda:ap-southeast-2:105594462793:function:*"
-            },
-            {
-                "Effect":"Allow",
-                "Action":[
-                    "sns:*"
-                ],
-                "Resource": "arn:aws:sns:*:*:*"
-            } 
-            ```
+        ```
+        {
+            "Effect":"Allow",
+            "Action":[
+                "lambda:InvokeFunction",
+                "lambda:AddPermission",
+                "lambda:RemovePermission"
+            ],
+            "Resource": "arn:aws:lambda:ap-southeast-2:105594462793:function:*"
+        },
+        {
+            "Effect":"Allow",
+            "Action":[
+                "sns:*"
+            ],
+            "Resource": "arn:aws:sns:*:*:*"
+        } 
+        ```
 
-        2. If the function uses Django ORM, you will need to append below to the beginning of your lambda function file and add `DJANGO_SETTINGS_MODULE` to the `EnvironmentVariables`.
-            
-            ```
-            import django
-            django.setup()
-            ```
+    2. If the function uses Django ORM, you will need to append below to the beginning of your lambda function file and add `DJANGO_SETTINGS_MODULE` to the `EnvironmentVariables`.
+        
+        ```
+        import django
+        django.setup()
+        ```
 
 2. Django app
 
