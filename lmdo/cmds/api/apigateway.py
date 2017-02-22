@@ -323,8 +323,8 @@ class Apigateway(AWSBase):
         swagger_api = False
         # If there is already an exsiting swagger api template,
         # fetch it so we won't  duplicate it 
-        if os.path.isfile(self.get_swagger_template()) and self.get_apigateway_name():
-            swagger_api = self.if_api_exist_by_name(self.get_apigateway_name())
+        #if os.path.isfile(self.get_swagger_template()) and self.get_apigateway_name():
+        swagger_api = self.if_api_exist_by_name(self.get_apigateway_name())
         
         iam = IAM()
 
@@ -355,6 +355,7 @@ class Apigateway(AWSBase):
                 to_replace['$CognitoUserPool'] = 'CognitoUserPool-{}'.format(lm_func.get('FunctionName'))
                 to_replace["$authorizer"] = '{"' + str(to_replace['$CognitoUserPool'])+'":[]}'
             else:
+                to_replace['$CognitoUserPool'] = 'CognitoUserPool-{}'.format(lm_func.get('FunctionName'))
                 to_replace["$authorizer"] = ''
 
             template_dir = get_template(APIGATEWAY_SWAGGER_WSGI)
