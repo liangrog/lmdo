@@ -139,7 +139,7 @@ def copytree(src, dst, symlinks=False, ignore=None):
 
         if name in ignored_names:
             continue
-
+        
         srcname = os.path.join(src, name)
         dstname = os.path.join(dst, name)
 
@@ -166,9 +166,9 @@ def copytree(src, dst, symlinks=False, ignore=None):
             errors.extend(str(err))
     try:
         shutil.copystat(src, dst)
-    except WindowsError:
+    #except WindowsError:
         # can't copy file access times on Windows
-        pass
+    #    pass
     except OSError as why:
         errors.extend((src, dst, str(why)))
     if errors:

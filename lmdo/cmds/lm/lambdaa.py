@@ -204,8 +204,8 @@ class Lambda(AWSBase):
     def get_zipped_package(self, func_name, func_type='default'):
         """Packaging lambda"""
         # Copy project file to temp
-        lambda_temp_dir = tempfile.gettempdir()
-        copytree(os.getcwd(), lambda_temp_dir)
+        lambda_temp_dir = tempfile.mkdtemp()
+        copytree(os.getcwd(), lambda_temp_dir, ignore=shutil.ignore_patterns('*.git*'))
         self.add_init_file_to_root(lambda_temp_dir)
 
         # Installing packages
@@ -213,11 +213,18 @@ class Lambda(AWSBase):
         if self.if_wsgi_exist():
             self.pip_wsgi_install(lambda_temp_dir)
 
-        target = '{}/{}'.format(tempfile.gettempdir(), self.get_zip_name(func_name))
-        if zipper(lambda_temp_dir, target, LAMBDA_EXCLUDE) \
+        target_temp_dir = tempfile.mkdtemp()
+        target = '{}/{}'.format(target_temp_dir, self.get_zip_name(func_name))
+        replace_path = [
+            {
+               'from_path': lambda_temp_dir,
+               'to_path': '.'
+            }
+        ]
+        if zipper(lambda_temp_dir, target, LAMBDA_EXCLUDE, False, replace_path) \
             and (not func_type or func_type == 'default'):
             shutil.rmtree(lambda_temp_dir)
-            return target
+            return (target_temp_dir, target)
 
         # zip lmdo wsgi function
         if func_type == 'wsgi':
@@ -229,14 +236,14 @@ class Lambda(AWSBase):
 
             replace_path = [
                 {
-                   'from_path': '/usr/lib/python2.7/site-packages/lmdo/wsgi',
-                   'to_path': lambda_temp_dir
+                   'from_path': self.get_wsgi_dir(),
+                   'to_path': '.'
                 }
             ]
-
+            
             if zipper(self.get_wsgi_dir(), target, LAMBDA_EXCLUDE, False, replace_path):
                 shutil.rmtree(lambda_temp_dir)
-                return target
+                return (target_temp_dir, target)
 
         return False
 
@@ -295,7 +302,7 @@ class Lambda(AWSBase):
             if lm.get('EnvironmentVariables'):
                 params['Environment'] = {'Variables': lm.get('EnvironmentVariables')}
 
-            zip_package = self.get_zipped_package(lm.get('FunctionName'), lm.get('Type'))
+            tmp_path, zip_package = self.get_zipped_package(lm.get('FunctionName'), lm.get('Type'))
             
             if zip_package:
                 if package_only:
@@ -306,6 +313,7 @@ class Lambda(AWSBase):
                     # If function exists
                     info = self.get_function(self.get_function_name(lm.get('FunctionName')))
                     if info:
+                        lm.get('RoleArn') or self.create_role(self.get_role_name(lm.get('FunctionName')), lm.get('RolePolicy'))
                         self.update_function_code(info.get('Configuration').get('FunctionName'), lm.get('S3Bucket'), self.get_zip_name(lm.get('FunctionName')))
                     else:
                         # User configured role or create a new on based on policy document
@@ -314,7 +322,7 @@ class Lambda(AWSBase):
                         self.create_function(**params)
 
                 # Clean up
-                shutil.rmtree(zip_package)
+                shutil.rmtree(tmp_path)
 
     def create_role(self, role_name, role_policy):
         """Create role for lambda from policy doc"""
@@ -341,13 +349,13 @@ class Lambda(AWSBase):
                         tar = tarfile.open(detail['path'], mode="r:gz")
                         for member in tar.getmembers():
                             if member.isdir():
-                                shutil.rmtree(tmp_path, member.name), ignore_errors=True)
+                                shutil.rmtree(os.path.join(tmp_path, member.name), ignore_errors=True)
                                 continue
 
                             #tar.extract(member, os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER))
                             tar.extract(member, tmp_path)
                         
-                        Oprint.info('Complete installing Amazon Linux AMI bianry package{}'.format(name), 'pip')
+                        Oprint.info('Complete installing Amazon Linux AMI bianry package {}'.format(name), 'pip')
                         requirements.remove(name.lower())
 
                 requirements = ' '.join(requirements)

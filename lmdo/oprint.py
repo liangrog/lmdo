@@ -9,7 +9,7 @@ def lmdo_output(func):
 
     def __wrapper(cls, msg, src='lmdo', *args, **kwargs):
         if type(msg) is str:
-            msg = '==> [{}]: {}'.format(src, msg).lower()
+            msg = '==> [{}]: {}'.format(src, msg)
 
         output = func(cls, msg, *args, **kwargs)
         return output

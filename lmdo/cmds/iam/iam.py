@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.oprint import Oprint
@@ -152,18 +153,14 @@ class IAM(AWSBase):
         try:
             Oprint.info('Start creating role {} and policie for Lambda'.format(role_name), 'iam')
             
-            # Default assum roles
-            assume_roles = '"{}"'.format('","'.join(LAMBDA_DEFAULT_ASSUME_ROLES))
-
-            if role_policy and role_policy is dict and role_policy.get('AssumeRoles') and len(roles.get('AssumeRoles')) > 0:
-                roles = role_policy.get('AssumeRoles')
-                if len(roles) == 1:
-                    assume_roles += '"{}"'.format(roles[0])
-                else:
-                    assume_roles += '"{}"'.format('","'.join(roles))
+            if role_policy and role_policy.get('AssumeRoles'):
+                roles = LAMBDA_DEFAULT_ASSUME_ROLES + role_policy.get('AssumeRoles')
 
             assume_template = get_template(IAM_ROLE_LAMBDA_ASSUME)
-            
+ 
+            # Default assum roles
+            assume_roles = '"{}"'.format('","'.join(roles))
+           
             to_replace = {
                 "$services": assume_roles,
                 "$region": self.get_region(),
@@ -179,17 +176,16 @@ class IAM(AWSBase):
                 role = self._client.create_role(RoleName=role_name, AssumeRolePolicyDocument=policy_doc)
             else:
                 self._client.update_assume_role_policy(RoleName=role_name, PolicyDocument=policy_doc)
-
             
             # If inline policy document provided
             policy_template = get_template(IAM_POLICY_LAMBDA_DEFAULT)
 
-            if role_policy and role_policy is dict and role_policy.get('PolicyDocument'):
-                with open(role_policy.get('PolicyDocument'), 'r') as outfile:
+            if role_policy and role_policy.get('PolicyDocument'):
+                with open(os.path.join(os.getcwd(), role_policy.get('PolicyDocument')), 'r') as outfile:
                     to_replace['$more'] = ',' + outfile.read()
             else:
                 to_replace['$more'] = ''
-
+            
             with open(policy_template, 'r') as outfile:
                 policy_doc = update_template(outfile.read(), to_replace)
 

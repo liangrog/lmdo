@@ -76,6 +76,14 @@ If using session, you will need to create two files:
 
 Details pleae ref to [AWS CLI](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
 
+One step deployment
+-----
+Alternatively, you can deploy and delete your entire service by running
+    
+    $ lmdo deploy 
+        or
+    $ lmdo destroy
+
 Boiler plating
 -----
 To get a boiler plate repo from somewhere in github, run
@@ -116,20 +124,10 @@ You can create standard lambda function and or use a bridging lambda function pr
    **Requirements**
    
    * The invokable lambda function files need to be placed on the top level of the project folder. 
-   * The `requirements.txt` file and `vendored` folder are required under the project folder. 
-   * All the pip installations will be installed in the `vendored` folder.
+   * The `requirements.txt` file that specifies what packages are needed to be installed 
    
    **Writting your Lambda function**
    
-   Add below lines at the beginning of your lambda function file so all your modules can be found by AWS Lambda runtime:
-
-        import os
-        import sys
-
-        module_path = os.path.dirname(os.path.realpath(__file__))
-        sys.path.append(os.path.join(module_path, "./"))
-        sys.path.append(os.path.join(module_path, "./vendored"))
-
     **lmdo.yml configuration**
     
     To configure your lambda, enter an entry under `Lambda`:
@@ -139,8 +137,13 @@ You can create standard lambda function and or use a bridging lambda function pr
           FunctionName: superman              # mandatory, the actual function name in AWS will have the format of <user>-<stage>-<service-name>-<FunctionName>
           Handler: handler.fly                # mandatory, define the handler function
           MemorySize: 128                     # optional, default to 128
-          RoleArn: rolearn                    # Either provide a role arn or assume role policy doc, the RolePolicyDocument takes preccedent
-          RolePolicyDocument: path/to/policy  # Assume role Policy
+          RoleArn: rolearn                    # Either provide an existing role arn or RolePolicy, you only need one of them. If none defined, a default role with default policy will be generated
+          RolePolicy:                         # if none of it's children specified, lmdo will generate default
+              AssumeRoles:                    # optional, the default has added apigateway, lambda, events, ec2. You only need to add the extras here
+                  - sns.amazonaws.com         # optional, list assume roles
+              PolicyDocument: policy.json     # optional path/to/policy role policy json file (see note below).
+              ManagedPolicyArns:              # optional, add your managed policy here using arns
+                  - arn:aws:blah              # optional, list of managed policy arns
           Runtime: python2.7                  # optional default to 'python2.7'
           Timeout: 180                        # optional default to 180
           VpcConfig:                          # optional, Lambda VPC configuration
@@ -155,13 +158,41 @@ You can create standard lambda function and or use a bridging lambda function pr
               MYSQL_PASSWORD: secret
               MYSQL_USERNAME: admin
               MYSQL_DATABASE: lmdo
- 
+    
+    Note:
+        1. `PolicyDocument` format:
+
+            ```
+            {
+                "Effect":"Allow",
+                "Action":[
+                    "lambda:InvokeFunction",
+                    "lambda:AddPermission",
+                    "lambda:RemovePermission"
+                ],
+                "Resource": "arn:aws:lambda:ap-southeast-2:105594462793:function:*"
+            },
+            {
+                "Effect":"Allow",
+                "Action":[
+                    "sns:*"
+                ],
+                "Resource": "arn:aws:sns:*:*:*"
+            } 
+            ```
+
+        2. If the function uses Django ORM, you will need to append below to the beginning of your lambda function file and add `DJANGO_SETTINGS_MODULE` to the `EnvironmentVariables`.
+            
+            ```
+            import django
+            django.setup()
+            ```
+
 2. Django app
 
    **Requirements**
    
-   * The `requirements.txt` file and `vendored` folder are required under the project folder. 
-   * All the pip installations will be installed in the `vendored` folder.
+   * The `requirements.txt` file that specifies what packages are needed to be installed 
    
    **lmdo.yml configuration**
    
@@ -175,7 +206,12 @@ You can create standard lambda function and or use a bridging lambda function pr
          FunctionName: superman              # mandatory
          MemorySize: 128                     # optional, default to 128
          RoleArn: rolearn                    # Either provide a role arn or assume role policy doc, the RolePolicyDocument takes preccedent
-         RolePolicyDocument: path/to/policy  # Assume role Policy
+         RolePolicy:                         # if none of it's children specified, lmdo will generate default
+             AssumeRoles:                    # optional, the default has added apigateway, lambda, events, ec2. You only need to add the extras here
+                 - sns.amazonaws.com         # optional, list assume roles
+             PolicyDocument: policy.json     # optional path/to/policy role policy json file (see note below).
+             ManagedPolicyArns:              # optional, add your managed policy here using arns
+                 - arn:aws:blah              # optional, list of managed policy arns
          Runtime: python2.7                  # optional default to 'python2.7'
          Timeout: 180                        # optional default to 180
          VpcConfig:                          # optional
@@ -187,7 +223,11 @@ You can create standard lambda function and or use a bridging lambda function pr
          EnvironmentVariables:                       # mandatory
              DJANGO_SETTINGS_MODULE: mysite.settings # mandatory
  
- 
+3. Naming convention
+
+    lmdo will append `<user>-<stage>-<service-name>` to the function name and created role name as a convention
+
+    
 To deploy all the functions, run
 
     $ lmdo lm (create|update|delete)
@@ -247,13 +287,5 @@ AWS Cloudwatch Logs
         $ lmdo logs tail function <function_name> [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>]
 
   The `<function_name>` is the name you configure in your lmdo.yml
-
-One step deployment
------
-Alternatively, you can deploy and delete your entire service by running
-    
-    $ lmdo deploy 
-        or
-    $ lmdo destroy
 
 

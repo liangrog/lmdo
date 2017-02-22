@@ -41,7 +41,7 @@ class BoilerPlate(object):
             Oprint.info('Start downloading repo to your project from {}'.format(self._args.get('<url>')), 'lmdo')
             spinner.start()
 
-            tmp = tempfile.gettempdir()
+            tmp = tempfile.mkdtemp()
             self.git_clone(self._args.get('<url>'), tmp)
             copytree(tmp, './', ignore=shutil.ignore_patterns('*.git*'))
             shutil.rmtree(tmp)
