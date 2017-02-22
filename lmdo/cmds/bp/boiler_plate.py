@@ -3,11 +3,13 @@ import sys
 import os
 import shutil
 import fnmatch
+import tempfile
+
 from git import Repo
 
-from lmdo.config import PROJECT_CONFIG_FILE, TMP_DIR
+from lmdo.config import PROJECT_CONFIG_FILE
 from lmdo.oprint import Oprint
-from lmdo.utils import mkdir, get_sitepackage_dirs
+from lmdo.utils import mkdir, get_sitepackage_dirs, copytree
 from lmdo.spinner import spinner
 
 class BoilerPlate(object):
@@ -31,7 +33,7 @@ class BoilerPlate(object):
                 src_dir = pd + '/lmdo/template'
                 break
         if src_dir:
-            self.copytree(src_dir, './{}'.format(self._args.get('<project_name>')))
+            copytree(src_dir, './{}'.format(self._args.get('<project_name>')))
         
     def fetch(self):
         """Fetch template repo to local"""
@@ -39,9 +41,9 @@ class BoilerPlate(object):
             Oprint.info('Start downloading repo to your project from {}'.format(self._args.get('<url>')), 'lmdo')
             spinner.start()
 
-            tmp = '{}/{}'.format(TMP_DIR, 'git_tmp')
+            tmp = tempfile.mkdtemp()
             self.git_clone(self._args.get('<url>'), tmp)
-            self.copytree(tmp, './', ignore=shutil.ignore_patterns('*.git*'))
+            copytree(tmp, './', ignore=shutil.ignore_patterns('*.git*'))
             shutil.rmtree(tmp)
             
             spinner.stop()
@@ -49,57 +51,6 @@ class BoilerPlate(object):
         except Exception as e:
             spinner.stop()
             raise e
-
-    def copytree(self, src, dst, symlinks=False, ignore=None):
-        """Copy content to new destination"""
-        names = os.listdir(src)
-
-        if ignore is not None:
-            ignored_names = ignore(src, names)
-        else:
-            ignored_names = set()
-
-        errors = []
-        for name in names:
-            if name.endswith('.pyc'):
-                continue
-
-            if name in ignored_names:
-                continue
-
-            srcname = os.path.join(src, name)
-            dstname = os.path.join(dst, name)
-
-            # Delete if exists
-            if os.path.exists(dstname):
-                try:
-                    shutil.rmtree(dstname)
-                except Exception as e:
-                    os.unlink(dstname)
-
-            try:
-                if symlinks and os.path.islink(srcname):
-                    linkto = os.readlink(srcname)
-                    os.symlink(linkto, dstname)
-                elif os.path.isdir(srcname):
-                    shutil.copytree(srcname, dstname, symlinks, ignore)
-                else:
-                    shutil.copy2(srcname, dstname)
-            except (IOError, os.error) as why:
-                errors.append((srcname, dstname, str(why)))
-            # catch the Error from the recursive copytree so that we can
-            # continue with other files
-            except Exception as err:
-                errors.extend(str(err))
-        try:
-            shutil.copystat(src, dst)
-        except WindowsError:
-            # can't copy file access times on Windows
-            pass
-        except OSError as why:
-            errors.extend((src, dst, str(why)))
-        if errors:
-            raise Exception(errors)
 
     def git_clone(self, url, local_dir, depth=1):
         """Clone a repo from url to local"""

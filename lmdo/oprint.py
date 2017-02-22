@@ -2,12 +2,14 @@ from __future__ import print_function
 import os
 import sys
 
+from botocore.exceptions import ClientError
+
 def lmdo_output(func):
     """lmdo output message decorator"""
 
     def __wrapper(cls, msg, src='lmdo', *args, **kwargs):
         if type(msg) is str:
-            msg = '==> [{}]: {}'.format(src, msg).lower()
+            msg = '==> [{}]: {}'.format(src, msg)
 
         output = func(cls, msg, *args, **kwargs)
         return output
@@ -39,6 +41,8 @@ class Oprint(object):
     def infog(cls, msg):
         if type(msg) is str:
             print(Oprint.okgreen + msg + Oprint.endc)
+        elif type(msg) is ClientError:
+            print(Oprint.okgreen + str(msg.response['Error']['Message']) + Oprint.endc)
         else:
             print(msg)
 
@@ -47,6 +51,8 @@ class Oprint(object):
     def info(cls, msg):
         if type(msg) is str:
             print(Oprint.okblue + msg + Oprint.endc)
+        elif type(msg) is ClientError:
+            print(Oprint.okblue + str(msg.response['Error']['Message']) + Oprint.endc)
         else:
             print(msg)
     
@@ -55,6 +61,8 @@ class Oprint(object):
     def warn(cls, msg):
         if type(msg) is str:
             print(Oprint.warning + msg + Oprint.endc)
+        elif type(msg) is ClientError:
+            print(Oprint.warning + str(msg.response['Error']['Message']) + Oprint.endc)
         else:
             print(msg)
     
@@ -63,6 +71,8 @@ class Oprint(object):
     def err(cls, msg, exit=True):
         if type(msg) is str:
             print(Oprint.fail + msg + Oprint.endc)
+        elif type(msg) is ClientError:
+            print(Oprint.fail + str(msg.response['Error']['Message']) + Oprint.endc)
         else:
             print(msg)
         

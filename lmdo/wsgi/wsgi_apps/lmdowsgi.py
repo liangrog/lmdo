@@ -24,14 +24,25 @@ class LmdoWSGI(object):
 
         # Standard wsgi
         environ['REQUEST_METHOD'] = event['httpMethod']
-        
-        x_forwarded_for = event['headers'].get('X-Forwarded-For', '')
-        if ',' in x_forwarded_for:
-            environ['REMOTE_ADDR'] = x_forwarded_for.split(', ')[0]
-        else:
-            environ['REMOTE_ADDR'] = '127.0.0.1'
+       
+        if event.get('headers'):
+            x_forwarded_for = event['headers'].get('X-Forwarded-For', '')
 
-        environ['REMOTE_PORT'] = event['headers'].get('X-Forwarded-Port', '')
+            if ',' in x_forwarded_for:
+                environ['REMOTE_ADDR'] = x_forwarded_for.split(', ')[0]
+            else:
+                environ['REMOTE_ADDR'] = '127.0.0.1'
+
+            environ['REMOTE_PORT'] = event['headers'].get('X-Forwarded-Port', '')
+    
+            if event['headers'].get('Content-Type'):
+                environ['CONTENT_TYPE'] = event['headers'].get('Content-Type')
+
+            for header in event['headers']:
+                wsgi_name = "HTTP_" + str(header.upper().replace('-', '_'))
+                environ[wsgi_name] = str(event['headers'].get(header))
+
+            environ['APIGATEWAY_HEADERS'] = event['headers']
 
         environ['PATH_INFO'] = urls.url_unquote('/' + str(event['path'].split('/', 2).pop())) 
         
@@ -59,16 +70,8 @@ class LmdoWSGI(object):
         environ['wsgi.multithread'] = False
         environ['wsgi.run_once'] = False
 
-        if event['headers'].get('Content-Type'):
-            environ['CONTENT_TYPE'] = event['headers'].get('Content-Type')
-
-
-        for header in event['headers']:
-            wsgi_name = "HTTP_" + str(header.upper().replace('-', '_'))
-            environ[wsgi_name] = str(event['headers'].get(header))
 
         # API Gateway params
-        environ['APIGATEWAY_HEADERS'] = event['headers']
         environ['APIGATEWAY_STAGE_VAR'] = event['stageVariables']
         environ['APIGATEWAY_BASE64'] = event['isBase64Encoded']
         environ['APIGATEWAY_PATH_PARAMS'] = event['pathParameters']

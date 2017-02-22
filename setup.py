@@ -61,7 +61,8 @@ setup(
         'PyYAML==3.12',
         'jinja2==2.8',
         'tqdm==4.10',
-        'gitpython'
+        'gitpython',
+        'lambda-packages==0.13.0',
     ],
     extras_require={
         'test': ['coverage', 'pytest', 'pytest-cov'],
