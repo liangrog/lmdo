@@ -200,7 +200,7 @@ You can create standard lambda function and or use a bridging lambda function pr
    To config, add below entry in `Lambda`:
    
          S3Bucket: lambda.bucket.name        # mandatory
-         Type: django                        # mandatory Other types
+         Type: wsgi                          # mandatory
          CognitoUserPoolId: user_pool_id     # Optional, your AWS user pool authorizer id
          DisableApiGateway: False            # Optional, if set to True, the apigateway for Django app won't be created
          ApiBasePath: /path                  # Mandatory if apigateway to be created. Base resource path for django app
