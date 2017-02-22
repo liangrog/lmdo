@@ -171,7 +171,7 @@ You can create standard lambda function and or use a bridging lambda function pr
                 "lambda:AddPermission",
                 "lambda:RemovePermission"
             ],
-            "Resource": "arn:aws:lambda:ap-southeast-2:105594462793:function:*"
+            "Resource": "arn:aws:lambda:ap-southeast-1:1234565:function:*"
         },
         {
             "Effect":"Allow",
