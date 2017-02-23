@@ -15,6 +15,7 @@ class LmdoConfig(ConfigParserInterface):
     """lmdo project configuration Loader"""
     
     def __init__(self):
+        import traceback;traceback.print_stack()
         self.template_to_config()
         self.load_config()
 
