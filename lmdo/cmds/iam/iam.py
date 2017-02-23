@@ -153,8 +153,9 @@ class IAM(AWSBase):
         try:
             Oprint.info('Start creating role {} and policie for Lambda'.format(role_name), 'iam')
             
+            roles = LAMBDA_DEFAULT_ASSUME_ROLES
             if role_policy and role_policy.get('AssumeRoles'):
-                roles = LAMBDA_DEFAULT_ASSUME_ROLES + role_policy.get('AssumeRoles')
+                roles += role_policy.get('AssumeRoles')
 
             assume_template = get_template(IAM_ROLE_LAMBDA_ASSUME)
  
