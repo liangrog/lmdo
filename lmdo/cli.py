@@ -37,16 +37,8 @@ from __future__ import print_function
 from docopt import docopt
 
 from . import __version__ as VERSION
-from lmdo.lmdo_config import LmdoConfig
 from lmdo.oprint import Oprint
-from lmdo.cmds.cf.cf_client import CfClient
-from lmdo.cmds.lm.lm_client import LmClient
-from lmdo.cmds.api.api_client import ApiClient
-from lmdo.cmds.s3.s3_client import S3Client
-from lmdo.cmds.deploy.deploy_client import DeployClient
-from lmdo.cmds.destroy.destroy_client import DestroyClient
 from lmdo.cmds.bp.bp_client import BpClient
-from lmdo.cmds.logs.logs_client import LogsClient
 
 
 def main():
@@ -59,26 +51,34 @@ def main():
         client_factory = BpClient(args)
         return client_factory.execute()
 
+    from lmdo.lmdo_config import lmdo_config
     # Check if cli is at the right directory
-    if not LmdoConfig.if_lmdo_config_exist():
+    if not lmdo_config.if_lmdo_config_exist():
         Oprint.err('Please run lmdo command at the directory contains the lmdo config file')
 
     # Call the right client to handle
     if args.get('bp'):
         client_factory = BpClient(args)
     elif args.get('s3'):
+        from lmdo.cmds.s3.s3_client import S3Client
         client_factory = S3Client(args)
     elif args.get('cf'):
+        from lmdo.cmds.cf.cf_client import CfClient
         client_factory = CfClient(args)
     elif args.get('lm'):
+        from lmdo.cmds.lm.lm_client import LmClient
         client_factory = LmClient(args)
     elif args.get('api'):
+        from lmdo.cmds.api.api_client import ApiClient
         client_factory = ApiClient(args)
     elif args.get('logs'):
+        from lmdo.cmds.logs.logs_client import LogsClient
         client_factory = LogsClient(args)
     elif args.get('deploy'):
+        from lmdo.cmds.deploy.deploy_client import DeployClient
         client_factory = DeployClient(args)
     elif args.get('destroy'):
+        from lmdo.cmds.destroy.destroy_client import DestroyClient
         client_factory = DestroyClient(args)
 
     if client_factory:
