@@ -18,6 +18,15 @@ class LmdoWSGI(object):
     def environ(self):
         return self._environ
 
+    def format_headers(self, headers):
+        """Formatting headers to our spec"""
+        for header_type in headers.keys():
+            # change 'content-type' to 'Content-Type' e.g.
+            if header_type.title() != header_type:
+                headers[header_type.title()] = headers.pop(header_type)
+
+        return headers
+
     def translate(self, event, context=None):
         """Translating lambda event to wsgi dict"""
         environ = {}
@@ -26,7 +35,9 @@ class LmdoWSGI(object):
         environ['REQUEST_METHOD'] = event['httpMethod']
        
         if event.get('headers'):
-            x_forwarded_for = event['headers'].get('X-Forwarded-For', '')
+            headers = self.format_headers(event['headers'])
+
+            x_forwarded_for = headers.get('X-Forwarded-For', '')
 
             if ',' in x_forwarded_for:
                 environ['REMOTE_ADDR'] = x_forwarded_for.split(', ')[0]
@@ -38,13 +49,14 @@ class LmdoWSGI(object):
             if event['headers'].get('Content-Type'):
                 environ['CONTENT_TYPE'] = event['headers'].get('Content-Type')
 
-            for header in event['headers']:
+            for header in headers.keys():
                 wsgi_name = "HTTP_" + str(header.upper().replace('-', '_'))
-                environ[wsgi_name] = str(event['headers'].get(header))
+                environ[wsgi_name] = str(headers.get(header))
 
-            environ['APIGATEWAY_HEADERS'] = event['headers']
+            environ['APIGATEWAY_HEADERS'] = headers
 
-        environ['PATH_INFO'] = urls.url_unquote('/' + str(event['path'].split('/', 2).pop())) 
+        #environ['PATH_INFO'] = urls.url_unquote('/' + str(event['path'].split('/', 2).pop())) 
+        environ['PATH_INFO'] = urls.url_unquote(str(event['path'])) 
         
         if event.get('queryStringParameters'):
             environ['QUERY_STRING'] = urlencode(event.get('queryStringParameters'))
@@ -57,8 +69,8 @@ class LmdoWSGI(object):
         environ['SERVER_PROTOCOL'] = str('HTTP/1.1')
 
         if event.get('body'):
-            environ['CONTENT_LENGTH'] = str(len(event.get('body')))
-            environ['wsgi.input'] = StringIO(event.get('body'))
+            environ['CONTENT_LENGTH'] = str(len(str(event.get('body'))))
+            environ['wsgi.input'] = StringIO(str(event.get('body')))
         else:
             environ['CONTENT_LENGTH'] = '0'
             environ['wsgi.input'] = StringIO('')
@@ -70,17 +82,16 @@ class LmdoWSGI(object):
         environ['wsgi.multithread'] = False
         environ['wsgi.run_once'] = False
 
-
         # API Gateway params
-        environ['APIGATEWAY_STAGE_VAR'] = event['stageVariables']
-        environ['APIGATEWAY_BASE64'] = event['isBase64Encoded']
-        environ['APIGATEWAY_PATH_PARAMS'] = event['pathParameters']
-        environ['APIGATEWAY_REQUEST_CONTEXT'] = event['requestContext']
-        environ['APIGATEWAY_PATH'] = event['path']
-        environ['APIGATEWAY_RESOURCE'] = event['resource']
-        environ['APIGATEWAY_QUERY_STRING_PARAMS'] = event['queryStringParameters']
-        environ['APIGATEWAY_BODY'] = event['body']
-        environ['APIGATEWAY_HTTP_METHOD'] = event['httpMethod']
+        environ['APIGATEWAY_STAGE_VAR'] = event.get('stageVariables', '')
+        environ['APIGATEWAY_BASE64'] = event.get('isBase64Encoded', False)
+        environ['APIGATEWAY_PATH_PARAMS'] = event.get('pathParameters', '')
+        environ['APIGATEWAY_REQUEST_CONTEXT'] = event.get('requestContext', '') 
+        environ['APIGATEWAY_PATH'] = event.get('path', '')
+        environ['APIGATEWAY_RESOURCE'] = event.get('resource', '')
+        environ['APIGATEWAY_QUERY_STRING_PARAMS'] = event.get('queryStringParameters', '')
+        environ['APIGATEWAY_BODY'] = str(event.get('body', ''))
+        environ['APIGATEWAY_HTTP_METHOD'] = event.get('httpMethod', '')
 
         # Lambda context object
         environ['LAMBDA_CONTEXT'] = context

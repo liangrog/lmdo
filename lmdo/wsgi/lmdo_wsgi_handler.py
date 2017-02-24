@@ -34,6 +34,10 @@ class LambdaHandler(object):
             time_start = datetime.datetime.now()
 
             environ = self._wsgi.translate(event, context)
+
+            if self._settings.DEBUG:
+                logger.info(environ) 
+
             response = apigateway_response.run_app(get_django(), environ)
 
             return response
