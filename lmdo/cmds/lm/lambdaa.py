@@ -359,20 +359,20 @@ class Lambda(AWSBase):
                             #tar.extract(member, os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER))
                             tar.extract(member, tmp_path)
                         
-                        Oprint.info('Complete installing Amazon Linux AMI bianry package {}'.format(name), 'pip')
+                        #Oprint.info('Complete installing Amazon Linux AMI bianry package {}'.format(name), 'pip')
                         requirements.remove(name.lower())
 
                 # Need to quote the package name in case 'package>=1.0'
                 requirements = '"' + '" "'.join(requirements) + '"'
 
-                Oprint.info('Installing python package dependancies if there is any missing to {}'.format(tmp_path), 'pip')
+                Oprint.info('Installing python package dependancies to {}'.format(tmp_path), 'pip')
 
                 spinner.start()
                 #pip.main(['install', '-t', os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER), '-r', os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE), '&>/dev/null'])
                 os.system('pip install --upgrade -t {} {} &>/dev/null'.format(tmp_path, requirements))
                 spinner.stop()
 
-                Oprint.info('Python package installation complete', 'pip')
+                #Oprint.info('Python package installation complete', 'pip')
 
 
             except Exception as e:
