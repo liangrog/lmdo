@@ -179,7 +179,7 @@ class Lambda(AWSBase):
                 S3Bucket=bucket_name,
                 S3Key=s3_key
             )
-            Oprint.info('Lambda function {} has been updated'.format(func_name), 'lambda')
+            Oprint.info('Lambda function {} codes has been updated'.format(func_name), 'lambda')
         except Exception as e:
             Oprint.err(e, 'lambda')
                 
@@ -313,8 +313,12 @@ class Lambda(AWSBase):
                     # If function exists
                     info = self.get_function(self.get_function_name(lm.get('FunctionName')))
                     if info:
-                        lm.get('RoleArn') or self.create_role(self.get_role_name(lm.get('FunctionName')), lm.get('RolePolicy'))
+                        role_arn = lm.get('RoleArn') or self.create_role(self.get_role_name(lm.get('FunctionName')), lm.get('RolePolicy'))
                         self.update_function_code(info.get('Configuration').get('FunctionName'), lm.get('S3Bucket'), self.get_zip_name(lm.get('FunctionName')))
+                       
+                        params.pop('Code')
+                        self._client.update_function_configuration(**params)
+                        Oprint.info('Updated lambda function configuration', 'lambda')
                     else:
                         # User configured role or create a new on based on policy document
                         role_arn = lm.get('RoleArn') or self.create_role(self.get_role_name(lm.get('FunctionName')), lm.get('RolePolicy'))
