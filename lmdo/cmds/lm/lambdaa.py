@@ -344,7 +344,7 @@ class Lambda(AWSBase):
             try:
                 for name, detail in lambda_packages.items():
                     if name.lower() in requirements:
-                        Oprint.info('Installing Amazon Linux AMI bianry package {}'.format(name), 'pip')
+                        Oprint.info('Installing Amazon Linux AMI bianry package {} to {}'.format(name, tmp_path), 'pip')
                         
                         tar = tarfile.open(detail['path'], mode="r:gz")
                         for member in tar.getmembers():
@@ -358,9 +358,10 @@ class Lambda(AWSBase):
                         Oprint.info('Complete installing Amazon Linux AMI bianry package {}'.format(name), 'pip')
                         requirements.remove(name.lower())
 
-                requirements = ' '.join(requirements)
+                # Need to quote the package name in case 'package>=1.0'
+                requirements = '"' + '" "'.join(requirements) + '"'
 
-                Oprint.info('Installing python package dependancies if there is any missing', 'pip')
+                Oprint.info('Installing python package dependancies if there is any missing to {}'.format(tmp_path), 'pip')
 
                 spinner.start()
                 #pip.main(['install', '-t', os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER), '-r', os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE), '&>/dev/null'])
