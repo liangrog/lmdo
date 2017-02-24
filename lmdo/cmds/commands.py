@@ -73,6 +73,11 @@ class TailCommand(CommandInterface):
     def run(self):
         self._obj.tail()
 
+class PackageCommand(CommandInterface):
+    """Command for package"""
+    def run(self):
+        self._obj.package()
+
 class Dispatcher(object):
     """Command invocation class"""
     def run(self, command):

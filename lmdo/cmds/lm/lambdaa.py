@@ -40,6 +40,9 @@ class Lambda(AWSBase):
     def create(self):
         self.process()
 
+    def package(self):
+        self.process()
+
     def delete(self):
         """Delete lambda functions"""
         # Dont run if doesn't exist
@@ -305,7 +308,8 @@ class Lambda(AWSBase):
             tmp_path, zip_package = self.get_zipped_package(lm.get('FunctionName'), lm.get('Type'))
             
             if zip_package:
-                if package_only:
+                # Only package up lambda function
+                if self._args.get('package'):
                     Oprint.info('Generated zipped lambda package {}'.format(zip_package), 'lambda')
                     continue
 
@@ -391,7 +395,7 @@ class Lambda(AWSBase):
             os.system('pip install werkzeug base58 wsgi-request-logger --upgrade -t {} &>/dev/null'.format(tmp_path))
             spinner.stop()
 
-            Oprint.info('Wsgi python package installation complete', 'pip')
+            #Oprint.info('Wsgi python package installation complete', 'pip')
         except Exception as e:
             spinner.stop()
             raise e

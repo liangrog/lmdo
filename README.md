@@ -24,7 +24,7 @@ Usage
     lmdo init <project_name>
     lmdo bp fetch <url>
     lmdo cf (create|update|delete)
-    lmdo lm (create|update|delete) [--function-name=<functionName>]
+    lmdo lm (create|update|delete|package) [--function-name=<functionName>]
     lmdo api (create|update|delete)
     lmdo api create-stage <from_stage> <to_stage>
     lmdo api delete-stage <from_stage>
