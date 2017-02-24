@@ -31,7 +31,7 @@ class Apigateway(AWSBase):
 
         swagger_api = self.create_api_by_swagger()
         swagger_api = self.create_wsgi_api()
-        if swagger_api and swagger_api is dict:
+        if swagger_api:
             self.create_deployment(swagger_api.get('id'), self._config.get('Stage'), swagger_api.get('name'))
 
     def update(self):
