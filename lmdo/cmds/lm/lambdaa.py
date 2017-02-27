@@ -4,6 +4,8 @@ import pip
 import tarfile
 import shutil
 import tempfile
+import subprocess
+import glob
 
 from lambda_packages import lambda_packages
 
@@ -212,7 +214,8 @@ class Lambda(AWSBase):
         self.add_init_file_to_root(lambda_temp_dir)
 
         # Installing packages
-        self.pip_install(lambda_temp_dir)
+        self.dependency_packaging(lambda_temp_dir)
+
         if self.if_wsgi_exist():
             self.pip_wsgi_install(lambda_temp_dir)
 
@@ -343,46 +346,62 @@ class Lambda(AWSBase):
         """Delete role for lambda"""
         self._iam.delete_lambda_role(self.get_role_name_by_arn(role_arn))
 
-    def pip_install(self, tmp_path):
+    def dependency_packaging(self, tmp_path):
+        """Packaging dependencies"""
+        if self._config.get('VirtualEnv'):
+            self.venv_package_install(tmp_path)
+        else:
+            self.package_install(tmp_path)
+
+    def package_install(self, tmp_path):
         """Install requirement"""
         if os.path.isfile('{}/{}'.format(tmp_path, os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE))):
             with open('{}/{}'.format(tmp_path, os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE))) as f:
-                requirements = f.read().splitlines()
-
+                requirements = [item.strip().lower() for item in f.read().splitlines() if item.strip()]
             try:
-                for name, detail in lambda_packages.items():
-                    if name.lower() in requirements:
-                        Oprint.info('Installing Amazon Linux AMI bianry package {} to {}'.format(name, tmp_path), 'pip')
-                        
-                        tar = tarfile.open(detail['path'], mode="r:gz")
-                        for member in tar.getmembers():
-                            if member.isdir():
-                                shutil.rmtree(os.path.join(tmp_path, member.name), ignore_errors=True)
-                                continue
+                lambda_pkg_to_install = {}
+                
+                # Filter function to find package should 
+                # be fetched from lambda package
+                def find_lambda_pkg(item):
+                    found = False
+                    for name, detail in lambda_packages.items(): 
+                        if item.startswith(name.lower()):
+                            lambda_pkg_to_install[name.lower()] = detail
+                            return False
+                        else:
+                            continue
 
-                            #tar.extract(member, os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER))
-                            tar.extract(member, tmp_path)
-                        
-                        #Oprint.info('Complete installing Amazon Linux AMI bianry package {}'.format(name), 'pip')
-                        requirements.remove(name.lower())
+                    return True
 
-                # Need to quote the package name in case 'package>=1.0'
-                requirements = '"' + '" "'.join(requirements) + '"'
+                requirements = filter(find_lambda_pkg, requirements)
+                # always install setup tool
+                requirements.append('setuptools')
+   
+                for name, detail in lambda_pkg_to_install.iteritems():
+                    Oprint.info('Installing Amazon Linux AMI bianry package {} to {}'.format(name, tmp_path), 'pip')
+                    
+                    tar = tarfile.open(detail['path'], mode="r:gz")
+                    for member in tar.getmembers():
+                        if member.isdir():
+                            shutil.rmtree(os.path.join(tmp_path, member.name), ignore_errors=True)
+                            continue
+
+                        #tar.extract(member, os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER))
+                        tar.extract(member, tmp_path)
+           
+                tmp_requirements = tempfile.NamedTemporaryFile(delete=False)
+                for line in requirements:                     
+                    tmp_requirements.write(line + '\n')
+                tmp_requirements.close()
 
                 Oprint.info('Installing python package dependancies to {}'.format(tmp_path), 'pip')
-
                 spinner.start()
-                #pip.main(['install', '-t', os.getenv('PIP_VENDOR_FOLDER', PIP_VENDOR_FOLDER), '-r', os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE), '&>/dev/null'])
-                os.system('pip install --upgrade -t {} {} &>/dev/null'.format(tmp_path, requirements))
+                os.system('pip install -t {} -r {} &>/dev/null'.format(tmp_path, tmp_requirements.name))
                 spinner.stop()
-
-                #Oprint.info('Python package installation complete', 'pip')
-
-
             except Exception as e:
                 spinner.stop()
-                raise e
-
+                Oprint.err(e, 'pip')
         else:
             Oprint.warn('{} could not be found, no dependencies will be installed'.format(os.getenv('PIP_REQUIREMENTS_FILE', PIP_REQUIREMENTS_FILE)), 'pip')
 
@@ -392,13 +411,142 @@ class Lambda(AWSBase):
             Oprint.info('Installing python package dependancies for wsgi', 'pip')
 
             spinner.start()
-            os.system('pip install werkzeug base58 wsgi-request-logger --upgrade -t {} &>/dev/null'.format(tmp_path))
+            os.system('pip install werkzeug base58 wsgi-request-logger -t {} &>/dev/null'.format(tmp_path))
             spinner.stop()
 
             #Oprint.info('Wsgi python package installation complete', 'pip')
         except Exception as e:
             spinner.stop()
             raise e
+    
+    def venv_package_install(self, tmp_path):
+        """Install virtualenv packages"""
+        venv = self.get_current_venv_path()
+
+        cwd = os.getcwd()
+
+        def splitpath(path):
+            parts = []
+            (path, tail) = os.path.split(path)
+            while path and tail:
+                parts.append(tail)
+                (path, tail) = os.path.split(path)
+            parts.append(os.path.join(path, tail))
+            return map(os.path.normpath, parts)[::-1]
+        split_venv = splitpath(venv)
+        split_cwd = splitpath(cwd)
+
+        # Ideally this should be avoided automatically,
+        # but this serves as an okay stop-gap measure.
+        if split_venv[-1] == split_cwd[-1]:  # pragma: no cover
+            Oprint.warn("Warning! Your project and virtualenv have the same name! You may want to re-create your venv with a new name, or explicitly define a 'project_name', as this may cause errors.", 'lambda')
+
+        # Then, do site site-packages..
+        egg_links = []
+        
+        site_packages = os.path.join(venv, 'lib', 'python2.7', 'site-packages')
+        egg_links.extend(glob.glob(os.path.join(site_packages, '*.egg-link')))
+
+        copytree(site_packages, tmp_path, symlinks=False)
+
+        # We may have 64-bin specific packages too.
+        site_packages_64 = os.path.join(venv, 'lib64', 'python2.7', 'site-packages')
+        if os.path.exists(site_packages_64):
+            egg_links.extend(glob.glob(os.path.join(site_packages_64, '*.egg-link')))
+            copytree(site_packages_64, tmp_path, symlinks=False)
+
+        if egg_links:
+            self.copy_editable_packages(egg_links, tmp_path)
+
+        package_to_keep = []
+        if os.path.isdir(site_packages):
+            package_to_keep += os.listdir(site_packages)
+        if os.path.isdir(site_packages_64):
+            package_to_keep += os.listdir(site_packages_64)
+
+        installed_packages_name_set = [package.project_name.lower() for package in
+                                       pip.get_installed_distributions() if package.project_name in package_to_keep or
+                                       package.location in [site_packages, site_packages_64]]
+        # First, try lambda packages
+        for name, details in lambda_packages.items():
+            Oprint.info('Installing Lambda_package Amazon Linux AMI bianry package {} to {}'.format(name, tmp_path), 'pip')
+            if name.lower() in installed_packages_name_set:
+                tar = tarfile.open(details['path'], mode="r:gz")
+                for member in tar.getmembers():
+                    # If we can, trash the local version.
+                    if member.isdir():
+                        shutil.rmtree(os.path.join(tmp_path, member.name), ignore_errors=True)
+                        continue
+                    tar.extract(member, tmp_path)
+
+        # Then try to use manylinux packages from PyPi..
+        # Related: https://github.com/Miserlou/Zappa/issues/398
+        try:
+            Oprint.info('Installing virtualenv python package dependancies to {}'.format(tmp_path), 'pip')
+            spinner.start()
+            for installed_package_name in installed_packages_name_set:
+                if installed_package_name not in lambda_packages:
+                    wheel_url = self.get_manylinux_wheel(installed_package_name)
+                    if wheel_url:
+                        resp = requests.get(wheel_url, timeout=2, stream=True)
+                        resp.raw.decode_content = True
+                        zipresp = resp.raw
+                        with zipfile.ZipFile(BytesIO(zipresp.read())) as zfile:
+                            zfile.extractall(tmp_path)
+            spinner.stop()
+        except Exception as e:
+            spinner.stop()
+            Oprint.warn(e, 'pip')
+            
+    def copy_editable_packages(self, egg_links, temp_package_path):
+        for egg_link in egg_links:
+            with open(egg_link) as df:
+                egg_path = df.read().decode('utf-8').splitlines()[0].strip()
+                pkgs = set([x.split(".")[0] for x in find_packages(egg_path, exclude=['test', 'tests'])])
+                for pkg in pkgs:
+                    copytree(os.path.join(egg_path, pkg), os.path.join(temp_package_path, pkg), symlinks=False)
+
+        if temp_package_path:
+            # now remove any egg-links as they will cause issues if they still exist
+            for link in glob.glob(os.path.join(temp_package_path, "*.egg-link")):
+                os.remove(link)
+
+    def get_current_venv_path(self):
+        """
+        Returns the path to the current virtualenv
+        """
+        if 'VIRTUAL_ENV' in os.environ:
+            venv = os.environ['VIRTUAL_ENV']
+        elif os.path.exists('.python-version'):  # pragma: no cover
+            try:
+                subprocess.check_output('pyenv', stderr=subprocess.STDOUT)
+            except OSError:
+                Oprint.err("This directory seems to have pyenv's local venv but pyenv executable was not found.", 'lambda')
+            with open('.python-version', 'r') as f:
+                env_name = f.read()[:-1]
+            bin_path = subprocess.check_output(['pyenv', 'which', 'python']).decode('utf-8')
+            venv = bin_path[:bin_path.rfind(env_name)] + env_name
+        else:  # pragma: no cover
+            Oprint.err("An active virtual environment is not found", 'lambda')
+
+        return venv
+
+    def get_manylinux_wheel(self, package):
+        """
+        For a given package name, returns a link to the download URL,
+        else returns None.
+        """
+        url = 'https://pypi.python.org/pypi/{}/json'.format(package)
+        try:
+            res = requests.get(url, timeout=1.5)
+            data = res.json()
+            version = data['info']['version']
+            for f in data['releases'][version]:
+                if f['filename'].endswith('cp27mu-manylinux1_x86_64.whl'):
+                    return f['url']
+        except Exception, e: # pragma: no cover
+            return None
+        return None
 
     def if_specify_function(self):
         """If user specify a function to process"""

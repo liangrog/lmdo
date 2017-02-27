@@ -6,7 +6,7 @@ from lmdo.cmds.client_factory_interface import ClientFactoryInterface
 class CfClient(ClientFactoryInterface):
     """Cloudformation command client"""
     def __init__(self, args):
-        self._cloudformation = Cloudformation()
+        self._cloudformation = Cloudformation(args)
         self._dispatcher = Dispatcher()
         self._args = args
 

@@ -60,7 +60,7 @@ class S3(AWSBase):
         """Upload file to S3, provide network progress bar"""
         # Check if bucket exist, create one if user agrees
         if not self.if_bucket_exist(bucket_name):
-            sys_pause('Bucket {} doesn\'t exist! Do you want to create it? [yes/no]'.format(bucket_name), 's3')
+            sys_pause('Bucket {} doesn\'t exist! Do you want to create it? [yes/no]'.format(bucket_name), 'yes')
             self.create_bucket(bucket_name)
 
         Oprint.info('Start uploading {} to S3 bucket {}'.format(key, bucket_name), 's3')

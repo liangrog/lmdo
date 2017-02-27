@@ -2,13 +2,16 @@ from __future__ import print_function
 import os
 import fnmatch
 import json
+import datetime
+import pprint
 
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.s3.s3 import S3
 from lmdo.oprint import Oprint
-from lmdo.config import CLOUDFORMATION_DIRECTORY, CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX, CLOUDFORMATION_TEMPLATE, CLOUDFORMATION_PARAMETER_FILE
-from lmdo.utils import find_files_by_postfix, find_files_by_name_only
+from lmdo.config import CLOUDFORMATION_DIRECTORY, CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX, CLOUDFORMATION_TEMPLATE, CLOUDFORMATION_PARAMETER_FILE, CLOUDFORMATION_STACK_LOCK_POLICY, CLOUDFORMATION_STACK_UNLOCK_POLICY
+from lmdo.utils import find_files_by_postfix, find_files_by_name_only, get_template, sys_pause
 from lmdo.waiters.cloudformation_waiters import CloudformationWaiterStackCreate, CloudformationWaiterStackUpdate, CloudformationWaiterStackDelete
+from lmdo.cmds.cf.cf_status import CfStatus
 
 
 class Cloudformation(AWSBase):
@@ -18,11 +21,12 @@ class Cloudformation(AWSBase):
     Stack name is fixed with User-Stage-Servicename-Service
     """
 
-    def __init__(self):
+    def __init__(self, args=None):
         super(Cloudformation, self).__init__()
         self._client = self.get_client('cloudformation') 
         self._s3 = S3()
         self._template = self.if_main_template_exist()
+        self._args = args or {}
 
     @property
     def client(self):
@@ -147,7 +151,10 @@ class Cloudformation(AWSBase):
                 func_params['Parameters'] = json.loads(outfile.read())
        
         if to_update:
-            self.update_stack(self.get_stack_name(), **func_params)
+            if self._args.get('-c') or self._args.get('--change_set'):
+                self.stack_update_via_change_set(self.get_stack_name, **func_params)
+            else:
+                self.update_stack(self.get_stack_name(), **func_params)
         else:
             self.create_stack(self.get_stack_name(), **func_params)
 
@@ -161,6 +168,8 @@ class Cloudformation(AWSBase):
                 **kwargs
             )
             waiter.wait(stack_name)
+
+            self.lock_stack(stack_name=stack_name)
         except Exception as e:
             Oprint.err(e, 'cloudformation')
             return False
@@ -172,6 +181,7 @@ class Cloudformation(AWSBase):
     def update_stack(self, stack_name, capabilities=['CAPABILITY_NAMED_IAM', 'CAPABILITY_IAM'], **kwargs):
         """Update a stack"""
         try:
+            self.unlock_stack(stack_name=stack_name)
             waiter = CloudformationWaiterStackUpdate(self._client)
             response = self._client.update_stack(
                 StackName=stack_name,
@@ -179,6 +189,7 @@ class Cloudformation(AWSBase):
                 **kwargs
             )
             waiter.wait(stack_name)
+            self.lock_stack(stack_name=stack_name)
         except Exception as e:
             Oprint.err(e, 'cloudformation')
             return False
@@ -195,6 +206,7 @@ class Cloudformation(AWSBase):
             return True
 
         try:
+            self.unlock_stack(stack_name=stack_name)
             waiter = CloudformationWaiterStackDelete(self._client)
             response = self._client.delete_stack(StackName=stack_name)
             waiter.wait(stack_name)
@@ -204,11 +216,23 @@ class Cloudformation(AWSBase):
 
         self.verify_stack('delete', stack_info['Stacks'][0]['StackId']) 
         return True
+    
+    def get_stack_status(self, stack_id=None, status_niddle=None):
+        stack_info = self.get_stack(stack_id or self.get_stack_name())
+        status = stack_info['Stacks'][0]['StackStatus']
+
+        if status_niddle == CfStatus.STACK_COMPLETE:
+            return True if status.endswith('_COMPLETE') else False
+        if status_niddle == CfStatus.STACK_FAILED::
+            return True if status.endswith('_FAILED') or status.endswith('ROLLBACK_COMPLETE') else False
+        if status_niddle == CfStatus._IN_PROGRESS:
+            return True if status.endswith('_IN_PROGRESS') else False
+
+        return status
 
     def verify_stack(self, mode, stack_id=None):
         """Check if stack action successful, deleted stack must provide stack id"""
-        stack_info = self.get_stack(stack_id or self.get_stack_name())
-        status = stack_info['Stacks'][0]['StackStatus']
+        status = self.get_stack_status(stack_id)
 
         if mode == 'create':
             if status != 'CREATE_COMPLETE':
@@ -232,5 +256,149 @@ class Cloudformation(AWSBase):
                 return opts['OutputValue']
        
         return None
-                   
+   
+    def list_existing_change_set(self, stack_name, *args, **kwargs):
+        """List all existing stack"""
+        try:
+            response = self._client.list_change_sets(StackName=stack_name, *args, **kwargs)
+        except Exception as e:
+            Oprint.warn(e, 'cloudformation')
+        
+        return response
+
+    def describe_change_set(self, change_set_name, *args, **kwargs):
+        """Get change set information"""
+        try:
+            response = self_client.describe_change_set(ChangeSetName=change_set_name, *args, **kwargs)
+        except Exception as e:
+            Oprint.err(e, 'cloudformation')
+
+        return response
+
+    def create_change_set_name(self, stack_name):
+        """Create uniformed change set name"""
+        timestamp = '{:%Y-%m-%d-%H-%M-%S}'.format(datetime.datetime.now())
+        return '{}-changeset-{}'.format(stack_name, timestamp)
+
+    def delete_change_set(self, change_set_name, *args, **kwargs):
+        """Delete existing change set"""
+        try:
+            response = self._client.delete_change_set(ChangeSetName=change_set_name, *args, **kwargs)
+        except Exception as e:
+            Oprint.warn(e, 'cloudformation')
+
+        return True
+
+    def create_change_set(self, stack_name, *args, **kwargs):
+        """Creating change set"""
+        try:
+            change_set_name = create_change_set_name(stack_name)
+
+            Oprint.info('Creating change set {} for stack {}'.format(change_set_name, stack_name), 'cloudformation')
+            response = self._client.create_change_set(StackName=stack_name, ChangeSetName=change_set_name, *args, **kwargs)
+        except Exception as e:
+            Oprint.err(e, 'cloudformation')
+
+        return change_set_name
+
+    def excecute_change_set(self, change_set_name, stack_name, *args, **kwargs):
+        """Run changeset to make it happen"""
+        try:
+            self.unlock_stack(stack_name=self.get_stack_name())
+            waiter = CloudformationWaiterStackUpdate(self._client)
+            Oprint.info('Executing change set {} for updating stack {}'.format(change_set_name, stack_name), 'cloudformation')
+            response = self._client.execute_change_set(ChangeSetName=change_set_name, StackName=stack_name, *args, **kwargs)
+            waiter.wait(stack_name)
+            self.lock_stack(stack_name=self.get_stack_name())
+        except Exception as e:
+            Oprint.err(e, 'cloudformation')
+        
+        self.verify_stack('update')
+
+        return response
+
+    def lock_stack(self, stack_name):
+        """Lock stack so no changes can be made accidentally"""
+        try:
+            lock_policy = get_template(CLOUDFORMATION_STACK_LOCK_POLICY)
+            with open(lock_policy, 'r') as outfile:
+                policy = outfile
+
+            Oprint.info('Locking stack {} to prevent accidental changes'.format(stack_name), 'cloudformation')
+            response = self._client.set_stack_policy(Stackname=stack_name, StackPolicyBody=policy)
+        except Exception as e:
+            Oprint.err(e, 'cloudformation')
+        
+        return True
+
+    def unlock_stack(self, stack_name):
+        """Unlock stack for update"""
+        try:
+            unlock_policy = get_template(CLOUDFORMATION_STACK_UNLOCK_POLICY)
+            with open(unlock_policy, 'r') as outfile:
+                policy = outfile
+
+            Oprint.info('Unlocking stack {} for update'.format(stack_name), 'cloudformation')
+            response = self._client.set_stack_policy(Stackname=stack_name, StackPolicyBody=policy)
+        except Exception as e:
+            Oprint.err(e, 'cloudformation')
+        
+        return True
+
+    def get_stack_event(self, stack_name, *args, **kwargs):
+        try:
+            response = self._client.describe_stack_events(StackName=stack_name, *args, **kwargs)
+        except Exception as e:
+            Oprint.warn(e, 'cloudformation')
+        return response
+    
+    def display_stack_event(self, stack_name, *args, **kwargs):
+        """Displaying new stack event"""
+        events = self.get_stack_event(stack_name=stack_name)['StackEvents']
+        events.reverse()
+        new_events = [event for event in events if (not self.current_event_timestamp) or (event["Timestamp"] > self.current_event_timestamp)]
+        for event in new_events:
+            prefix = 'Stack Event | '
+            event_info = ' '.join([
+                event['Timestamp'].replace(microsecond=0).isoformat(),
+                event['LogicalResourceId'],
+                event['ResourceType'],
+                event['ResourceStatus'],
+                event.get('ResourceStatusReason', '')
+            ])
+            Oprint.info('{}{}'.format(prefix, event_info), 'cloudformation')
+
+    def stack_events_waiter(self):
+        pass
+
+    def display_change_set(self, change_set_name, stack_name):
+        """Display change set infos"""
+        change_set_info = self.describe_change_set(change_set_name=change_set_name, StackName=stack_name)
+        pprint.pprint(change_set_info.get('Changes'))
+
+        token = change_set_info.get('NextToken')
+        if token:
+            while token:
+                change_set_info = self.describe_change_set(change_set_name=change_set_name, StackName=stack_name, NextToken=token)
+                pprint.pprint(change_set_info.get('Changes'))
+                token = change_set_info.get('NextToken')
+
+        return True
+
+    def stack_update_via_change_set(self, stack_name, *args, **kwargs):
+        """Securely update a stack"""
+        change_set_name = self.create_change_set(stack_name=stack_name, *args, **kwargs)
+        self.display_change_set(change_set_name=change_set_name, stack_name=stack_name)
+        
+        sys_pause('Proceed to execute the change set?[yes/no]', 'yes')
+
+        self.excecute_change_set(ChangeSetName=change_set_name, stack_ame=stack_name)
+
+        return True
+
+        
+
+
+
+
 
