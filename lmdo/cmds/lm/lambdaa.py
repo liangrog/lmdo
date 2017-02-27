@@ -446,13 +446,14 @@ class Lambda(AWSBase):
         
         site_packages = os.path.join(venv, 'lib', 'python2.7', 'site-packages')
         egg_links.extend(glob.glob(os.path.join(site_packages, '*.egg-link')))
-
+        Oprint.info('Copying lib packages over', 'pip')
         copytree(site_packages, tmp_path, symlinks=False)
 
         # We may have 64-bin specific packages too.
         site_packages_64 = os.path.join(venv, 'lib64', 'python2.7', 'site-packages')
         if os.path.exists(site_packages_64):
             egg_links.extend(glob.glob(os.path.join(site_packages_64, '*.egg-link')))
+            Oprint.info('Copying lib64 packages over', 'pip')
             copytree(site_packages_64, tmp_path, symlinks=False)
 
         if egg_links:
@@ -499,6 +500,8 @@ class Lambda(AWSBase):
             Oprint.warn(e, 'pip')
             
     def copy_editable_packages(self, egg_links, temp_package_path):
+        """Copy editable packages"""
+        Oprint.info('Copying editable packages over', 'pip')
         for egg_link in egg_links:
             with open(egg_link) as df:
                 egg_path = df.read().decode('utf-8').splitlines()[0].strip()
@@ -515,13 +518,14 @@ class Lambda(AWSBase):
         """
         Returns the path to the current virtualenv
         """
+        Oprint.info('Identifying current virtualenv path', 'pip')
         if 'VIRTUAL_ENV' in os.environ:
             venv = os.environ['VIRTUAL_ENV']
         elif os.path.exists('.python-version'):  # pragma: no cover
             try:
                 subprocess.check_output('pyenv', stderr=subprocess.STDOUT)
             except OSError:
-                Oprint.err("This directory seems to have pyenv's local venv but pyenv executable was not found.", 'lambda')
+                Oprint.err("This directory seems to have pyenv's local venv but pyenv executable was not found.", 'pip')
             with open('.python-version', 'r') as f:
                 env_name = f.read()[:-1]
             bin_path = subprocess.check_output(['pyenv', 'which', 'python']).decode('utf-8')
