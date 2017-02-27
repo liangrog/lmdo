@@ -56,6 +56,14 @@ Stage: dev
 # ApiVarMapToFile:  #optional. replacement of string in swagger to template content
 #     $apiIntegrationRequestTemple: api_integration_request_template.json
 
+# ***********************************************
+# @optional
+# @description:
+# If you are working in virtualenv environment
+# set this to True so that the packaging of lambda
+# functions can pick up the dependencies
+# ************************************************
+# VirtualEnv: False
 
 # ****************************************
 # @optional
