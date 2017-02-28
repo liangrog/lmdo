@@ -237,6 +237,8 @@ To only deploy one function, run
     
     $ lmdo lm (create|update|delete) --function-name=blah
 
+If you are using virtualenv, please set `VirtualEnv: True` in config
+
 AWS API Gateway
 -----
 1. Standard API Gateway
