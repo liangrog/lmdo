@@ -93,6 +93,7 @@
                 "produces": [
                     "application/json"
                 ],
+                "security": [$authorizer],
                 "responses": {
                     "200": {
                         "description": "200 response",
@@ -135,6 +136,7 @@
                 "produces": [
                     "application/json"
                 ],
+                "security": [$authorizer],
                 "parameters": [
                     {
                         "name": "proxy",
