@@ -3,6 +3,7 @@ import os
 import fnmatch
 import json
 import datetime
+import time
 import pprint
 
 from lmdo.cmds.aws_base import AWSBase
@@ -12,7 +13,7 @@ from lmdo.config import CLOUDFORMATION_DIRECTORY, CLOUDFORMATION_TEMPLATE_ALLOWE
 from lmdo.utils import find_files_by_postfix, find_files_by_name_only, get_template, sys_pause
 from lmdo.waiters.cloudformation_waiters import CloudformationWaiterStackCreate, CloudformationWaiterStackUpdate, CloudformationWaiterStackDelete
 from lmdo.cmds.cf.cf_status import CfStatus
-
+from lmdo.utc import utc
 
 class Cloudformation(AWSBase):
     """
@@ -27,6 +28,7 @@ class Cloudformation(AWSBase):
         self._s3 = S3()
         self._template = self.if_main_template_exist()
         self._args = args or {}
+        self.current_event_timestamp = (datetime.datetime.now(utc) - datetime.timedelta(seconds=3))
 
     @property
     def client(self):
@@ -161,13 +163,21 @@ class Cloudformation(AWSBase):
     def create_stack(self, stack_name, capabilities=['CAPABILITY_NAMED_IAM', 'CAPABILITY_IAM'], **kwargs):
         """Create stack""" 
         try:
-            waiter = CloudformationWaiterStackCreate(self._client)            
-            response = self._client.create_stack(
-                StackName=stack_name,
-                Capabilities=capabilities,
-                **kwargs
-            )
-            waiter.wait(stack_name)
+            if self._args.get('-e') or self._args.get('--event'):
+                response = self._client.create_stack(
+                    StackName=stack_name,
+                    Capabilities=capabilities,
+                    **kwargs
+                )
+                self.stack_events_waiter(stack_name=stack_name)
+            else:
+                waiter = CloudformationWaiterStackCreate(self._client)            
+                response = self._client.create_stack(
+                    StackName=stack_name,
+                    Capabilities=capabilities,
+                    **kwargs
+                )
+                waiter.wait(stack_name)
 
             self.lock_stack(stack_name=stack_name)
         except Exception as e:
@@ -182,13 +192,23 @@ class Cloudformation(AWSBase):
         """Update a stack"""
         try:
             self.unlock_stack(stack_name=stack_name)
-            waiter = CloudformationWaiterStackUpdate(self._client)
-            response = self._client.update_stack(
-                StackName=stack_name,
-                Capabilities=capabilities,
-                **kwargs
-            )
-            waiter.wait(stack_name)
+            
+            if self._args.get('-e') or self._args.get('--event'):
+                response = self._client.update_stack(
+                    StackName=stack_name,
+                    Capabilities=capabilities,
+                    **kwargs
+                )
+                self.stack_events_waiter(stack_name=stack_name)
+            else:
+                waiter = CloudformationWaiterStackUpdate(self._client)
+                response = self._client.update_stack(
+                    StackName=stack_name,
+                    Capabilities=capabilities,
+                    **kwargs
+                )
+                waiter.wait(stack_name)
+
             self.lock_stack(stack_name=stack_name)
         except Exception as e:
             Oprint.err(e, 'cloudformation')
@@ -223,9 +243,9 @@ class Cloudformation(AWSBase):
 
         if status_niddle == CfStatus.STACK_COMPLETE:
             return True if status.endswith('_COMPLETE') else False
-        if status_niddle == CfStatus.STACK_FAILED::
+        if status_niddle == CfStatus.STACK_FAILED:
             return True if status.endswith('_FAILED') or status.endswith('ROLLBACK_COMPLETE') else False
-        if status_niddle == CfStatus._IN_PROGRESS:
+        if status_niddle == CfStatus.STACK_IN_PROGRESS:
             return True if status.endswith('_IN_PROGRESS') else False
 
         return status
@@ -322,10 +342,10 @@ class Cloudformation(AWSBase):
         try:
             lock_policy = get_template(CLOUDFORMATION_STACK_LOCK_POLICY)
             with open(lock_policy, 'r') as outfile:
-                policy = outfile
+                policy = outfile.read()
 
             Oprint.info('Locking stack {} to prevent accidental changes'.format(stack_name), 'cloudformation')
-            response = self._client.set_stack_policy(Stackname=stack_name, StackPolicyBody=policy)
+            response = self._client.set_stack_policy(StackName=stack_name, StackPolicyBody=policy)
         except Exception as e:
             Oprint.err(e, 'cloudformation')
         
@@ -336,10 +356,10 @@ class Cloudformation(AWSBase):
         try:
             unlock_policy = get_template(CLOUDFORMATION_STACK_UNLOCK_POLICY)
             with open(unlock_policy, 'r') as outfile:
-                policy = outfile
+                policy = outfile.read()
 
             Oprint.info('Unlocking stack {} for update'.format(stack_name), 'cloudformation')
-            response = self._client.set_stack_policy(Stackname=stack_name, StackPolicyBody=policy)
+            response = self._client.set_stack_policy(StackName=stack_name, StackPolicyBody=policy)
         except Exception as e:
             Oprint.err(e, 'cloudformation')
         
@@ -368,8 +388,21 @@ class Cloudformation(AWSBase):
             ])
             Oprint.info('{}{}'.format(prefix, event_info), 'cloudformation')
 
-    def stack_events_waiter(self):
-        pass
+            # Update timestamp
+            if not self.current_event_timestamp:
+                self.current_event_timestamp = event['Timestamp']
+            elif event['Timestamp'] > self.current_event_timestamp:
+                self.current_event_timestamp = event['Timestamp']
+
+    def stack_events_waiter(self, stack_name):
+        """Event waiter"""
+        in_progress = True
+        while in_progress:
+            in_progress = self.get_stack_status(status_niddle=CfStatus.STACK_IN_PROGRESS)
+            self.display_stack_event(stack_name=stack_name)
+            time.sleep(3)
+
+        return in_progress
 
     def display_change_set(self, change_set_name, stack_name):
         """Display change set infos"""
