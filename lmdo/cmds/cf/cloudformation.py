@@ -11,9 +11,11 @@ from lmdo.cmds.s3.s3 import S3
 from lmdo.oprint import Oprint
 from lmdo.config import CLOUDFORMATION_DIRECTORY, CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX, CLOUDFORMATION_TEMPLATE, CLOUDFORMATION_PARAMETER_FILE, CLOUDFORMATION_STACK_LOCK_POLICY, CLOUDFORMATION_STACK_UNLOCK_POLICY
 from lmdo.utils import find_files_by_postfix, find_files_by_name_only, get_template, sys_pause
-from lmdo.waiters.cloudformation_waiters import CloudformationWaiterStackCreate, CloudformationWaiterStackUpdate, CloudformationWaiterStackDelete
+from lmdo.waiters.cloudformation_waiters import CloudformationWaiterStackCreate, CloudformationWaiterStackUpdate, CloudformationWaiterStackDelete, CloudformationWaiterChangeSetCreateComplete
 from lmdo.cmds.cf.cf_status import CfStatus
 from lmdo.utc import utc
+from lmdo.resolvers import ParamsResolver, TemplatesResolver
+
 
 class Cloudformation(AWSBase):
     """
@@ -26,6 +28,7 @@ class Cloudformation(AWSBase):
         super(Cloudformation, self).__init__()
         self._client = self.get_client('cloudformation') 
         self._s3 = S3()
+        self._stack_info_cache = {}
         self._template = self.if_main_template_exist()
         self._args = args or {}
         self.current_event_timestamp = (datetime.datetime.now(utc) - datetime.timedelta(seconds=3))
@@ -111,14 +114,15 @@ class Cloudformation(AWSBase):
             Oprint.err(e, 'cloudformation')
         return True
 
-    def get_stack(self, stack_name):
+    def get_stack(self, stack_name, cached=False):
         """Check get stack info"""
         try:
-            info = self._client.describe_stacks(StackName=stack_name)
+            if not self._stack_info_cache.get(stack_name) or not cached:
+                self.self._stack_info_cache[stack_name] = self._client.describe_stacks(StackName=stack_name)
         except Exception as e:
             return False
 
-        return info
+        return self.self._stack_info_cache[stack_name]
 
     def process(self, is_local):
         """Creating/updating stack"""
@@ -154,7 +158,7 @@ class Cloudformation(AWSBase):
        
         if to_update:
             if self._args.get('-c') or self._args.get('--change_set'):
-                self.stack_update_via_change_set(self.get_stack_name, **func_params)
+                self.stack_update_via_change_set(stack_name=self.get_stack_name(), **func_params)
             else:
                 self.update_stack(self.get_stack_name(), **func_params)
         else:
@@ -266,9 +270,9 @@ class Cloudformation(AWSBase):
             if status != 'DELETE_COMPLETE':
                 Oprint.warn("Delete stack failed with status {} (most likely caused by your S3 buckets have contents)".format(status), 'cloudformation')
 
-    def get_output_value(self, stack_name, key):
+    def get_output_value(self, stack_name, key, cached=False):
         """get a specific stack output value"""
-        stack_info = self.get_stack(stack_name)
+        stack_info = self.get_stack(stack_name, cached=cached)
         outputs = stack_info['Stacks'][0]['Outputs']
 
         for opts in outputs:
@@ -289,7 +293,7 @@ class Cloudformation(AWSBase):
     def describe_change_set(self, change_set_name, *args, **kwargs):
         """Get change set information"""
         try:
-            response = self_client.describe_change_set(ChangeSetName=change_set_name, *args, **kwargs)
+            response = self._client.describe_change_set(ChangeSetName=change_set_name, *args, **kwargs)
         except Exception as e:
             Oprint.err(e, 'cloudformation')
 
@@ -312,10 +316,14 @@ class Cloudformation(AWSBase):
     def create_change_set(self, stack_name, *args, **kwargs):
         """Creating change set"""
         try:
-            change_set_name = create_change_set_name(stack_name)
+            waiter = CloudformationWaiterChangeSetCreateComplete(self._client)
+            
+            change_set_name = self.create_change_set_name(stack_name)
 
-            Oprint.info('Creating change set {} for stack {}'.format(change_set_name, stack_name), 'cloudformation')
+            #Oprint.info('Creating change set {} for stack {}'.format(change_set_name, stack_name), 'cloudformation')
             response = self._client.create_change_set(StackName=stack_name, ChangeSetName=change_set_name, *args, **kwargs)
+
+            waiter.wait(change_set_name=change_set_name, stack_name=stack_name)
         except Exception as e:
             Oprint.err(e, 'cloudformation')
 
@@ -324,12 +332,20 @@ class Cloudformation(AWSBase):
     def excecute_change_set(self, change_set_name, stack_name, *args, **kwargs):
         """Run changeset to make it happen"""
         try:
-            self.unlock_stack(stack_name=self.get_stack_name())
-            waiter = CloudformationWaiterStackUpdate(self._client)
-            Oprint.info('Executing change set {} for updating stack {}'.format(change_set_name, stack_name), 'cloudformation')
-            response = self._client.execute_change_set(ChangeSetName=change_set_name, StackName=stack_name, *args, **kwargs)
-            waiter.wait(stack_name)
-            self.lock_stack(stack_name=self.get_stack_name())
+            self.unlock_stack(stack_name=stack_name)
+
+            if self._args.get('-e') or self._args.get('--event'):
+                Oprint.info('Executing change set {} for updating stack {}'.format(change_set_name, stack_name), 'cloudformation')
+                response = self._client.execute_change_set(ChangeSetName=change_set_name, StackName=stack_name, *args, **kwargs)
+
+                self.stack_events_waiter(stack_name=stack_name)
+            else: 
+                waiter = CloudformationWaiterStackUpdate(self._client)
+                Oprint.info('Executing change set {} for updating stack {}'.format(change_set_name, stack_name), 'cloudformation')
+                response = self._client.execute_change_set(ChangeSetName=change_set_name, StackName=stack_name, *args, **kwargs)
+                waiter.wait(stack_name)
+
+            self.lock_stack(stack_name=stack_name)
         except Exception as e:
             Oprint.err(e, 'cloudformation')
         
@@ -407,7 +423,13 @@ class Cloudformation(AWSBase):
     def display_change_set(self, change_set_name, stack_name):
         """Display change set infos"""
         change_set_info = self.describe_change_set(change_set_name=change_set_name, StackName=stack_name)
-        pprint.pprint(change_set_info.get('Changes'))
+        # If no changes, skip
+        if not change_set_info.get('Changes'):
+            print(change_set_info)
+            Oprint.warn('There is no changes in change set, abort', 'cloudformation')
+            return False
+
+        self.pretty_change_set_changes(change_set_info.get('Changes'))
 
         token = change_set_info.get('NextToken')
         if token:
@@ -418,20 +440,42 @@ class Cloudformation(AWSBase):
 
         return True
 
+    def pretty_change_set_changes(self, changes):
+        """Display changes in a pretty format"""
+        Oprint.infog('Proposed changes', 'cloudformation')
+        for item in changes:
+            change = item['ResourceChange']
+            Oprint.infog('========================', 'cloudformation')
+            Oprint.infog('Type: {}'.format(item.get('Type')), 'cloudformation')
+            Oprint.infog('Action: {}'.format(change.get('Action')), 'cloudformation')
+            Oprint.infog('Replacement: {}'.format(change.get('Replacement')), 'cloudformation')
+            Oprint.infog('Scope: {}'.format(', '.join(change.get('Scope') or [])), 'cloudformation')
+            Oprint.infog('ResourceType: {}'.format(change.get('ResourceType')), 'cloudformation')
+            Oprint.infog('LogicalResourceId: {}'.format(change.get('LogicalResourceId')), 'cloudformation')
+            Oprint.infog('PhysicalResourceId: {}'.format(change.get('PhysicalResourceId')), 'cloudformation')
+            Oprint.infog('Details:', 'cloudformation')
+
+            for detail in change['Details']:
+                Oprint.infog('    ChangeSource: {}'.format(detail.get('ChangeSource')), 'cloudformation')
+                Oprint.infog('    Evaluation: {}'.format(detail.get('Evaluation')), 'cloudformation')
+                Oprint.infog('    CausingEntity: {}'.format(detail.get('CausingEntity')), 'cloudformation')
+                Oprint.infog('    Target:', 'cloudformation')
+                Oprint.infog('        Attribute: {}'.format(detail.get('Target').get('Attribute')), 'cloudformation')
+                Oprint.infog('        Name: {}'.format(detail.get('Target').get('Name')), 'cloudformation')
+                Oprint.infog('        RequiresRecreation: {}'.format(detail.get('Target').get('RequiresRecreation')), 'cloudformation')
+                Oprint.infog('        -------------------------', 'cloudformation')
+
     def stack_update_via_change_set(self, stack_name, *args, **kwargs):
         """Securely update a stack"""
         change_set_name = self.create_change_set(stack_name=stack_name, *args, **kwargs)
-        self.display_change_set(change_set_name=change_set_name, stack_name=stack_name)
+        
+        if not self.display_change_set(change_set_name=change_set_name, stack_name=stack_name):
+            return False
         
         sys_pause('Proceed to execute the change set?[yes/no]', 'yes')
 
-        self.excecute_change_set(ChangeSetName=change_set_name, stack_ame=stack_name)
+        self.excecute_change_set(change_set_name=change_set_name, stack_name=stack_name)
 
         return True
 
         
-
-
-
-
-

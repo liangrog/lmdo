@@ -66,5 +66,24 @@ class CloudformationWaiterStackDelete(AWSWaiterBase, CliWaiterInterface):
         except Exception as e:
             spinner.stop()
 
+class CloudformationWaiterChangeSetCreateComplete(AWSWaiterBase, CliWaiterInterface):
+    """Cloudformation waiter for updating stack"""
+    def __init__(self, client=None, client_type='cloudformation'):
+        super(CloudformationWaiterChangeSetCreateComplete, self).__init__(client=client, client_type=client_type)
+        self._client_type = client_type
+        self._change_set_create = self._client.get_waiter('change_set_create_complete')
+
+    def get_waiter(self):
+        return self._change_set_create
+
+    def wait(self, change_set_name, stack_name):
+        try:
+            Oprint.info('Start creating change set {} for stack {}'.format(change_set_name, stack_name), self._client_type)
+            spinner.start()
+            self._change_set_create.wait(StackName=stack_name, ChangeSetName=change_set_name)
+            spinner.stop()
+            Oprint.info('Change set {} creation completed'.format(change_set_name), self._client_type)
+        except Exception as e:
+            spinner.stop()
 
 

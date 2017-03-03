@@ -1,10 +1,10 @@
 
 from lmdo.cmds.s3.s3 import S3
 from lmdo.cmds.commands import Dispatcher, SyncCommand
-from lmdo.cmds.client_factory_interface import ClientFactoryInterface
+from lmdo.cmds.client_factory import ClientFactory
 
 
-class S3Client(ClientFactoryInterface):
+class S3Client(ClientFactory):
     """Cloudformation command client"""
     def __init__(self, args):
         self._s3 = S3()

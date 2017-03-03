@@ -39,7 +39,17 @@ Stage: dev
 # will create a stack name with format  {User}-{Stage}-{Service}-service
 # ***********************************************************************
 # StackName: blah
+CloudFormation:
+    S3Bucket: blah.com.au                   # Bucket to upload template, if not provided, will upload from local but won't work for nested stacks without it
+    TemplateRepoPath: path_to_template      # Path to re-useable stack folder
+    Stacks:
+      - NameSuffix: stack_one              # stack name postfix
+        TemplatePath: path_to_the_template  # master template path
+        ParamsPath: path_of_params          # params path for the stack
 
+      - NameSuffix: stack_two              # stack name postfix
+        TemplatePath: path_to_the_template  # master template path
+        ParamsPath: path_of_params          # params path for the stack
 
 # ****************************************************
 # @optional

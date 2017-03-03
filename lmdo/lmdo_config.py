@@ -3,15 +3,15 @@ from __future__ import print_function
 import os
 
 import jinja2
-import yaml
 
-from lmdo.config_parser_interface import ConfigParserInterface
+from lmdo.config_parser import ConfigParser
+from lmdo.file_loader import FileLoader
 from lmdo.config import PROJECT_CONFIG_FILE, PROJECT_CONFIG_TEMPLATE, CONFIG_MANDATORY_KEYS
 from lmdo.oprint import Oprint
 from lmdo.utils import mkdir
 
 
-class LmdoConfig(ConfigParserInterface):
+class LmdoConfig(ConfigParser):
     """lmdo project configuration Loader"""
     
     def __init__(self):
@@ -43,14 +43,8 @@ class LmdoConfig(ConfigParserInterface):
         return jinja2.Environment(loader=jinja2.FileSystemLoader(path or './')).get_template(filename).render(context)
 
     def load_config(self):
-        """Load YAML config data from project directory"""
-        # Load yaml file
-        with open(PROJECT_CONFIG_FILE, 'r') as outfile:
-            try:
-                self._config = yaml.load(outfile)
-            except yaml.YAMLError as e:
-                Oprint.err(e, 'lmdo')
-
+        """Load config data from project directory"""
+        self._config = FileLoader(PROJECT_CONFIG_FILE).load()
         self.validate()
 
     def get(self, key):
