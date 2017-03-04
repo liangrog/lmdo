@@ -4,12 +4,12 @@ import fnmatch
 import json
 import datetime
 import time
-import pprint
+import shutil
 
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.s3.s3 import S3
 from lmdo.oprint import Oprint
-from lmdo.config import CLOUDFORMATION_DIRECTORY, CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX, CLOUDFORMATION_TEMPLATE, CLOUDFORMATION_PARAMETER_FILE, CLOUDFORMATION_STACK_LOCK_POLICY, CLOUDFORMATION_STACK_UNLOCK_POLICY
+from lmdo.config import CLOUDFORMATION_STACK_LOCK_POLICY, CLOUDFORMATION_STACK_UNLOCK_POLICY
 from lmdo.utils import find_files_by_postfix, find_files_by_name_only, get_template, sys_pause
 from lmdo.waiters.cloudformation_waiters import CloudformationWaiterStackCreate, CloudformationWaiterStackUpdate, CloudformationWaiterStackDelete, CloudformationWaiterChangeSetCreateComplete
 from lmdo.cmds.cf.cf_status import CfStatus
@@ -21,7 +21,6 @@ class Cloudformation(AWSBase):
     """
     Class upload cloudformation template to S3
     and create/update stack
-    Stack name is fixed with User-Stage-Servicename-Service
     """
 
     def __init__(self, args=None):
@@ -41,70 +40,61 @@ class Cloudformation(AWSBase):
     def s3(self):
         return self._s3
     
-    def get_stack_name(self):
+    def get_stack_name(self, stack_name):
         """get defined stack name"""
-        return self._config.get('StackName') if self._config.get('StackName') else "{}-service".format(self.get_name_id())
+        return self._config.get('StackName') if self._config.get('StackName') else "{}-{}".format(self.get_name_id(), stack_name)
 
     def create(self):
         """Create/Update stack"""
         # Don't run if we don't have templates
-        if not self._template:
+        if not self._config.get('CloudFormation'):
+            Oprint.info('No cloudformation found, skip', 'cloudformation')
             return True
         
         self.process(self.prepare())
 
     def delete(self):
         """Delete stack"""
-        self.delete_stack(self.get_stack_name())
+        if not self._config.get('CloudFormation'):
+            Oprint.info('No cloudformation found, skip', 'cloudformation')
+            return True
+
+        for stack in self._config.get('CloudFormation').get('Stacks'):
+            if stack.get('DisableUserPrefix') == True:
+                stack_name = stack.get('name')
+            else:
+                stack_name = self.get_stack_name(stack.get('name'))
+
+            self.delete_stack(self.get_stack_name())
 
     def update(self):
         """Wrapper, same action as create"""
         self.create()
 
-    def find_main_template(self):
-        """Get the main template file"""
-        return find_files_by_name_only("./{}".format(CLOUDFORMATION_DIRECTORY), CLOUDFORMATION_TEMPLATE, CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX)
-
-    def find_template_files(self):
-        """find all files end with .json or .templates"""
-        return find_files_by_postfix("./{}".format(CLOUDFORMATION_DIRECTORY), CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX)
-
-    def if_main_template_exist(self):
-        """Check if we have only one main template defined, allow .json or .template"""
-        found_files = self.find_main_template()
-        if len(found_files) > 1:
-            Oprint.err("You cannot define more than one {} template".format(CLOUDFORMATION_TEMPLATE))
-        
-        if len(found_files) < 1:
-            return False
-
-        # return the main template file name
-        return found_files.pop()
-
-    def prepare(self):
-        is_local = False
-        bucket_name = self._config.get('CloudformationBucket')
-
-        templates = self.find_template_files()
+    def prepare(self, templates, bucket=None):
+        """Prepare all templates/validate/upload before create and update"""
+        if len(templates['children']) > 0 and not bucket:
+            Oprint.err('S3 bucket hasn\'t been provided for nested template', 'cloudformation')
 
         # Validate syntax of the template
-        for template in templates:
-            with open("./{}/{}".format(CLOUDFORMATION_DIRECTORY, template), 'r') as outfile: 
+        self.validate_template(templates['master'])
+
+        for child_template in templates['children']:
+            with open(child_template, 'r') as outfile: 
                 tpl = outfile.read()
                 self.validate_template(tpl)
 
         # If bucket provided, we upload 
         # all templates into the subfolder 
-        if bucket_name:
-            # Don't upload parameter file
-            for f in templates:
-                if not fnmatch.fnmatch(f, CLOUDFORMATION_PARAMETER_FILE):
-                    self._s3.upload_file(bucket_name, "./{}/{}".format(CLOUDFORMATION_DIRECTORY, f), "{}/{}".format(self.get_stack_name(), f))
-        else:
-            # Put local prepare here
-            is_local = True
+        if bucket:
+            path, template_name = os.path.split(templates['master'])
+            self._s3.upload_file(bucket, templates['master'], "{}/{}".format(self.get_name_id(), template_name))
 
-        return is_local
+            for child_template in templates['children']:
+                path, template_name = os.path.split(child_template)
+                self._s3.upload_file(bucket, templates['master'], "{}/{}".format(self.get_name_id(), template_name))
+
+        return True
 
     def validate_template(self, template_body):
         """Validate template via content"""
@@ -122,47 +112,59 @@ class Cloudformation(AWSBase):
         except Exception as e:
             return False
 
-        return self.self._stack_info_cache[stack_name]
+        return self._stack_info_cache[stack_name]
 
     def process(self, is_local):
         """Creating/updating stack"""
-        to_update = False
-        stack_info = self.get_stack(self.get_stack_name())
+        if self._config.get('CloudFormation'):
+            s3_bucket = self._config.get('CloudFormation').get('S3Bucket')
+            repo_path = self._config.get('CloudFormation').get('TemplateRepoPath')
+            for stack in self._config.get('CloudFormation').get('Stacks'):
+                func_params = {}
 
-        if stack_info:
-            # You cannot update a stack with status ROLLBACK_COMPLETE during creation
-            if stack_info['Stacks'][0]['StackStatus'] == 'ROLLBACK_COMPLETE':
-                Oprint.warn('Stack {} exits with bad state ROLLBACK_COMPLETE. Required to be removed first'.format(self.get_stack_name()), 'cloudformation')
-                self.delete_stack(self.get_stack_name())
-            else:
-                to_update = True
+                params_path = stack.get('ParamsPath')
+                if params_path:
+                    func_params['Parameters'] = ParamsResolver(params_path=params_path).resolve()
 
-        if is_local:
-            # Read template data into cache
-            if os.path.isfile("./{}/{}".format(CLOUDFORMATION_DIRECTORY, self._template)):
-                with open("./{}/{}".format(CLOUDFORMATION_DIRECTORY, self._template), 'r') as outfile:
-                    template_body = outfile.read()
+                if stack.get('DisableUserPrefix') == True:
+                    stack_name = stack.get('name')
+                else:
+                    stack_name = self.get_stack_name(stack.get('name'))
+
+                templates = TemplatesResolver(template_path=stack.get('TemplatePath'), repo_path=repo_path).resolve()
+                self.prepare(templates=templates, bucket=s3_bucket)
+
+                to_update = False
+                stack_info = self.get_stack(stack_name=stack_name)
+
+                if stack_info:
+                    # You cannot update a stack with status ROLLBACK_COMPLETE during creation
+                    if stack_info['Stacks'][0]['StackStatus'] == 'ROLLBACK_COMPLETE':
+                        Oprint.warn('Stack {} exited with bad state ROLLBACK_COMPLETE. Required to be removed first'.format(stack_name), 'cloudformation')
+                        self.delete_stack(stack_name)
+                else:
+                    to_update = True
+
+                if not s3_bucket:
+                    # Read master template data into cache
+                    with open(templates['master'], 'r') as outfile:
+                        template_body = outfile.read()
  
-            func_params = {
-                "TemplateBody": template_body,
-            }
-        else:
-            func_params = {
-                "TemplateURL": "{}/{}/{}".format(self._s3.get_bucket_url(self._config.get('CloudformationBucket')), self.get_stack_name(), self._template)
-            }
+                    func_params['TemplateBody']: template_body
+                else:
+                    path, template_name = os.path.split(templates['master'])
+                    func_params['TemplateURL']: self.get_template_s3_url(template_name)
 
-        # If parameters file exist
-        if os.path.isfile("./{}/{}".format(CLOUDFORMATION_DIRECTORY, CLOUDFORMATION_PARAMETER_FILE)):
-            with open("./{}/{}".format(CLOUDFORMATION_DIRECTORY, CLOUDFORMATION_PARAMETER_FILE), 'r') as outfile:
-                func_params['Parameters'] = json.loads(outfile.read())
-       
-        if to_update:
-            if self._args.get('-c') or self._args.get('--change_set'):
-                self.stack_update_via_change_set(stack_name=self.get_stack_name(), **func_params)
-            else:
-                self.update_stack(self.get_stack_name(), **func_params)
-        else:
-            self.create_stack(self.get_stack_name(), **func_params)
+                if to_update:
+                    if self._args.get('-c') or self._args.get('--change_set'):
+                        self.stack_update_via_change_set(stack_name=stack_name, **func_params)
+                    else:
+                        self.update_stack(stack_name, **func_params)
+                else:
+                    self.create_stack(stack_name, **func_params)
+                
+                # Remove temporary template dir
+                shutil.rmtree(templates['tmp_dir'])
 
     def create_stack(self, stack_name, capabilities=['CAPABILITY_NAMED_IAM', 'CAPABILITY_IAM'], **kwargs):
         """Create stack""" 
@@ -242,7 +244,7 @@ class Cloudformation(AWSBase):
         return True
     
     def get_stack_status(self, stack_id=None, status_niddle=None):
-        stack_info = self.get_stack(stack_id or self.get_stack_name())
+        stack_info = self.get_stack(stack_id)
         status = stack_info['Stacks'][0]['StackStatus']
 
         if status_niddle == CfStatus.STACK_COMPLETE:
@@ -256,7 +258,7 @@ class Cloudformation(AWSBase):
 
     def verify_stack(self, mode, stack_id=None):
         """Check if stack action successful, deleted stack must provide stack id"""
-        status = self.get_stack_status(stack_id)
+        status = self.get_stack_status(stack_id=stack_id)
 
         if mode == 'create':
             if status != 'CREATE_COMPLETE':
@@ -414,7 +416,7 @@ class Cloudformation(AWSBase):
         """Event waiter"""
         in_progress = True
         while in_progress:
-            in_progress = self.get_stack_status(status_niddle=CfStatus.STACK_IN_PROGRESS)
+            in_progress = self.get_stack_status(stack_id=stack_name, status_niddle=CfStatus.STACK_IN_PROGRESS)
             self.display_stack_event(stack_name=stack_name)
             time.sleep(3)
 
@@ -435,7 +437,7 @@ class Cloudformation(AWSBase):
         if token:
             while token:
                 change_set_info = self.describe_change_set(change_set_name=change_set_name, StackName=stack_name, NextToken=token)
-                pprint.pprint(change_set_info.get('Changes'))
+                self.pretty_change_set_changes(change_set_info.get('Changes'))
                 token = change_set_info.get('NextToken')
 
         return True

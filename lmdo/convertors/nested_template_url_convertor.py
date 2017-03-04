@@ -58,11 +58,11 @@ class NestedStackUrlConvertor(Convertor, ChainProcessor):
         template_names = self.get_template_names(content)
 
         # Dont continue if there 
-        if template_names and not lmdo_config['CloudFormation'].get['S3Bucket']:
+        if template_names and not lmdo_config.get('CloudFormation').get('S3Bucket'):
             Oprint.err('Nested stack requires S3 bucket, but found none', 'cloudformation')
 
         for template_name in template_names:
-            url = aws.get_nested_stack_url(template_name=template_name)
+            url = aws.get_template_s3_url(template_name=template_name)
             from_str = '$template|{}'.format(template_name)
             replacement[from_str] = url                
 

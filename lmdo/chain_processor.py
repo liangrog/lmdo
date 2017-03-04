@@ -20,7 +20,7 @@ class ChainProcessor(object):
     def process_next(self, data):
         """Let the next successor process"""
         if self.successor:
-            self.successor.process_next(self.process(data))
+            return self.successor.process_next(self.process(data))
         else:
             return self.process(data)
 
