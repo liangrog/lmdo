@@ -57,7 +57,6 @@ def main():
     if not lmdo_config.if_lmdo_config_exist():
         Oprint.err('Please run lmdo command at the directory contains the lmdo config file')
 
-        print('---------')
     # Call the right client to handle
     if args.get('bp'):
         client_factory = BpClient(args)
