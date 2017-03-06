@@ -1,9 +1,9 @@
 
 from lmdo.cmds.lm.lambdaa import Lambda
 from lmdo.cmds.commands import Dispatcher, CreateCommand, UpdateCommand, DeleteCommand, PackageCommand
-from lmdo.cmds.client_factory_interface import ClientFactoryInterface
+from lmdo.cmds.client_factory import ClientFactory
 
-class LmClient(ClientFactoryInterface):
+class LmClient(ClientFactory):
     """Lambda command client"""
     def __init__(self, args):
         self._lambda = Lambda(args)

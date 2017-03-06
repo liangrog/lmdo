@@ -3,10 +3,10 @@ from lmdo.cmds.cf.cloudformation import Cloudformation
 from lmdo.cmds.lm.lambdaa import Lambda
 from lmdo.cmds.api.apigateway import Apigateway
 from lmdo.cmds.commands import Dispatcher, DeleteCommand
-from lmdo.cmds.client_factory_interface import ClientFactoryInterface
+from lmdo.cmds.client_factory import ClientFactory
 from lmdo.oprint import Oprint
 
-class DestroyClient(ClientFactoryInterface):
+class DestroyClient(ClientFactory):
     """Cloudformation command client"""
     def __init__(self, args):
         self._cloudformation = Cloudformation()

@@ -59,6 +59,10 @@ class AWSBase(object):
     def get_name_id(self):
         return "{}-{}-{}".format(self._config.get('User'), self._config.get('Stage'), self._config.get('Service')).lower()
 
+    def get_template_s3_url(self, template_name):
+        """Construct the template URL for nested stack"""
+        return 'https://s3.amazonaws.com/{}/{}/{}'.format(self._config.get('CloudFormation').get('S3Bucket'), self.get_name_id(), template_name)
+
     def get_policy_arn(self, policy_name):
         """Fetch policy arn"""
         return 'arn:aws:iam::{}:policy/{}'.format(self.get_account_id(), policy_name)

@@ -1,9 +1,9 @@
 
 from lmdo.cmds.cf.cloudformation import Cloudformation
 from lmdo.cmds.commands import Dispatcher, CreateCommand, UpdateCommand, DeleteCommand
-from lmdo.cmds.client_factory_interface import ClientFactoryInterface
+from lmdo.cmds.client_factory import ClientFactory
 
-class CfClient(ClientFactoryInterface):
+class CfClient(ClientFactory):
     """Cloudformation command client"""
     def __init__(self, args):
         self._cloudformation = Cloudformation(args)

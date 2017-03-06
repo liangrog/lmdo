@@ -3,13 +3,13 @@ import os
 import fnmatch
 import mimetypes
 
-from tqdm import tqdm
-
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.oprint import Oprint
 from lmdo.utils import sys_pause
 from lmdo.waiters.s3_waiters import S3WaiterBucketCreate, S3WaiterBucketDelete, S3WaiterObjectCreate
 from lmdo.config import S3_UPLOAD_EXCLUDE
+from lmdo.file_upload_progress import FileUploadProgress
+
 
 class S3(AWSBase):
     """S3 handler"""
@@ -66,8 +66,7 @@ class S3(AWSBase):
         Oprint.info('Start uploading {} to S3 bucket {}'.format(key, bucket_name), 's3')
         #waiter = S3WaiterObjectCreate(self._client)
         
-        progress = tqdm(total=float(os.stat(file_path).st_size), unit_scale=True, unit='B')
-        self._client.upload_file(file_path, bucket_name, key, Callback=progress.update, **kwargs)
+        self._client.upload_file(file_path, bucket_name, key, Callback=FileUploadProgress(file_path), **kwargs)
         
         #waiter.wait(bucket_name, key)
         Oprint.info('Complete uploading {}'.format(key), 's3')

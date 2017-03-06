@@ -60,7 +60,6 @@ setup(
         'boto3==1.4.2',
         'PyYAML==3.12',
         'jinja2==2.8',
-        'tqdm==4.10',
         'gitpython',
         'lambda-packages==0.13.0',
     ],

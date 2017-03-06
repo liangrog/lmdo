@@ -1,10 +1,10 @@
 
 from lmdo.cmds.logs.logs import Logs
 from lmdo.cmds.commands import Dispatcher, TailCommand
-from lmdo.cmds.client_factory_interface import ClientFactoryInterface
+from lmdo.cmds.client_factory import ClientFactory
 
 
-class LogsClient(ClientFactoryInterface):
+class LogsClient(ClientFactory):
     """Cloudformation command client"""
     def __init__(self, args):
         self._logs = Logs(args)

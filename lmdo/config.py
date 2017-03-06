@@ -87,3 +87,6 @@ DEFAULT_ASSUME_ROLES = [
     "events.amazonaws.com", 
     "ec2.amazonaws.com"
 ]
+
+FILE_LOADER_TEMPLATE_ALLOWED_EXT = ['.yml', '.template', '.json']
+FILE_LOADER_PARAM_ALLOWED_EXT = ['.yml', '.json']

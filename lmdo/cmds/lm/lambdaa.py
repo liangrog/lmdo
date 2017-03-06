@@ -6,6 +6,7 @@ import shutil
 import tempfile
 import subprocess
 import glob
+import copy
 
 from lambda_packages import lambda_packages
 
@@ -54,6 +55,12 @@ class Lambda(AWSBase):
 
         # delete  all functions
         for lm in self._config.get('Lambda'):
+            
+            # If user specify a function
+            specify_function = self.if_specify_function()
+            if specify_function and specify_function != lm.get('FunctionName'):
+                continue
+ 
             # Get function info before being deleted
             info = self.get_function(self.get_function_name(lm.get('FunctionName')))
             if info:
@@ -216,7 +223,7 @@ class Lambda(AWSBase):
         # Installing packages
         self.dependency_packaging(lambda_temp_dir)
 
-        if self.if_wsgi_exist():
+        if func_type == 'wsgi':
             self.pip_wsgi_install(lambda_temp_dir)
 
         target_temp_dir = tempfile.mkdtemp()
@@ -422,7 +429,7 @@ class Lambda(AWSBase):
     def venv_package_install(self, tmp_path):
         """Install virtualenv packages"""
         venv = self.get_current_venv_path()
-
+        
         cwd = os.getcwd()
 
         def splitpath(path):
@@ -464,20 +471,27 @@ class Lambda(AWSBase):
             package_to_keep += os.listdir(site_packages)
         if os.path.isdir(site_packages_64):
             package_to_keep += os.listdir(site_packages_64)
-
+       
         installed_packages_name_set = [package.project_name.lower() for package in
                                        pip.get_installed_distributions() if package.project_name in package_to_keep or
                                        package.location in [site_packages, site_packages_64]]
+
+        precompiled_lambda_packages = []
+
         # First, try lambda packages
-        for name, details in lambda_packages.items():
-            Oprint.info('Installing Lambda_package Amazon Linux AMI bianry package {} to {}'.format(name, tmp_path), 'pip')
+        for name, details in lambda_packages.iteritems():
+            # Make a local copy so that we can use later
+            precompiled_lambda_packages.append(name.lower())
+
             if name.lower() in installed_packages_name_set:
+                Oprint.info('Installing Lambda_package Amazon Linux AMI bianry package {} to {}'.format(name, tmp_path), 'pip')
                 tar = tarfile.open(details['path'], mode="r:gz")
                 for member in tar.getmembers():
                     # If we can, trash the local version.
                     if member.isdir():
                         shutil.rmtree(os.path.join(tmp_path, member.name), ignore_errors=True)
                         continue
+
                     tar.extract(member, tmp_path)
 
         # Then try to use manylinux packages from PyPi..
@@ -486,7 +500,7 @@ class Lambda(AWSBase):
             Oprint.info('Installing virtualenv python package dependancies to {}'.format(tmp_path), 'pip')
             spinner.start()
             for installed_package_name in installed_packages_name_set:
-                if installed_package_name not in lambda_packages:
+                if installed_package_name not in precompiled_lambda_packages:
                     wheel_url = self.get_manylinux_wheel(installed_package_name)
                     if wheel_url:
                         resp = requests.get(wheel_url, timeout=2, stream=True)
@@ -554,6 +568,6 @@ class Lambda(AWSBase):
 
     def if_specify_function(self):
         """If user specify a function to process"""
-        return False if not self._args.get('--function-name') else self._args.get('--function-name')
+        return False if not self._args.get('--function') else self._args.get('--function')
            
                   

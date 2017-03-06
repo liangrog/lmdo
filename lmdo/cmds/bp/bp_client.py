@@ -1,10 +1,10 @@
 
 from lmdo.cmds.bp.boiler_plate import BoilerPlate
 from lmdo.cmds.commands import Dispatcher, InitCommand, FetchCommand
-from lmdo.cmds.client_factory_interface import ClientFactoryInterface
+from lmdo.cmds.client_factory import ClientFactory
 
 
-class BpClient(ClientFactoryInterface):
+class BpClient(ClientFactory):
     """Init command client"""
     def __init__(self, args):
         self._boiler_plate = BoilerPlate(args)

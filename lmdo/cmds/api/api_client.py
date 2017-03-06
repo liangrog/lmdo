@@ -2,9 +2,9 @@
 from lmdo.cmds.api.apigateway import Apigateway
 from lmdo.cmds.commands import Dispatcher, CreateCommand, UpdateCommand, DeleteCommand, CreateStageCommand, DeleteStageCommand, \
     CreateDomainCommand, DeleteDomainCommand, CreateMappingCommand, DeleteMappingCommand
-from lmdo.cmds.client_factory_interface import ClientFactoryInterface
+from lmdo.cmds.client_factory import ClientFactory
 
-class ApiClient(ClientFactoryInterface):
+class ApiClient(ClientFactory):
     """Cloudformation command client"""
     def __init__(self, args):
         self._apigateway = Apigateway(args)
