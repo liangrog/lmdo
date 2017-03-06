@@ -5,7 +5,7 @@ Usage:
     lmdo init <project_name>
     lmdo bp fetch <url>
     lmdo cf (create|update|delete) [-c | --change_set] [-e | --event]
-    lmdo lm (create|update|delete|package) [--function-name=<functionName>]
+    lmdo lm (create|update|delete|package) [--function=<functionName>]
     lmdo api (create|update|delete)
     lmdo api create-stage <from_stage> <to_stage>
     lmdo api delete-stage <from_stage>
@@ -28,7 +28,7 @@ Options:
     --start-date=<datetime>        Start date in format 1970-01-01
     --end-date=<datetime>          End date in format 1970-01-01
     -f --follow                    Follow entry
-    --function-name=<functioName>  Lambda function name
+    --function=<functioName>  Lambda function name
     --group-name=<groupName>       Cloudwatch log group name
 
 """

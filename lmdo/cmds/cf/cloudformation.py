@@ -234,9 +234,14 @@ class Cloudformation(AWSBase):
         try:
             if not no_policy:
                 self.unlock_stack(stack_name=stack_name)
-            waiter = CloudformationWaiterStackDelete(self._client)
-            response = self._client.delete_stack(StackName=stack_name)
-            waiter.wait(stack_name)
+
+            if self._args.get('-e') or self._args.get('--event'):
+                response = self._client.delete_stack(StackName=stack_name)
+                self.stack_events_waiter(stack_name=stack_name)
+            else:
+                waiter = CloudformationWaiterStackDelete(self._client)
+                response = self._client.delete_stack(StackName=stack_name)
+                waiter.wait(stack_name)
         except Exception as e:
             Oprint.err(e, 'cloudformation')
             return False
