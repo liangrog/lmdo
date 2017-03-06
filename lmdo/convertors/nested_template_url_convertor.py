@@ -6,13 +6,11 @@ from lmdo.convertors import Convertor
 from lmdo.chain_processor import ChainProcessor
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.oprint import Oprint
+from lmdo.lmdo_config import lmdo_config
 
-
-class NestedStackUrlConvertor(Convertor, ChainProcessor):
+class NestedTemplateUrlConvertor(ChainProcessor, Convertor):
     """
     Replace environment variable tags using enviroment variable
-    tag format:
-    $stack|[name]::[key]
     """
 
     def process(self, data):
@@ -25,7 +23,7 @@ class NestedStackUrlConvertor(Convertor, ChainProcessor):
         """
         data_string = json.dumps(data)
     
-        for key, value in self.replacement_data(data_string):
+        for key, value in self.replacement_data(data_string).iteritems():
             data_string = data_string.replace(key, value)
 
         return json.loads(data_string)
@@ -39,9 +37,9 @@ class NestedStackUrlConvertor(Convertor, ChainProcessor):
         search_result = re.findall(self.get_pattern(), content)
         
         if search_result:
-            result = {}
+            result = []
             for item in search_result:
-                header, template_name = item[1,-1].split("|")
+                header, template_name = item[1:-1].split("|")
                 if template_name not in result:
                     result.append(template_name)
 

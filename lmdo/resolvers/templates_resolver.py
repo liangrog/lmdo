@@ -3,7 +3,9 @@ import tempfile
 import json
 
 from lmdo.resolvers import Resolver
-from lmdo.convertors import EnvVarConvertor, StackVarConvertor, NestedTemplateUrlConvertor
+from lmdo.convertors.env_var_convertor import EnvVarConvertor
+from lmdo.convertors.stack_var_convertor import StackVarConvertor
+from lmdo.convertors.nested_template_url_convertor import NestedTemplateUrlConvertor
 from lmdo.file_loader import FileLoader
 from lmdo.config import FILE_LOADER_TEMPLATE_ALLOWED_EXT 
 from lmdo.oprint import Oprint
@@ -34,15 +36,15 @@ class TemplatesResolver(Resolver):
             "children": []
         }
 
-        templates['master'] = self.create_template(self._template_path)
+        templates['master'] = self._template_path
         with open(templates['master'], 'r') as outfile:
             master_tpl = json.loads(outfile.read())
 
         template_urls = []
         for name, resource in master_tpl['Resources'].iteritems():
             if resource['Type'] == 'AWS::CloudFormation::Stack':
-                template_urls.append(resource['TemplateURL'])
-
+                template_urls.append(resource['Properties']['TemplateURL'])
+        
         if template_urls:
             for url in template_urls:
                 if url.startswith('$template'):
@@ -63,11 +65,11 @@ class TemplatesResolver(Resolver):
 
         file_path = self.find_template(template_name)
         if not file_path:
-            Oprint.err('Cannot find template {} in {}'.format(template_name, self._repo_path)
+            Oprint.err('Cannot find template {} in {}'.format(template_name, self._repo_path))
 
         file_loader = FileLoader(file_path=file_path, allowed_ext=FILE_LOADER_TEMPLATE_ALLOWED_EXT)
         file_loader.successor = env_var_convertor
-        result = file_loader.process_next()
+        result = file_loader.process()
 
         template_name = os.path.basename(file_path)
         new_file_path = os.path.join(self._temp_dir, template_name)
@@ -77,12 +79,13 @@ class TemplatesResolver(Resolver):
 
         return new_file_path
 
-    def find_template(self, file_name):
+    def find_template(self, template_name):
         """Get list of params files"""
         findings = []
         if os.path.isdir(self._repo_path):
-            findings = FileLoader.find_files(path=file_name, allowed_ext=FILE_LOADER_TEMPLATE_ALLOWED_EXT)
-        
+            findings = FileLoader.find_files_by_names(search_path=self._repo_path, only_files=[template_name])
+       
+        print(findings)
         # Only return the first found
         return findings[0] if findings else None
 

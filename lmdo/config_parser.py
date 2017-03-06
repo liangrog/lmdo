@@ -1,7 +1,7 @@
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 
 
-class ConfigParserInterface:
+class ConfigParser:
     __metaclass__ = ABCMeta
 
     """
@@ -13,11 +13,11 @@ class ConfigParserInterface:
     @abstractmethod
     def get(self, *args, **kwargs):
         """Get value from config file"""
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def validate(self, *args, **kwargs):
         """Validate config file"""
-        raise NotImplementedError
+        pass
 
 

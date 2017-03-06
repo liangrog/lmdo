@@ -3,15 +3,15 @@
 class ChainProcessor(object):
     """Processor deal with chain of resposibility"""
     def __init__(self):
-        self.successor = None
+        self._successor = None
     
     @property
     def successor(self):
-        return self.successor
+        return self._successor
 
     @successor.setter
     def successor(self, successor):
-        self.successor = successor
+        self._successor = successor
     
     def process(self, data):
         """Interface for all children"""
@@ -19,8 +19,8 @@ class ChainProcessor(object):
 
     def process_next(self, data):
         """Let the next successor process"""
-        if self.successor:
-            return self.successor.process_next(self.process(data))
+        if self._successor:
+            return self._successor.process_next(self.process(data))
         else:
             return self.process(data)
 

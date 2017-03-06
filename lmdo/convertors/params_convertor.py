@@ -3,9 +3,9 @@ from lmdo.convertors import Convertor
 from lmdo.chain_processor import ChainProcessor
 
 
-class ParamsConvertor(Convertor, ChainProcessor):
+class ParamsConvertor(ChainProcessor, Convertor):
     """Convert json data to AWS cloudformation parameter list"""
-    
+   
     def process(self, data):
         return self.convert(data)
 
@@ -15,7 +15,7 @@ class ParamsConvertor(Convertor, ChainProcessor):
             return data
 
         params = []
-        for key, value in data:
+        for key, value in data.iteritems():
             params.append(self.get_param_dict(key, value))
 
         return params

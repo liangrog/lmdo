@@ -1,7 +1,9 @@
 import os
 
 from lmdo.resolvers import Resolver
-from lmdo.convertors import ParamsConvertor, EnvVarConvertor, StackVarConvertor
+from lmdo.convertors.env_var_convertor import EnvVarConvertor
+from lmdo.convertors.stack_var_convertor import StackVarConvertor
+from lmdo.convertors.params_convertor import ParamsConvertor
 from lmdo.file_loader import FileLoader
 from lmdo.config import FILE_LOADER_PARAM_ALLOWED_EXT 
 
@@ -29,12 +31,12 @@ class ParamsResolver(Resolver):
         stack_var_convertor = StackVarConvertor()
 
         env_var_convertor.successor = stack_var_convertor
-        stack_var_convertor.successor = param_convertor.successor
+        stack_var_convertor.successor = param_convertor
 
         for file_path in files:
             file_loader = FileLoader(file_path=file_path, allowed_ext=FILE_LOADER_PARAM_ALLOWED_EXT)
-            file_loader.successor = param_convertor
-            result += file_loader.process_next()
+            file_loader.successor = env_var_convertor
+            result += file_loader.process()
 
         return result
 
@@ -44,7 +46,7 @@ class ParamsResolver(Resolver):
             return [self._params_path]
 
         if os.path.isdir(self._params_path):
-            return FileLoader.find_files(path=self._params_path, allowed_ext=FILE_LOADER_PARAM_ALLOWED_EXT)
+            return FileLoader.find_files_by_extensions(search_path=self._params_path, allowed_ext=FILE_LOADER_PARAM_ALLOWED_EXT)
 
         return []
 

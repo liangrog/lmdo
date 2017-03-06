@@ -61,7 +61,7 @@ class AWSBase(object):
 
     def get_template_s3_url(self, template_name):
         """Construct the template URL for nested stack"""
-        return 'https://s3.amazonaws.com/{}/{}/{}'.format(self._config['CloudFormation'].get('S3Bucket'), self.get_name_id(), template_name)
+        return 'https://s3.amazonaws.com/{}/{}/{}'.format(self._config.get('CloudFormation').get('S3Bucket'), self.get_name_id(), template_name)
 
     def get_policy_arn(self, policy_name):
         """Fetch policy arn"""

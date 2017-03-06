@@ -9,6 +9,7 @@ from lmdo.file_loader import FileLoader
 from lmdo.config import PROJECT_CONFIG_FILE, PROJECT_CONFIG_TEMPLATE, CONFIG_MANDATORY_KEYS
 from lmdo.oprint import Oprint
 from lmdo.utils import mkdir
+from lmdo.convertors.env_var_convertor import EnvVarConvertor
 
 
 class LmdoConfig(ConfigParser):
@@ -44,7 +45,11 @@ class LmdoConfig(ConfigParser):
 
     def load_config(self):
         """Load config data from project directory"""
-        self._config = FileLoader(PROJECT_CONFIG_FILE).load()
+        env_var_convertor = EnvVarConvertor()
+        file_loader = FileLoader(file_path=PROJECT_CONFIG_FILE)
+        file_loader.successor = env_var_convertor
+        self._config = file_loader.process()
+        
         self.validate()
 
     def get(self, key):

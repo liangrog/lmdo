@@ -52,10 +52,12 @@ def main():
         return client_factory.execute()
 
     from lmdo.lmdo_config import lmdo_config
+
     # Check if cli is at the right directory
     if not lmdo_config.if_lmdo_config_exist():
         Oprint.err('Please run lmdo command at the directory contains the lmdo config file')
 
+        print('---------')
     # Call the right client to handle
     if args.get('bp'):
         client_factory = BpClient(args)

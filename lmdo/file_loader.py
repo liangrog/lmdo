@@ -4,17 +4,29 @@ import json
 import yaml
 
 from lmdo.oprint import Oprint
-from lmdo.chain_processor import ChainProcessor
 
-class FileLoader(ChainProcessor):
+class FileLoader(object):
     """
     Loading content from yml, json, template files
     and convert them into json object
+
+    It can only be used at the top of ChainProcessor,
+    can not be the successor as it doesn't implement
+    the base class ChainProcessor
     """
-    def __init__(self, file_path, allowed_ext=None):
+    def __init__(self, file_path, allowed_ext=None, *args, **kwargs):
         self._file_path = file_path
         self._allowed_ext = allowed_ext
-
+        self._successor = None
+    
+    @property
+    def successor(self):
+        return self._successor
+    
+    @successor.setter
+    def successor(self, successor):
+        self._successor = successor
+   
     def get_ext(self):
         """Get file extension"""
         name, ext = os.path.splitext(self._file_path)
@@ -43,7 +55,7 @@ class FileLoader(ChainProcessor):
             if not self.file_allowed():
                 raise Exception('File type {} is not allowed'.format(self.get_ext()))
 
-            with open(PROJECT_CONFIG_FILE, 'r') as outfile:
+            with open(self._file_path, 'r') as outfile:
                 content = outfile.read()
                 if self.is_json() or self.is_template():
                     return json.loads(content)
@@ -59,25 +71,33 @@ class FileLoader(ChainProcessor):
     def process(self):
         """Load file into memory"""
         try:
-            return self.loading_strategy()
+            if not self._successor:
+                return self.loading_strategy()
+            else:
+                return self._successor.process_next(self.loading_strategy())
         except Exception as e:
             Oprint.err(e, 'lmdo')
 
     @classmethod
-    def find_files(cls, path, allowed_file_extensions=None, only_files=None):
+    def find_files_by_extensions(cls, search_path, allowed_ext):
         """Find files recursively by giving directory"""
         file_list = []
-        for root, dirnames, filenames in os.walk(path):
+        for root, dirnames, filenames in os.walk(search_path):
             for filename in filenames:
-                if allowed_file_extensions:
-                    name, extension = os.path.splitext(filename)
-                    if extension in allowed_file_extensions:
-                        file_list.append(os.path.join(root, filename))
-
-                if only_files:
-                    if filename in only_files:
-                        file_list.append(os.path.join(root, filename))
+                name, extension = os.path.splitext(filename)
+                if extension in allowed_ext:
+                    file_list.append(os.path.join(root, filename))
 
         return file_list
             
+    @classmethod
+    def find_files_by_names(cls, search_path, only_files):
+        """Find files recursively by giving directory"""
+        file_list = []
+        for root, dirnames, filenames in os.walk(search_path):
+            for filename in filenames:
+                if filename in only_files:
+                    file_list.append(os.path.join(root, filename))
+
+        return file_list
 
