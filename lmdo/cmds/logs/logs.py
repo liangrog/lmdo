@@ -3,11 +3,11 @@ import datetime
 import time
 import json
 import os
+import collections
 
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.lm.lambdaa import Lambda
 from lmdo.oprint import Oprint
-
 
 class Logs(AWSBase):
     """Cloudwatch logs handler"""
@@ -24,18 +24,22 @@ class Logs(AWSBase):
     def tail(self):
         """Tailing the log stream"""
         try:
-            self.get_logs()
+            self.get_logs(tail=True)
         except KeyboardInterrupt:
             os._exit(0)
 
-    def get_logs(self):
+    def get_logs(self, tail=False):
         """Fetch cloudwatch logs"""
         if self._args.get('function'):
             function_name = Lambda.fetch_function_name(self.get_name_id(), self._args.get('<function_name>'))
             log_group_name = '/aws/lambda/{}'.format(function_name)
         else:
             log_group_name = self._args.get('<log_group_name>')
-        
+       
+        # Maximum cache number of log entry IDs
+        max_search = 5000
+        recent_log = collections.deque(maxlen=max_search)
+        recent_log.appendleft(0)
         for event in self.generate_logs(log_group_name):
             if event is self._wait:
                 if self._args.get('-f') or self._args.get('--follow'):
@@ -43,8 +47,15 @@ class Logs(AWSBase):
                     continue
                 else:
                     return True
-            
-            self.print_to_console(event)
+                
+            if event['eventId'] not in recent_log:
+                if len(recent_log) == max_search:
+                    recent_log.pop()
+
+                recent_log.appendleft(event['eventId'])
+                self.print_to_console(event)
+            else:
+                continue
 
     def generate_logs(self, log_group_name):
         """Log generator"""
@@ -62,7 +73,7 @@ class Logs(AWSBase):
         end_time = self.get_end_time()
         if end_time:
             kw['endTime'] = end_time
-
+        
         while True:
             try:
                 response = self.filter_logs(**kw)
@@ -83,7 +94,7 @@ class Logs(AWSBase):
 
     def print_to_console(self, event):
         """Out put logs"""
-        print('log entry --------------------------------------------')
+        print('--------------------------------------------')
         print(event['message'])
         #Oprint.warn(event['message'], 'logs')
 
