@@ -63,13 +63,12 @@ class S3(AWSBase):
             sys_pause('Bucket {} doesn\'t exist! Do you want to create it? [yes/no]'.format(bucket_name), 'yes')
             self.create_bucket(bucket_name)
 
-        Oprint.info('Start uploading {} to S3 bucket {}'.format(key, bucket_name), 's3')
+        Oprint.info('Start uploading {} to S3 bucket {}. (size:{}MB)'.format(key, bucket_name, (os.path.getsize(file_path)/1000000)), 's3')
         #waiter = S3WaiterObjectCreate(self._client)
-        
         self._client.upload_file(file_path, bucket_name, key, Callback=FileUploadProgress(file_path), **kwargs)
         
         #waiter.wait(bucket_name, key)
-        Oprint.info('Complete uploading {}'.format(key), 's3')
+        Oprint.info('Complete uploading {}. (size:{}MB)'.format(key, (os.path.getsize(file_path)/1000000)), 's3')
 
         return True
 
