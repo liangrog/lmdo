@@ -428,6 +428,7 @@ class Lambda(AWSBase):
     
     def venv_package_install(self, tmp_path):
         """Install virtualenv packages"""
+        import pip
         venv = self.get_current_venv_path()
         
         cwd = os.getcwd()
@@ -472,17 +473,10 @@ class Lambda(AWSBase):
         if os.path.isdir(site_packages_64):
             package_to_keep += os.listdir(site_packages_64)
        
-        installed_packages_name_set = [package.project_name.lower() for package in
-                                       pip.get_installed_distributions() if package.project_name in package_to_keep or
-                                       package.location in [site_packages, site_packages_64]]
-
-        precompiled_lambda_packages = []
+        installed_packages_name_set = self.get_virtualenv_installed_package()
 
         # First, try lambda packages
         for name, details in lambda_packages.iteritems():
-            # Make a local copy so that we can use later
-            precompiled_lambda_packages.append(name.lower())
-
             if name.lower() in installed_packages_name_set:
                 Oprint.info('Installing Lambda_package Amazon Linux AMI bianry package {} to {}'.format(name, tmp_path), 'pip')
                 tar = tarfile.open(details['path'], mode="r:gz")
@@ -494,25 +488,31 @@ class Lambda(AWSBase):
 
                     tar.extract(member, tmp_path)
 
+                installed_packages_name_set.remove(name.lower())
+
         # Then try to use manylinux packages from PyPi..
         # Related: https://github.com/Miserlou/Zappa/issues/398
         try:
             Oprint.info('Installing virtualenv python package dependancies to {}'.format(tmp_path), 'pip')
             spinner.start()
             for installed_package_name in installed_packages_name_set:
-                if installed_package_name not in precompiled_lambda_packages:
-                    wheel_url = self.get_manylinux_wheel(installed_package_name)
-                    if wheel_url:
-                        resp = requests.get(wheel_url, timeout=2, stream=True)
-                        resp.raw.decode_content = True
-                        zipresp = resp.raw
-                        with zipfile.ZipFile(BytesIO(zipresp.read())) as zfile:
-                            zfile.extractall(tmp_path)
+                wheel_url = self.get_manylinux_wheel(installed_package_name)
+                if wheel_url:
+                    resp = requests.get(wheel_url, timeout=2, stream=True)
+                    resp.raw.decode_content = True
+                    zipresp = resp.raw
+                    with zipfile.ZipFile(BytesIO(zipresp.read())) as zfile:
+                        zfile.extractall(tmp_path)
             spinner.stop()
         except Exception as e:
             spinner.stop()
             Oprint.warn(e, 'pip')
-            
+
+    def get_virtualenv_installed_package(self):
+        """Call freeze from shell to get the list of installed packages"""
+        command = ['pip', 'freeze']
+        return [pkg.split('==')[0].lower() for pkg in subprocess.check_output(command).decode('utf-8').splitlines()]
+
     def copy_editable_packages(self, egg_links, temp_package_path):
         """Copy editable packages"""
         Oprint.info('Copying editable packages over', 'pip')
