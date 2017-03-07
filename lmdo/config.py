@@ -27,7 +27,7 @@ LAMBDA_TIMEOUT = 180
 LAMBDA_EXCLUDE= {
     'dir': [
         'tests',
-        '*boto*',
+        #'*boto*',
         '*.git*',
         '.cache',
         'cloudformation',
