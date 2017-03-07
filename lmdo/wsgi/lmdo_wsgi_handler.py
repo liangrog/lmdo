@@ -42,13 +42,14 @@ class LambdaHandler(object):
 
             return response
         except Exception as e:
-            if self._settings.DEBUG:
-                traceback.print_exc(file=sys.stdout)
-
             # Return this unspecified exception as a 500, using template that API Gateway expects.
             content = {}
             content['statusCode'] = 500
             body = {'message': 'application error'}
+            
+            if self._settings.DEBUG:
+                body['traceback'] = traceback.format_exc()
+
             content['body'] = json.dumps(body, sort_keys=True, indent=4).encode('utf-8')
             return content
 
