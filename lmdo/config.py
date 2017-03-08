@@ -12,7 +12,7 @@ PIP_REQUIREMENTS_FILE = 'requirements.txt'
 
 # Cloudformations
 CLOUDFORMATION_DIRECTORY = 'cloudformation'
-CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX = ['json', 'template', '.yml']
+CLOUDFORMATION_TEMPLATE_ALLOWED_POSTFIX = ['json', 'template', '.yml', '.yaml']
 CLOUDFORMATION_TEMPLATE = 'main'
 CLOUDFORMATION_PARAMETER_FILE = 'params.json'
 CLOUDFORMATION_STACK_LOCK_POLICY = 'stack_lock_policy.json'
@@ -88,5 +88,5 @@ DEFAULT_ASSUME_ROLES = [
     "ec2.amazonaws.com"
 ]
 
-FILE_LOADER_TEMPLATE_ALLOWED_EXT = ['.yml', '.template', '.json']
-FILE_LOADER_PARAM_ALLOWED_EXT = ['.yml', '.json']
+FILE_LOADER_TEMPLATE_ALLOWED_EXT = ['.yml', '.yaml', '.template', '.json']
+FILE_LOADER_PARAM_ALLOWED_EXT = ['.yml', '.yaml', '.json']

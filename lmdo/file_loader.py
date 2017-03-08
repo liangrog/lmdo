@@ -47,7 +47,7 @@ class FileLoader(object):
         return True if self.get_ext() == '.template' else False
 
     def is_yaml(self):
-        return True if self.get_ext() == '.yml' else False
+        return True if self.get_ext() in ['.yml', '.yaml'] else False
 
     def loading_strategy(self):
         """Load file into json object"""
