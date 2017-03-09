@@ -85,7 +85,7 @@ class TemplatesResolver(Resolver):
         result = file_loader.process()
        
         if file_loader.is_yaml():
-            result = yaml.safe_dump(result, default_flow_style=False)
+            result = yaml.safe_dump(result, default_flow_style=False, encoding=('utf-8'))
             for key, value in self.TO_YAML.iteritems():
                 result = result.replace(key, value)
 
