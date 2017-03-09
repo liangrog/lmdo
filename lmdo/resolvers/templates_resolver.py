@@ -83,17 +83,22 @@ class TemplatesResolver(Resolver):
         file_loader = FileLoader(file_path=file_path, allowed_ext=FILE_LOADER_TEMPLATE_ALLOWED_EXT, yaml_replacements=self.YAML_TO)
         file_loader.successor = env_var_convertor
         result = file_loader.process()
-       
+      
+        # If it's yaml template, change ^ back to !
+        # and dump back with yaml syntax
         if file_loader.is_yaml():
             result = yaml.safe_dump(result, default_flow_style=False, encoding=('utf-8'))
             for key, value in self.TO_YAML.iteritems():
                 result = result.replace(key, value)
+        
+        if file_loader.is_json():
+            result = json.dumps(result)
 
         template_name = os.path.basename(file_path)
         new_file_path = os.path.join(self._temp_dir, template_name)
-
+        
         with open(new_file_path, 'w+') as f:
-            f.write(json.dumps(result))
+            f.write(result)
         f.close()
 
         return new_file_path
