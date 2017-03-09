@@ -30,7 +30,7 @@ class NestedTemplateUrlConvertor(ChainProcessor, Convertor):
 
     def get_pattern(self):
         """Template URL variable pattern $template|[template_name]"""
-        return r'"\$template\|.*?"'
+        return r'\$template\|.*?"'
 
     def get_template_names(self, content):
         """Get all the stack names and keys need to query"""
