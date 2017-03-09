@@ -25,7 +25,7 @@ class Cloudformation(AWSBase):
 
     def __init__(self, args=None):
         super(Cloudformation, self).__init__()
-        self._client = self.get_client('cloudformation') 
+        self._client = self.get_client('cloudformation')
         self._s3 = S3()
         self._stack_info_cache = {}
         self._args = args or {}
@@ -34,11 +34,11 @@ class Cloudformation(AWSBase):
     @property
     def client(self):
         return self._client
- 
+
     @property
     def s3(self):
         return self._s3
-    
+
     def get_stack_name(self, stack_name):
         """get defined stack name"""
         return self._config.get('StackName') if self._config.get('StackName') else "{}-{}".format(self.get_name_id(), stack_name.lower())
@@ -49,7 +49,7 @@ class Cloudformation(AWSBase):
         if not self._config.get('CloudFormation'):
             Oprint.info('No cloudformation found, skip', 'cloudformation')
             return True
-        
+
         self.process()
 
     def delete(self):
@@ -74,24 +74,24 @@ class Cloudformation(AWSBase):
         """Prepare all templates/validate/upload before create and update"""
         if len(templates['children']) > 0 and not bucket:
             Oprint.err('S3 bucket hasn\'t been provided for nested template', 'cloudformation')
-        
+
         # Validate syntax of the template
         with open(templates['master'], 'r') as outfile:
             self.validate_template(outfile.read())
 
         for child_template in templates['children']:
-            with open(child_template, 'r') as outfile: 
+            with open(child_template, 'r') as outfile:
                 self.validate_template(outfile.read())
 
-        # If bucket provided, we upload 
-        # all templates into the subfolder 
+        # If bucket provided, we upload
+        # all templates into the subfolder
         if bucket:
             path, template_name = os.path.split(templates['master'])
             self._s3.upload_file(bucket, templates['master'], "{}/{}".format(self.get_name_id(), template_name))
 
             for child_template in templates['children']:
                 path, template_name = os.path.split(child_template)
-                self._s3.upload_file(bucket, templates['master'], "{}/{}".format(self.get_name_id(), template_name))
+                self._s3.upload_file(bucket, child_template, "{}/{}".format(self.get_name_id(), template_name))
 
         return True
 
@@ -124,19 +124,19 @@ class Cloudformation(AWSBase):
                 params_path = stack.get('ParamsPath')
                 if params_path:
                     func_params['Parameters'] = ParamsResolver(params_path=params_path).resolve()
-                
+
                 if stack.get('DisableUserPrefix') == True:
                     stack_name = stack.get('Name')
                 else:
                     stack_name = self.get_stack_name(stack.get('Name'))
-                
+
                 templates = TemplatesResolver(template_path=stack.get('TemplatePath'), repo_path=repo_path).resolve()
-                
+
                 self.prepare(templates=templates, bucket=s3_bucket)
 
                 to_update = False
                 stack_info = self.get_stack(stack_name=stack_name)
-                
+
                 if stack_info:
                     # You cannot update a stack with status ROLLBACK_COMPLETE during creation
                     if stack_info['Stacks'][0]['StackStatus'] == 'ROLLBACK_COMPLETE':
@@ -144,12 +144,12 @@ class Cloudformation(AWSBase):
                         self.delete_stack(stack_name, no_policy=True)
                     else:
                         to_update = True
-                
+
                 if not s3_bucket:
                     # Read master template data into cache
                     with open(templates['master'], 'r') as outfile:
                         template_body = outfile.read()
- 
+
                     func_params['TemplateBody'] = template_body
                 else:
                     path, template_name = os.path.split(templates['master'])
@@ -162,12 +162,12 @@ class Cloudformation(AWSBase):
                         self.update_stack(stack_name, **func_params)
                 else:
                     self.create_stack(stack_name, **func_params)
-                
+
                 # Remove temporary template dir
                 shutil.rmtree(templates['tmp_dir'])
 
     def create_stack(self, stack_name, capabilities=['CAPABILITY_NAMED_IAM', 'CAPABILITY_IAM'], **kwargs):
-        """Create stack""" 
+        """Create stack"""
         try:
             if self._args.get('-e') or self._args.get('--event'):
                 response = self._client.create_stack(
@@ -177,7 +177,7 @@ class Cloudformation(AWSBase):
                 )
                 self.stack_events_waiter(stack_name=stack_name)
             else:
-                waiter = CloudformationWaiterStackCreate(self._client)            
+                waiter = CloudformationWaiterStackCreate(self._client)
                 response = self._client.create_stack(
                     StackName=stack_name,
                     Capabilities=capabilities,
@@ -189,7 +189,7 @@ class Cloudformation(AWSBase):
         except Exception as e:
             Oprint.err(e, 'cloudformation')
             return False
-        
+
         self.verify_stack(mode='create', stack_id=response.get('StackId'))
 
         return True
@@ -198,7 +198,7 @@ class Cloudformation(AWSBase):
         """Update a stack"""
         try:
             self.unlock_stack(stack_name=stack_name)
-            
+
             if self._args.get('-e') or self._args.get('--event'):
                 response = self._client.update_stack(
                     StackName=stack_name,
@@ -246,10 +246,10 @@ class Cloudformation(AWSBase):
             Oprint.err(e, 'cloudformation')
             return False
 
-        self.verify_stack(mode='delete', stack_id=stack_info['Stacks'][0]['StackId']) 
+        self.verify_stack(mode='delete', stack_id=stack_info['Stacks'][0]['StackId'])
 
         return True
-    
+
     def get_stack_status(self, stack_id=None, status_niddle=None):
         stack_info = self.get_stack(stack_name=stack_id)
         status = stack_info['Stacks'][0]['StackStatus']
@@ -287,16 +287,16 @@ class Cloudformation(AWSBase):
         for opts in outputs:
             if opts['OutputKey'] == key:
                 return opts['OutputValue']
-       
+
         return None
-   
+
     def list_existing_change_set(self, stack_name, *args, **kwargs):
         """List all existing stack"""
         try:
             response = self._client.list_change_sets(StackName=stack_name, *args, **kwargs)
         except Exception as e:
             Oprint.warn(e, 'cloudformation')
-        
+
         return response
 
     def describe_change_set(self, change_set_name, *args, **kwargs):
@@ -326,7 +326,7 @@ class Cloudformation(AWSBase):
         """Creating change set"""
         try:
             waiter = CloudformationWaiterChangeSetCreateComplete(self._client)
-            
+
             change_set_name = self.create_change_set_name(stack_name)
 
             #Oprint.info('Creating change set {} for stack {}'.format(change_set_name, stack_name), 'cloudformation')
@@ -348,7 +348,7 @@ class Cloudformation(AWSBase):
                 response = self._client.execute_change_set(ChangeSetName=change_set_name, StackName=stack_name, *args, **kwargs)
 
                 self.stack_events_waiter(stack_name=stack_name)
-            else: 
+            else:
                 waiter = CloudformationWaiterStackUpdate(self._client)
                 Oprint.info('Executing change set {} for updating stack {}'.format(change_set_name, stack_name), 'cloudformation')
                 response = self._client.execute_change_set(ChangeSetName=change_set_name, StackName=stack_name, *args, **kwargs)
@@ -357,7 +357,7 @@ class Cloudformation(AWSBase):
             self.lock_stack(stack_name=stack_name)
         except Exception as e:
             Oprint.err(e, 'cloudformation')
-        
+
         self.verify_stack(mode='update', stack_id=stack_name)
 
         return response
@@ -373,7 +373,7 @@ class Cloudformation(AWSBase):
             response = self._client.set_stack_policy(StackName=stack_name, StackPolicyBody=policy)
         except Exception as e:
             Oprint.err(e, 'cloudformation')
-        
+
         return True
 
     def unlock_stack(self, stack_name):
@@ -387,7 +387,7 @@ class Cloudformation(AWSBase):
             response = self._client.set_stack_policy(StackName=stack_name, StackPolicyBody=policy)
         except Exception as e:
             Oprint.err(e, 'cloudformation')
-        
+
         return True
 
     def get_stack_event(self, stack_name, *args, **kwargs):
@@ -396,7 +396,7 @@ class Cloudformation(AWSBase):
         except Exception as e:
             Oprint.warn(e, 'cloudformation')
         return response
-    
+
     def display_stack_event(self, stack_name, *args, **kwargs):
         """Displaying new stack event"""
         events = self.get_stack_event(stack_name=stack_name)['StackEvents']
@@ -477,14 +477,12 @@ class Cloudformation(AWSBase):
     def stack_update_via_change_set(self, stack_name, *args, **kwargs):
         """Securely update a stack"""
         change_set_name = self.create_change_set(stack_name=stack_name, *args, **kwargs)
-        
+
         if not self.display_change_set(change_set_name=change_set_name, stack_name=stack_name):
             return False
-        
+
         sys_pause('Proceed to execute the change set?[yes/no]', 'yes')
 
         self.excecute_change_set(change_set_name=change_set_name, stack_name=stack_name)
 
         return True
-
-        
