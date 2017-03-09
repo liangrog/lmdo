@@ -85,9 +85,9 @@ class TemplatesResolver(Resolver):
         result = file_loader.process()
 
         if file_loader.is_yaml():
+            result = yaml.dump(result, default_flow_style=False)
             for key, value in self.TO_YAML.iteritems():
                 result = result.replace(key, value)
-            result = yaml.dump(result, default_flow_style=False)
 
         template_name = os.path.basename(file_path)
         new_file_path = os.path.join(self._temp_dir, template_name)
