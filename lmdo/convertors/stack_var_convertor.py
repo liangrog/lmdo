@@ -58,7 +58,7 @@ class StackVarConvertor(ChainProcessor, Convertor):
         Return enviroment variable in a dict
         with a format of '$env|name': value
         """
-        replacement = {}
+        replacement = {'!': 'Fn::'}
         for stack_name, keys in self.get_stack_names_and_keys(content).iteritems():
             for key in keys:
                 value = self.get_stack_output(stack_name=stack_name, key=key)
