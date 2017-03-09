@@ -2,6 +2,8 @@ import os
 import tempfile
 import json
 
+import yaml
+
 from lmdo.resolvers import Resolver
 from lmdo.convertors.env_var_convertor import EnvVarConvertor
 from lmdo.convertors.stack_var_convertor import StackVarConvertor
@@ -15,6 +17,9 @@ class TemplatesResolver(Resolver):
     """
     Resolve templates
     """
+    YAML_TO = {'!': '^'}
+    TO_YAML = {'^': '!'}
+
     def __init__(self, template_path, repo_path=None):
         if not os.path.isfile(template_path):
             Oprint.err('Template not found by given path {}'.format(templated_path), 'cloudformation')
@@ -35,8 +40,12 @@ class TemplatesResolver(Resolver):
             "master": None,
             "children": []
         }
+        
+        def yaml_tmp_ctor(loader, tag_suffix, node):
+            if tag.suffix.startswith('!'):
+                return node
 
-        master_tpl = FileLoader(file_path=self._template_path, allowed_ext=FILE_LOADER_TEMPLATE_ALLOWED_EXT).process()
+        master_tpl = FileLoader(file_path=self._template_path, allowed_ext=FILE_LOADER_TEMPLATE_ALLOWED_EXT, yaml_replacements=self.YAML_TO).process()
         
         template_urls = []
         for name, resource in master_tpl['Resources'].iteritems():
@@ -71,9 +80,14 @@ class TemplatesResolver(Resolver):
         if not file_path:
             Oprint.err('Cannot find template {} in {}'.format(template_name, self._repo_path))
 
-        file_loader = FileLoader(file_path=file_path, allowed_ext=FILE_LOADER_TEMPLATE_ALLOWED_EXT)
+        file_loader = FileLoader(file_path=file_path, allowed_ext=FILE_LOADER_TEMPLATE_ALLOWED_EXT, yaml_replacements=self.YAML_TO)
         file_loader.successor = env_var_convertor
         result = file_loader.process()
+
+        if file_loader.is_yaml():
+            for key, value in self.TO_YAML:
+                result = result.replace(key, value)
+            result = yaml.dump(result, default_flow_style=False)
 
         template_name = os.path.basename(file_path)
         new_file_path = os.path.join(self._temp_dir, template_name)
