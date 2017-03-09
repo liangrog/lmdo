@@ -51,11 +51,12 @@ class TemplatesResolver(Resolver):
         for name, resource in master_tpl['Resources'].iteritems():
             if resource['Type'] == 'AWS::CloudFormation::Stack':
                 template_urls.append(resource['Properties']['TemplateURL'])
-        
+       
         if template_urls:
             for url in template_urls:
-                if url.startswith('$template'):
-                    header, template_name = url.split("|")
+                found = NestedTemplateUrlConvertor.match(url)
+                if found:
+                    header, template_name = found[0].split("|")
                     templates['children'].append(self.create_template(template_name))
         
         templates['master'] = self.create_template(self._template_path)

@@ -56,7 +56,7 @@ class EnvVarConvertor(ChainProcessor, Convertor):
         if search_result:
             result = []
             for item in search_result:
-                header, env_name = item[1:-1].split("|")
+                header, env_name = item[0:-1].split("|")
                 if env_name not in result:
                     result.append(env_name)
 
