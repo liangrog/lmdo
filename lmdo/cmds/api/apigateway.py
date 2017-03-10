@@ -5,8 +5,8 @@ import site
 import datetime
 
 from lmdo.cmds.aws_base import AWSBase
-from lmdo.cmds.lm.lambdaa import Lambda
 from lmdo.cmds.iam.iam import IAM
+from lmdo.cmds.lm.lambdaa import Lambda
 from lmdo.oprint import Oprint
 from lmdo.config import SWAGGER_DIR, SWAGGER_FILE, PROJECT_CONFIG_FILE, APIGATEWAY_SWAGGER_WSGI
 from lmdo.utils import update_template, get_template
@@ -329,10 +329,10 @@ class Apigateway(AWSBase):
         iam = IAM()
 
         for lm_func in self._config.get('Lambda'):
-            if lm_func.get('Type') != 'wsgi' or lm_func.get('DisableApiGateway'):
+            if lm_func.get('Type') != Lambda.FUNCTION_TYPE_WSGI or lm_func.get('DisableApiGateway'):
                 continue
             
-            function_name = Lambda.fetch_function_name(self.get_name_id(), lm_func.get('FunctionName'))
+            function_name = self.get_lmdo_format_name(lm_func.get('FunctionName'))
 
             role = iam.create_apigateway_lambda_role(self.get_apigateway_lambda_role_name(function_name))
             
@@ -380,7 +380,7 @@ class Apigateway(AWSBase):
         iam = IAM()
         for lm_func in self._config.get('Lambda'):
             if lm_func.get('Type') == 'wsgi' and not lm_func.get('DisableApiGateway'):
-                function_name = Lambda.fetch_function_name(self.get_name_id(), lm_func.get('FunctionName'))
+                function_name = self.get_lmdo_format_name(lm_func.get('FunctionName'))
                 iam.delete_role_and_associated_policies(self.get_apigateway_lambda_role_name(function_name))
 
 

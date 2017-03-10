@@ -6,7 +6,6 @@ import os
 import collections
 
 from lmdo.cmds.aws_base import AWSBase
-from lmdo.cmds.lm.lambdaa import Lambda
 from lmdo.oprint import Oprint
 
 class Logs(AWSBase):
@@ -31,7 +30,7 @@ class Logs(AWSBase):
     def get_logs(self, tail=False):
         """Fetch cloudwatch logs"""
         if self._args.get('function'):
-            function_name = Lambda.fetch_function_name(self.get_name_id(), self._args.get('<function_name>'))
+            function_name = self.get_lmdo_format_name(self._args.get('<function_name>'))
             log_group_name = '/aws/lambda/{}'.format(function_name)
         else:
             log_group_name = self._args.get('<log_group_name>')

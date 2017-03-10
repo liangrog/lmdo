@@ -7,6 +7,7 @@ import tempfile
 import subprocess
 import glob
 import copy
+import random
 
 from lambda_packages import lambda_packages
 
@@ -14,12 +15,35 @@ from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.s3.s3 import S3
 from lmdo.cmds.iam.iam import IAM
 from lmdo.oprint import Oprint
-from lmdo.config import LAMBDA_MEMORY_SIZE, LAMBDA_RUNTIME, LAMBDA_TIMEOUT, LAMBDA_EXCLUDE, PIP_VENDOR_FOLDER, PIP_REQUIREMENTS_FILE 
+from lmdo.config import LAMBDA_MEMORY_SIZE, LAMBDA_RUNTIME, LAMBDA_TIMEOUT, LAMBDA_EXCLUDE, PIP_VENDOR_FOLDER, PIP_REQUIREMENTS_FILE
 from lmdo.utils import zipper, get_sitepackage_dirs, class_function_retry, copytree
 from lmdo.spinner import spinner
 
+
 class Lambda(AWSBase):
     """Class  create/update lambda function"""
+    NAME = 'lambda'
+    LMDO_HANDLER_DIR = 'lmdo_handlers'
+
+    FUNCTION_TYPE_DEFAULT = 'default'
+    FUNCTION_TYPE_WSGI = 'wsgi'
+    FUNCTION_TYPE_CLOUDWATCHEVENTS = 'cloudwatch_events'
+
+    HANDLER_WSGI = 'lmdo_wsgi_handler.handler'
+
+    NAME_EVENTS_DISPATCHER = 'lmdo_events_dispatcher'
+    HANDLER_EVENTS_DISPATCHER_HANDLER = 'events_dispatcher_handler.handler'
+
+    VIRTUALENV_ZIP_EXCLUDES = [
+        '*.exe', '*.DS_Store', '*.Python', '*.git', '.git/*', '*.zip', '*.tar.gz',
+        '*.hg', '*.egg-info', 'pip', 'docutils*', 'setuputils*', 'lmdo', 
+        'lambda_packages', 'mock', 'boto3', 'botocore', 'git', 'gitdb',
+    ]
+
+    VIRTUALENV_EXCLUDE_PACKAGE = [
+        "boto3", "lmdo", "lambda-packages", "dateutil", "botocore",
+        "s3transfer", "six.py", "jmespath", "concurrent"
+    ]
 
     def __init__(self, args=None):
         super(Lambda, self).__init__()
@@ -27,6 +51,7 @@ class Lambda(AWSBase):
         self._s3 = S3()
         self._iam = IAM()
         self._args = args or {}
+        self._events_dispatcher_arn = None
 
     @property
     def client(self):
@@ -62,7 +87,7 @@ class Lambda(AWSBase):
                 continue
  
             # Get function info before being deleted
-            info = self.get_function(self.get_function_name(lm.get('FunctionName')))
+            info = self.get_function(self.get_lmdo_format_name(lm.get('FunctionName')))
             if info:
                 self.delete_function(info.get('Configuration').get('FunctionName'))
 
@@ -70,23 +95,11 @@ class Lambda(AWSBase):
                 if not lm.get('RoleArn') or len(lm.get('RoleArn')) <= 0:
                     self.delete_role(info.get('Configuration').get('Role'))
             else:
-                Oprint.warn('Cannot find function {} to delete in AWS'.format(self.get_function_name(lm.get('FunctionName'))), 'lambda')
+                Oprint.warn('Cannot find function {} to delete in AWS'.format(self.get_lmdo_format_name(lm.get('FunctionName'))), 'lambda')
 
     def update(self):
         """Wrapper, same action as create"""
         self.create()
-
-    def get_function_name(self, func_name):
-        """get defined function name"""
-        return "{}-{}".format(self.get_name_id(), func_name)
-
-    @classmethod
-    def fetch_function_name(cls, prefix, postfix):
-        """
-        Wrapper for access outside object context
-        Uggly, but quick work around...
-        """
-        return "{}-{}".format(prefix, postfix)
 
     def get_role_name(self, func_name):
         """get defined function name"""
@@ -98,18 +111,18 @@ class Lambda(AWSBase):
 
     def get_statement_id(self, func_name, principal_id):
         """get defined function permission statement ID"""
-        return "stmt-{}-{}".format(self.get_function_name(func_name), principal_id)
+        return "stmt-{}-{}".format(self.get_lmdo_format_name(func_name), principal_id)
 
     def add_permission(self, func_name, principal, principal_id, action='lambda:InvokeFunction'):
         """Add permission to Lambda function"""
         try:
             response = self._client.add_permission(
-                FunctionName=self.get_function_name(func_name),
+                FunctionName=self.get_lmdo_format_name(func_name),
                 StatementId=self.get_statement_id(func_name, principal_id),
                 Action=action,
                 Principal=principal
             )
-            Oprint.info('Permission {} has been added for {} with principal {}'.format(action, self.get_function_name(func_name), principal), 'lambda')
+            Oprint.info('Permission {} has been added for {} with principal {}'.format(action, self.get_lmdo_format_name(func_name), principal), 'lambda')
         except Exception as e:
             Oprint.err(e, 'lambda')
 
@@ -125,7 +138,7 @@ class Lambda(AWSBase):
                 FunctionName=func_name,
                 StatementId=self.get_statement_id(func_name,  principal_id)
             )
-            Oprint.info('Permission has been removed for {}'.format(self.get_function_name(func_name)), 'lambda')
+            Oprint.info('Permission has been removed for {}'.format(self.get_lmdo_format_name(func_name)), 'lambda')
         except Exception as e:
             Oprint.err(e, 'lambda')
 
@@ -166,7 +179,7 @@ class Lambda(AWSBase):
         """Wrapper for invoke"""
         try:
             response = self._client.invoke(
-                FunctionName=self.get_function_name(func_name),
+                FunctionName=self.get_lmdo_format_name(func_name),
                 **kwargs
             )
         except Exception as e:
@@ -213,7 +226,7 @@ class Lambda(AWSBase):
         if not os.path.isfile(init_file):
             open(init_file, 'a').close()
 
-    def get_zipped_package(self, func_name, func_type='default'):
+    def get_zipped_package(self, func_name, func_type):
         """Packaging lambda"""
         # Copy project file to temp
         lambda_temp_dir = tempfile.mkdtemp()
@@ -222,8 +235,8 @@ class Lambda(AWSBase):
 
         # Installing packages
         self.dependency_packaging(lambda_temp_dir)
-
-        if func_type == 'wsgi':
+        
+        if func_type == self.FUNCTION_TYPE_WSGI:
             self.pip_wsgi_install(lambda_temp_dir)
 
         target_temp_dir = tempfile.mkdtemp()
@@ -234,46 +247,45 @@ class Lambda(AWSBase):
                'to_path': '.'
             }
         ]
-        if zipper(lambda_temp_dir, target, LAMBDA_EXCLUDE, False, replace_path) \
-            and (not func_type or func_type == 'default'):
-            shutil.rmtree(lambda_temp_dir)
-            return (target_temp_dir, target)
 
-        # zip lmdo wsgi function
-        if func_type == 'wsgi':
+        # Zip what we'v got so far
+        zipper(lambda_temp_dir, target, LAMBDA_EXCLUDE, False, replace_path)
+
+        if func_type != self.FUNCTION_TYPE_DEFAULT:
             # Don't load lmdo __init__.py
             if LAMBDA_EXCLUDE.get('LAMBDA_EXCLUDE'):
-                LAMBDA_EXCLUDE['file_with_path'].append('*wsgi/__init__.py')
+                LAMBDA_EXCLUDE['file_with_path'].append('*{}/{}/__init__.py'.format(self.LMDO_HANDLER_DIR, func_type))
             else:
-                LAMBDA_EXCLUDE['file_with_path'] = ['*wsgi/__init__.py']
+                LAMBDA_EXCLUDE['file_with_path'] = ['*{}/{}/__init__.py'.format(self.LMDO_HANDLER_DIR, func_type)]
 
             replace_path = [
                 {
-                   'from_path': self.get_wsgi_dir(),
+                   'from_path': self.get_lmdo_function_dir(func_type),
                    'to_path': '.'
                 }
             ]
             
-            if zipper(self.get_wsgi_dir(), target, LAMBDA_EXCLUDE, False, replace_path):
-                shutil.rmtree(lambda_temp_dir)
-                return (target_temp_dir, target)
+            # Zip extra lmdo function handler
+            zipper(self.get_lmdo_function_dir(func_type), target, LAMBDA_EXCLUDE, False, replace_path)
 
-        return False
+        shutil.rmtree(lambda_temp_dir)
+        return (target_temp_dir, target)
 
-    def get_wsgi_dir(self):
+    def get_lmdo_function_dir(self, func_type):
+        """Get different function directory"""
         pkg_dir = get_sitepackage_dirs()
         for pd in pkg_dir:
-            if os.path.isdir(pd + '/lmdo'):
-                wsgi_dir = pd + '/lmdo/wsgi'
+            if os.path.isdir(os.path.join(pd, 'lmdo', self.LMDO_HANDLER_DIR)):
+                function_dir = os.path.join(pd, 'lmdo', self.LMDO_HANDLER_DIR, func_type)
                 break
         
-        return wsgi_dir
+        return function_dir
 
     def if_wsgi_exist(self):
         """Checking if wsgi lambda exist in config"""
         exist = False
         for lm in self._config.get('Lambda'):
-            if lm.get('Type') == 'wsgi':
+            if lm.get('Type') == self.FUNCTION_TYPE_WSGI:
                 exist = True
                 break
         return exist
@@ -287,60 +299,81 @@ class Lambda(AWSBase):
 
         # Create all functions
         for lm in self._config.get('Lambda'):
+            self.function_update_or_create(lm, package_only)
 
-            # If user specify a function
-            specify_function = self.if_specify_function()
-            if specify_function and specify_function != lm.get('FunctionName'):
-                continue
-            
-            params = {
-                'FunctionName': self.get_function_name(lm.get('FunctionName')),
-                'Code': {
-                    'S3Bucket': lm.get('S3Bucket'),
-                    'S3Key': self.get_zip_name(lm.get('FunctionName'))
-                },
-                'Handler': lm.get('Handler'),
-                'MemorySize': lm.get('MemorySize') or LAMBDA_MEMORY_SIZE,
-                'Runtime': lm.get('Runtime') or LAMBDA_RUNTIME,
-                'Timeout': lm.get('Timeout') or LAMBDA_TIMEOUT,
-                'Description': 'Function deployed for service {} by lmdo'.format(self._config.get('Service'))
-            }
+        return True
 
-            if lm.get('Type') == 'wsgi':
-                params['Handler'] = 'lmdo_wsgi_handler.handler'
+    def function_update_or_create(self, function_config, package_only=False):
+        """Create/update function based on config"""
+        # If user specify a function
+        specify_function = self.if_specify_function()
+        if specify_function and specify_function != function_config.get('FunctionName'):
+            return True
+ 
+        function_config = self.update_function_config(function_config)
+        
+        params = {
+            'FunctionName': self.get_lmdo_format_name(function_config.get('FunctionName')),
+            'Code': {
+                'S3Bucket': function_config.get('S3Bucket'),
+                'S3Key': self.get_zip_name(function_config.get('FunctionName'))
+            },
+            'Handler': function_config.get('Handler'),
+            'MemorySize': function_config.get('MemorySize') or LAMBDA_MEMORY_SIZE,
+            'Runtime': function_config.get('Runtime') or LAMBDA_RUNTIME,
+            'Timeout': function_config.get('Timeout') or LAMBDA_TIMEOUT,
+            'Description': function_config.get('Description') or 'Function deployed for service {} by lmdo'.format(self._config.get('Service'))
+        }
+        
+        if function_config.get('VpcConfig'):                
+            params['VpcConfig'] = function_config.get('VpcConfig')
 
-            if lm.get('VpcConfig'):                
-                params['VpcConfig'] = lm.get('VpcConfig')
-       
-            if lm.get('EnvironmentVariables'):
-                params['Environment'] = {'Variables': lm.get('EnvironmentVariables')}
+        if function_config.get('EnvironmentVariables'):
+            params['Environment'] = {'Variables': function_config.get('EnvironmentVariables')}
 
-            tmp_path, zip_package = self.get_zipped_package(lm.get('FunctionName'), lm.get('Type'))
-            
-            if zip_package:
-                # Only package up lambda function
-                if self._args.get('package'):
-                    Oprint.info('Generated zipped lambda package {}'.format(zip_package), 'lambda')
-                    continue
+        tmp_path, zip_package = self.get_zipped_package(function_config.get('FunctionName'), function_config.get('Type'))
+        
+        if zip_package:
+            # Only package up lambda function
+            if self._args.get('package'):
+                Oprint.info('Generated zipped lambda package {}'.format(zip_package), 'lambda')
+                return True
 
-                if self._s3.upload_file(lm.get('S3Bucket'), zip_package, self.get_zip_name(lm.get('FunctionName'))):
-                    # If function exists
-                    info = self.get_function(self.get_function_name(lm.get('FunctionName')))
-                    if info:
-                        role_arn = lm.get('RoleArn') or self.create_role(self.get_role_name(lm.get('FunctionName')), lm.get('RolePolicy'))
-                        self.update_function_code(info.get('Configuration').get('FunctionName'), lm.get('S3Bucket'), self.get_zip_name(lm.get('FunctionName')))
-                       
-                        params.pop('Code')
-                        self._client.update_function_configuration(**params)
-                        Oprint.info('Updated lambda function configuration', 'lambda')
-                    else:
-                        # User configured role or create a new on based on policy document
-                        role_arn = lm.get('RoleArn') or self.create_role(self.get_role_name(lm.get('FunctionName')), lm.get('RolePolicy'))
-                        params['Role'] = role_arn
-                        self.create_function(**params)
+            if self._s3.upload_file(function_config.get('S3Bucket'), zip_package, self.get_zip_name(function_config.get('FunctionName'))):
+                # If function exists
+                info = self.get_function(self.get_lmdo_format_name(function_config.get('FunctionName')))
+                if info:
+                    role_arn = function_config.get('RoleArn') or self.create_role(self.get_role_name(function_config.get('FunctionName')), function_config.get('RolePolicy'))
+                    self.update_function_code(info.get('Configuration').get('FunctionName'), function_config.get('S3Bucket'), self.get_zip_name(function_config.get('FunctionName')))
+                   
+                    params.pop('Code')
+                    self._client.update_function_configuration(**params)
+                    Oprint.info('Updated lambda function configuration', 'lambda')
+                else:
+                    # User configured role or create a new on based on policy document
+                    role_arn = function_config.get('RoleArn') or self.create_role(self.get_role_name(function_config.get('FunctionName')), function_config.get('RolePolicy'))
+                    params['Role'] = role_arn
+                    self.create_function(**params)
 
-                # Clean up
-                shutil.rmtree(tmp_path)
+            # Clean up
+            shutil.rmtree(tmp_path)
+
+    def update_function_config(self, function_config):
+        """Update function config value based on types"""
+        # Set default if not set
+        function_type = function_config.get('Type', self.FUNCTION_TYPE_DEFAULT)
+        function_config['Type'] = function_type
+
+        if function_type == self.FUNCTION_TYPE_WSGI:
+            function_config['Handler'] = self.HANDLER_WSGI
+            function_config['Description'] = 'Lmdo WSGI function deployed for service {} by lmdo'.format(self._config.get('Service'))
+
+        if function_type == self.FUNCTION_TYPE_CLOUDWATCHEVENTS:
+            function_config['Handler'] = self.HANDLER_EVENTS_DISPATCHER_HANDLER
+            function_config['FunctionName'] = self.NAME_EVENTS_DISPATCHER
+            function_config['Description'] = 'Lmdo cloudwatch event function deployed for service {} by lmdo'.format(self._config.get('Service'))
+        
+        return function_config
 
     def create_role(self, role_name, role_policy):
         """Create role for lambda from policy doc"""
@@ -455,14 +488,14 @@ class Lambda(AWSBase):
         site_packages = os.path.join(venv, 'lib', 'python2.7', 'site-packages')
         egg_links.extend(glob.glob(os.path.join(site_packages, '*.egg-link')))
         Oprint.info('Copying lib packages over', 'pip')
-        copytree(site_packages, tmp_path, symlinks=False)
-
+        copytree(site_packages, tmp_path, symlinks=False, ignore=shutil.ignore_patterns(*self.VIRTUALENV_ZIP_EXCLUDES))
+       
         # We may have 64-bin specific packages too.
         site_packages_64 = os.path.join(venv, 'lib64', 'python2.7', 'site-packages')
         if os.path.exists(site_packages_64):
             egg_links.extend(glob.glob(os.path.join(site_packages_64, '*.egg-link')))
             Oprint.info('Copying lib64 packages over', 'pip')
-            copytree(site_packages_64, tmp_path, symlinks=False)
+            copytree(site_packages_64, tmp_path, symlinks=False, ignore=shutil.ignore_patterns(*self.VIRTUALENV_ZIP_EXCLUDES))
 
         if egg_links:
             self.copy_editable_packages(egg_links, tmp_path)
@@ -472,9 +505,8 @@ class Lambda(AWSBase):
             package_to_keep += os.listdir(site_packages)
         if os.path.isdir(site_packages_64):
             package_to_keep += os.listdir(site_packages_64)
-       
+        
         installed_packages_name_set = self.get_virtualenv_installed_package()
-
         # First, try lambda packages
         for name, details in lambda_packages.iteritems():
             if name.lower() in installed_packages_name_set:
@@ -496,6 +528,7 @@ class Lambda(AWSBase):
             Oprint.info('Installing virtualenv python package dependancies to {}'.format(tmp_path), 'pip')
             spinner.start()
             for installed_package_name in installed_packages_name_set:
+                Oprint.warn(installed_package_name)
                 wheel_url = self.get_manylinux_wheel(installed_package_name)
                 if wheel_url:
                     resp = requests.get(wheel_url, timeout=2, stream=True)
@@ -507,11 +540,11 @@ class Lambda(AWSBase):
         except Exception as e:
             spinner.stop()
             Oprint.warn(e, 'pip')
-
+    
     def get_virtualenv_installed_package(self):
         """Call freeze from shell to get the list of installed packages"""
         command = ['pip', 'freeze']
-        return [pkg.split('==')[0].lower() for pkg in subprocess.check_output(command).decode('utf-8').splitlines()]
+        return [pkg.split('==')[0].lower() for pkg in subprocess.check_output(command).decode('utf-8').splitlines() if pkg.split('==')[0].lower() not in self.VIRTUALENV_EXCLUDE_PACKAGE]
 
     def copy_editable_packages(self, egg_links, temp_package_path):
         """Copy editable packages"""
@@ -569,5 +602,62 @@ class Lambda(AWSBase):
     def if_specify_function(self):
         """If user specify a function to process"""
         return False if not self._args.get('--function') else self._args.get('--function')
-           
-                  
+   
+    def get_events_dispatcher_name(self):
+        """lmdo events dispatcher function name"""
+        return self.get_lmdo_format_name(self.NAME_EVENTS_DISPATCHER)
+
+    def get_events_dispatcher_arn(self):
+        """Fetch lmdo events dispatcher arn"""
+        # Return cache
+        if self._events_dispatcher_arn:
+            return self._events_dispatcher_arn
+
+        # Return arn if exist otherwise create a new one
+        info = self.get_function(self.get_events_dispatcher_name())
+        if not info.get('Configuration').get('FunctionArn'):
+            Oprint.err('You have not config lmdo event dispatch lambda function', self.NAME)
+
+        self._events_dispatcher_arn = info.get('Configuration').get('FunctionArn')
+        
+        return self._events_dispatcher_arn
+
+    def get_function_name_by_lambda_arn(self, arn):
+        """
+        Strip function number from ARN
+        """
+        arn_list = arn.split(':')
+        return arn_list.pop()
+
+    def if_lambda_function(self, arn):
+        """Check if arn is function"""
+        arns = arn.split(':')
+        if 'function' in arns:
+            return True
+
+        return False
+
+    def add_event_permission_to_lambda(self, lambda_arn):
+        """
+        Add SNS permission to Lambda function so that
+        the topic can trigger Lambda
+        """
+        if not self.if_lambda_function(lambda_arn):
+            return False
+
+        function_name = self.get_function_name_by_lambda_arn(lambda_arn)
+        stmt_id = 'Stmts-%s-sns-%s' % (function_name, str(random.randrange(1000000, 10000000)))
+
+        response = self._client.add_permission(
+            FunctionName=function_name,
+            StatementId=stmt_id,
+            Action='lambda:InvokeFunction',
+            Principal='events.amazonaws.com'
+        )
+
+        if response.get('Statement') is None:
+            raise ValueError('Create lambda permission for SNS topic failed')
+
+        return stmt_id
+
+

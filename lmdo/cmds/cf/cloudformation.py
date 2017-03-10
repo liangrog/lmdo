@@ -39,10 +39,6 @@ class Cloudformation(AWSBase):
     def s3(self):
         return self._s3
     
-    def get_stack_name(self, stack_name):
-        """get defined stack name"""
-        return self._config.get('StackName') if self._config.get('StackName') else "{}-{}".format(self.get_name_id(), stack_name.lower())
-
     def create(self):
         """Create/Update stack"""
         # Don't run if we don't have templates
@@ -59,11 +55,7 @@ class Cloudformation(AWSBase):
             return True
 
         for stack in self._config.get('CloudFormation').get('Stacks'):
-            if stack.get('DisableUserPrefix') == True:
-                stack_name = stack.get('Name')
-            else:
-                stack_name = self.get_stack_name(stack.get('Name'))
-
+            stack_name = self.get_lmdo_format_name(stack.get('Name'), stack.get('DisablePrefix', False))
             self.delete_stack(stack_name)
 
     def update(self):
@@ -125,10 +117,7 @@ class Cloudformation(AWSBase):
                 if params_path:
                     func_params['Parameters'] = ParamsResolver(params_path=params_path).resolve()
                 
-                if stack.get('DisableUserPrefix') == True:
-                    stack_name = stack.get('Name')
-                else:
-                    stack_name = self.get_stack_name(stack.get('Name'))
+                stack_name = self.get_lmdo_format_name(stack.get('Name'), stack.get('DisablePrefix', False))
                 
                 templates = TemplatesResolver(template_path=stack.get('TemplatePath'), repo_path=repo_path).resolve()
                 

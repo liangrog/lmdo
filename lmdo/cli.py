@@ -3,9 +3,11 @@ lmdo
 
 Usage:
     lmdo init <project_name>
+    lmdo init config
     lmdo bp fetch <url>
     lmdo cf (create|update|delete) [-c | --change_set] [-e | --event]
     lmdo lm (create|update|delete|package) [--function=<functionName>]
+    lmdo cwe (create|update|delete)
     lmdo api (create|update|delete)
     lmdo api create-stage <from_stage> <to_stage>
     lmdo api delete-stage <from_stage>
@@ -72,6 +74,9 @@ def main():
     elif args.get('api'):
         from lmdo.cmds.api.api_client import ApiClient
         client_factory = ApiClient(args)
+    elif args.get('cwe'):
+        from lmdo.cmds.cwe.cwe_client import CweClient
+        client_factory = CweClient(args)
     elif args.get('logs'):
         from lmdo.cmds.logs.logs_client import LogsClient
         client_factory = LogsClient(args)

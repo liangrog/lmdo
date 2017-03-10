@@ -11,30 +11,49 @@ from lmdo.config import PROJECT_CONFIG_FILE
 from lmdo.oprint import Oprint
 from lmdo.utils import mkdir, get_sitepackage_dirs, copytree
 from lmdo.spinner import spinner
+from lmdo.config import PROJECT_CONFIG_FILE 
 
 class BoilerPlate(object):
     """Boiler plating handler"""
    
     def __init__(self, args):
         self._args = args
+        self._pkg_dir = None
 
     def init(self):
-        """Initiating the project and provide a sample lmdo.yml file"""
-        mkdir('./{}'.format(self._args.get('<project_name>')))
+        """Initiating the project and provide a sample lmdo.yaml file"""
+        if self._args.get('<project_name>'):
+            mkdir('./{}'.format(self._args.get('<project_name>')))
 
-        """Copy lmdo.yml over"""
-        # Do not copy over unless it's a clearn dir
-        if os.path.isfile('./{}'.format(PROJECT_CONFIG_FILE)):
-            Oprint.err('Your have existing lmdo.yml already, exiting...', 'lmdo')
+            """Copy lmdo.yaml over"""
+            # Do not copy over unless it's a clearn dir
+            if os.path.isfile(os.path.join(self._args.get('<project_name>'), PROJECT_CONFIG_FILE)):
+                Oprint.err('Your have existing {} already, exiting...'.format(PROJECT_CONFIG_FILE), 'lmdo')
 
-        pkg_dir = get_sitepackage_dirs()
-        for pd in pkg_dir:
-            if os.path.isdir(pd + '/lmdo'):
-                src_dir = pd + '/lmdo/template'
-                break
-        if src_dir:
-            copytree(src_dir, './{}'.format(self._args.get('<project_name>')))
-        
+            pkg_dir = self.get_installed_path()
+            if pkg_dir:
+                copytree(os.path.join(pkg_dir, 'template'), './{}'.format(self._args.get('<project_name>')))
+        elif self._args.get('config'):
+           pkg_dir = self.get_installed_path()
+           # Don't override existing lmdo.yaml
+           if os.path.isfile(PROJECT_CONFIG_FILE):
+               Oprint.warn('You have existing {} file, a copy will be created with name {}.copy'.format(PROJECT_CONFIG_FILE, PROJECT_CONFIG_FILE), 'lmdo')
+               shutil.copyfile(os.path.join(pkg_dir, 'template', PROJECT_CONFIG_FILE), '{}.copy'.format(PROJECT_CONFIG_FILE))
+           else:
+               shutil.copyfile(os.path.join(pkg_dir, 'template', PROJECT_CONFIG_FILE), PROJECT_CONFIG_FILE)
+    
+    def get_installed_path(self):
+        """Get lmdo site package installed path"""
+        if not self._pkg_dir:
+            pkg_dir = get_sitepackage_dirs()
+            for pd in pkg_dir:
+                if os.path.isdir(os.path.join(pd, 'lmdo')):
+                    self._pkg_dir = os.path.join(pd, 'lmdo')                
+                    return self._pkg_dir
+
+        Oprint.err('You don\'t seem to have lmdo installed. Cannot find lmdo in your site packages')
+        return False
+
     def fetch(self):
         """Fetch template repo to local"""
         try: 
