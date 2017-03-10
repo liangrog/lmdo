@@ -34,7 +34,7 @@ class StackVarConvertor(ChainProcessor, Convertor):
 
     def get_pattern(self):
         """Stack variable pattern $stack|[stack_name]::[key]"""
-        return r'"\$stack\|.*?"'
+        return r'\$stack\|.*?"'
 
     def get_stack_names_and_keys(self, content):
         """Get all the stack names and keys need to query"""
@@ -43,7 +43,7 @@ class StackVarConvertor(ChainProcessor, Convertor):
         if search_result:
             result = {}
             for item in search_result:
-                header, body = item[1:-1].split("|")
+                header, body = item[0:-1].split("|")
                 stack_name, key = body.split("::")
                 if not result.get(stack_name):
                     result[stack_name] = [key]

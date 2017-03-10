@@ -12,6 +12,12 @@ class NestedTemplateUrlConvertor(ChainProcessor, Convertor):
     """
     Replace environment variable tags using enviroment variable
     """
+    SEARCH_REGX = r'\$template\|.*?"'
+    SEARCH_REGX_STR = r'\$template\|.*?$'
+
+    @classmethod
+    def match(cls, haystack):
+        return re.findall(cls.SEARCH_REGX_STR, haystack)
 
     def process(self, data):
         return self.convert(data)
@@ -30,7 +36,7 @@ class NestedTemplateUrlConvertor(ChainProcessor, Convertor):
 
     def get_pattern(self):
         """Template URL variable pattern $template|[template_name]"""
-        return r'"\$template\|.*?"'
+        return self.SEARCH_REGX
 
     def get_template_names(self, content):
         """Get all the stack names and keys need to query"""
@@ -39,7 +45,7 @@ class NestedTemplateUrlConvertor(ChainProcessor, Convertor):
         if search_result:
             result = []
             for item in search_result:
-                header, template_name = item[1:-1].split("|")
+                header, template_name = item[0:-1].split("|")
                 if template_name not in result:
                     result.append(template_name)
 

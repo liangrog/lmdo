@@ -15,7 +15,7 @@ class S3(AWSBase):
     """S3 handler"""
     def __init__(self):
         super(S3, self).__init__()
-        self._client = self.get_client('s3') 
+        self._client = self.get_client('s3')
         self._resource = self.get_resource('s3')
 
     @property
@@ -40,7 +40,7 @@ class S3(AWSBase):
             return True
         return False
 
-    def create_bucket(bucket_name, acl='private'):
+    def create_bucket(self, bucket_name, acl='private'):
         """Create private bucket"""
         waiter = S3WaiterBucketCreate(self._client)
         self._client.create_bucket(ACL=acl, Bucket=bucket_name, CreateBucketConfiguration={'LocationConstraint': self.get_region()})
@@ -48,12 +48,12 @@ class S3(AWSBase):
 
         return True
 
-    def delete_bucket(bucket_name):
+    def delete_bucket(self, bucket_name):
         """Remove private bucket"""
         waiter = S3WaiterBucketDelete(self._client)
         self._client.delete_bucket(Bucket=bucket_name)
         waiter.wait(Bucket=bucket_name)
-        
+
         return True
 
     def upload_file(self, bucket_name, file_path, key, **kwargs):
@@ -66,7 +66,7 @@ class S3(AWSBase):
         Oprint.info('Start uploading {} to S3 bucket {}. (size:{}MB)'.format(key, bucket_name, (os.path.getsize(file_path)/1000000)), 's3')
         #waiter = S3WaiterObjectCreate(self._client)
         self._client.upload_file(file_path, bucket_name, key, Callback=FileUploadProgress(file_path), **kwargs)
-        
+
         #waiter.wait(bucket_name, key)
         Oprint.info('Complete uploading {}. (size:{}MB)'.format(key, (os.path.getsize(file_path)/1000000)), 's3')
 
@@ -87,7 +87,7 @@ class S3(AWSBase):
             self._client.delete_objects(Bucket=bucket, Delete={'Objects': objects['Contents']})
         except Exception as e:
             Oprint.err(e, 's3')
-                    
+
     def prepare_files_for_upload(self, from_path, asset_dir, exclude=None):
         """
         Prepare files for uploading
@@ -148,10 +148,8 @@ class S3(AWSBase):
 
             if file_path.endswith('.json'):
                 return 'binary/octet-stream'
-          
+
             # Default S3 type
             return 'binary/octet-stream'
-       
+
         return mime_type
-
-

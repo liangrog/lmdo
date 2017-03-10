@@ -14,9 +14,10 @@ class FileLoader(object):
     can not be the successor as it doesn't implement
     the base class ChainProcessor
     """
-    def __init__(self, file_path, allowed_ext=None, *args, **kwargs):
+    def __init__(self, file_path, allowed_ext=None, yaml_replacements=None):
         self._file_path = file_path
         self._allowed_ext = allowed_ext
+        self._yaml_replacements = yaml_replacements
         self._successor = None
     
     @property
@@ -57,11 +58,18 @@ class FileLoader(object):
 
             with open(self._file_path, 'r') as outfile:
                 content = outfile.read()
+
                 if self.is_json() or self.is_template():
                     return json.loads(content)
 
                 if self.is_yaml():
+                    if self._yaml_replacements:
+                        for key, value in self._yaml_replacements.iteritems():
+                            content = content.replace(key, value)
+
                     return yaml.load(content)
+                else:
+                    return content
 
         except Exception as e:
             Oprint.err(e)
