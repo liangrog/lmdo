@@ -7,7 +7,7 @@ from lmdo.cmds.aws_base import AWSBase
 from lmdo.oprint import Oprint
 from lmdo.utils import sys_pause
 from lmdo.waiters.s3_waiters import S3WaiterBucketCreate, S3WaiterBucketDelete, S3WaiterObjectCreate
-from lmdo.config import S3_UPLOAD_EXCLUDE
+from lmdo.config import S3_UPLOAD_EXCLUDE, PROJECT_CONFIG_FILE
 from lmdo.file_upload_progress import FileUploadProgress
 
 
@@ -25,7 +25,7 @@ class S3(AWSBase):
     def sync(self):
         """Sync local asset to s3"""
         if not self._config.get('AssetDirectory') or not self._config.get('AssetS3Bucket'):
-            Oprint.err('Your AssetDirectory or AssetS3Bucket is missing from lmdo.yml', 's3')
+            Oprint.err('Your AssetDirectory or AssetS3Bucket is missing from {}'.format(PROJECT_CONFIG_FILE), 's3')
 
         if os.path.isdir('./{}'.format(self._config.get('AssetDirectory'))):
             Oprint.err('Your asset directory {} doesn\'t exist'.format(self._config.get('AssetDirectory')), 's3')

@@ -63,6 +63,13 @@ class AWSBase(object):
             self._config.get('Service')
         ).lower()
 
+    def get_lmdo_format_name(self, name, prefix_disabled=False):
+        """Get lmdo name format prefixed with get_name_id"""
+        if prefix_disabled == True:
+            return name.lower()
+        else:
+            return "{}-{}".format(self.get_name_id(), name.lower())
+
     def get_template_s3_url(self, template_name):
         """Construct the template URL for nested stack"""
         return 'https://s3.amazonaws.com/{}/{}/{}'.format(self._config.get('CloudFormation').get('S3Bucket'), self.get_name_id(), template_name)

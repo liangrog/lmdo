@@ -3,8 +3,8 @@ lmdo system configuration
 """
 
 # File for lmdo project config data
-PROJECT_CONFIG_TEMPLATE = 'lmdo.yml.j2'
-PROJECT_CONFIG_FILE = 'lmdo.yml'
+PROJECT_CONFIG_TEMPLATE = 'lmdo.yaml.j2'
+PROJECT_CONFIG_FILE = 'lmdo.yaml'
 
 # PIP
 PIP_VENDOR_FOLDER = 'vendored'
@@ -27,14 +27,15 @@ LAMBDA_TIMEOUT = 180
 LAMBDA_EXCLUDE= {
     'dir': [
         'tests',
-        #'*boto*',
+        '*botocore*',
+        '*boto3*',
         '*.git*',
         '.cache',
         'cloudformation',
         'swagger',
     ],
     'file': [
-        'lmdo.yml',
+        'lmdo.yaml',
         '*.pyc',
         '.gitignore',
         '.coverage',
@@ -77,8 +78,13 @@ CONFIG_MANDATORY_KEYS= [
 # Template
 IAM_ROLE_APIGATEWAY_LAMBDA = 'apigateway_lambda_role.json'
 IAM_POLICY_APIGATEWAY_LAMBDA_INVOKE = 'iam_policy_lambda_invoke.json'
+
 IAM_ROLE_LAMBDA_ASSUME = 'default_lambda_assume_role.json'
 IAM_POLICY_LAMBDA_DEFAULT = 'default_lambda_role_policy.json'
+
+IAM_ROLE_EVENTS = 'default_events_role.json'
+IAM_POLICY_EVENTS = 'default_events_policy.json'
+
 APIGATEWAY_SWAGGER_WSGI = 'wsgi_apigateway.json'
 
 DEFAULT_ASSUME_ROLES = [

@@ -4,7 +4,9 @@ import os
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.oprint import Oprint
 from lmdo.utils import get_template, update_template 
-from lmdo.config import IAM_ROLE_APIGATEWAY_LAMBDA, IAM_POLICY_APIGATEWAY_LAMBDA_INVOKE, IAM_ROLE_LAMBDA_ASSUME, IAM_POLICY_LAMBDA_DEFAULT, LAMBDA_DEFAULT_ASSUME_ROLES 
+from lmdo.config import IAM_ROLE_APIGATEWAY_LAMBDA, IAM_POLICY_APIGATEWAY_LAMBDA_INVOKE, \
+        IAM_ROLE_LAMBDA_ASSUME, IAM_POLICY_LAMBDA_DEFAULT, LAMBDA_DEFAULT_ASSUME_ROLES, \
+        IAM_ROLE_EVENTS, IAM_POLICY_EVENTS
 
 class IAM(AWSBase):
     """create/update IAM properties"""
@@ -69,11 +71,36 @@ class IAM(AWSBase):
 
                 response = self.create_role(role_name, assume_policy)
 
-            policy = self.create_apigateway_lambda_invoke_policy(role_name, self.create_policy_name(role_name, 'lambda-invoke'))
+            policy = self.create_default_policy(role_name, self.create_policy_name(role_name, 'lambda-invoke'), IAM_POLICY_APIGATEWAY_LAMBDA_INVOKE)
+        except Exception as e:
+            Oprint.err(e, 'iam')
+
+        return response
+
+    def create_default_events_role(self, role_name):
+        """Create default event role"""
+        try: 
+            response = self.get_role(role_name)
+            
+            if response:
+                Oprint.warn('Role {} exists, no action required'.format(role_name), 'iam')
+
+            template = get_template(IAM_ROLE_EVENTS)
+            if not template:
+                return False
+
+            if not response:
+                with open(template, 'r') as outfile:
+                    assume_policy = outfile.read()
+
+                response = self.create_role(role_name, assume_policy)
+
+            policy = self.create_default_policy(role_name, self.create_policy_name(role_name, 'default-events'), IAM_POLICY_EVENTS)
         except Exception as e:
             Oprint.err(e, 'apigateway')
 
         return response
+
 
     def detach_role_managed_policies(self, role_name):
         """Detach managed policies that attache to a role"""
@@ -123,10 +150,10 @@ class IAM(AWSBase):
 
         return response
    
-    def create_apigateway_lambda_invoke_policy(self, role_name, policy_name):
+    def create_default_policy(self, role_name, policy_name, policy_file):
         """Create APIGateway role inline policy that can invoke lambda"""
         try:
-            template = get_template(IAM_POLICY_APIGATEWAY_LAMBDA_INVOKE)
+            template = get_template(policy_file)
             if not template:
                 return False
 
