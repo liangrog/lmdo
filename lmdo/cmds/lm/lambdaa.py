@@ -8,12 +8,14 @@ import subprocess
 import glob
 import copy
 import random
+import uuid
 
 from lambda_packages import lambda_packages
 
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.s3.s3 import S3
 from lmdo.cmds.iam.iam import IAM
+from lmdo.cmds.cwe.cloudwatch_event import CloudWatchEvent
 from lmdo.oprint import Oprint
 from lmdo.config import LAMBDA_MEMORY_SIZE, LAMBDA_RUNTIME, LAMBDA_TIMEOUT, LAMBDA_EXCLUDE, PIP_VENDOR_FOLDER, PIP_REQUIREMENTS_FILE
 from lmdo.utils import zipper, get_sitepackage_dirs, class_function_retry, copytree
@@ -27,12 +29,16 @@ class Lambda(AWSBase):
 
     FUNCTION_TYPE_DEFAULT = 'default'
     FUNCTION_TYPE_WSGI = 'wsgi'
-    FUNCTION_TYPE_CLOUDWATCHEVENTS = 'cloudwatch_events'
+    FUNCTION_TYPE_CLOUDWATCHEVENTS = 'cron_dispatcher'
+    FUNCTION_TYPE_HEATER = 'heater'
 
     HANDLER_WSGI = 'lmdo_wsgi_handler.handler'
 
     NAME_EVENTS_DISPATCHER = 'lmdo_events_dispatcher'
     HANDLER_EVENTS_DISPATCHER_HANDLER = 'events_dispatcher_handler.handler'
+
+    NAME_HEATER = 'lmdo_heater'
+    HANDLER_HEATER_HANDLER = 'heater_handler.handler'
 
     VIRTUALENV_ZIP_EXCLUDES = [
         '*.exe', '*.DS_Store', '*.Python', '*.git', '.git/*', '*.zip', '*.tar.gz',
@@ -50,8 +56,11 @@ class Lambda(AWSBase):
         self._client = self.get_client('lambda') 
         self._s3 = S3()
         self._iam = IAM()
+        self._event = CloudWatchEvent()
         self._args = args or {}
-        self._events_dispatcher_arn = None
+        self._events_dispatcher_arn = {}
+        self._heater_arn = None
+        self._default_event_role_arn = None
 
     @property
     def client(self):
@@ -89,14 +98,20 @@ class Lambda(AWSBase):
             # Get function info before being deleted
             info = self.get_function(self.get_lmdo_format_name(lm.get('FunctionName')))
             if info:
+                # If it's a dispatcher
+                self.delete_rules_for_dispatcher(lm)
+
                 self.delete_function(info.get('Configuration').get('FunctionName'))
+
+                # Remove container heater
+                self.heat_down(lm)
 
                 # Delete role if it's created by lmdo
                 if not lm.get('RoleArn') or len(lm.get('RoleArn')) <= 0:
                     self.delete_role(info.get('Configuration').get('Role'))
             else:
                 Oprint.warn('Cannot find function {} to delete in AWS'.format(self.get_lmdo_format_name(lm.get('FunctionName'))), 'lambda')
-
+            
     def update(self):
         """Wrapper, same action as create"""
         self.create()
@@ -228,29 +243,37 @@ class Lambda(AWSBase):
 
     def get_zipped_package(self, func_name, func_type):
         """Packaging lambda"""
-        # Copy project file to temp
+        # Create packaging temp dir
         lambda_temp_dir = tempfile.mkdtemp()
-        copytree(os.getcwd(), lambda_temp_dir, ignore=shutil.ignore_patterns('*.git*'))
-        self.add_init_file_to_root(lambda_temp_dir)
-
-        # Installing packages
-        self.dependency_packaging(lambda_temp_dir)
-        
-        if func_type == self.FUNCTION_TYPE_WSGI:
-            self.pip_wsgi_install(lambda_temp_dir)
-
+        # Create zip file temp dir
         target_temp_dir = tempfile.mkdtemp()
         target = '{}/{}'.format(target_temp_dir, self.get_zip_name(func_name))
-        replace_path = [
-            {
-               'from_path': lambda_temp_dir,
-               'to_path': '.'
-            }
-        ]
 
-        # Zip what we'v got so far
-        zipper(lambda_temp_dir, target, LAMBDA_EXCLUDE, False, replace_path)
+        self.add_init_file_to_root(lambda_temp_dir)
+ 
+        if func_type == self.FUNCTION_TYPE_WSGI:
+            self.pip_wsgi_install(lambda_temp_dir)
+      
+        # Heater is one file only from lmdo. don't need packages
+        if func_type != self.FUNCTION_TYPE_HEATER:
+            # Copy project files
+            copytree(os.getcwd(), lambda_temp_dir, ignore=shutil.ignore_patterns('*.git*'))
 
+            # Installing package
+            self.dependency_packaging(lambda_temp_dir)
+            
+            replace_path = [
+                {
+                   'from_path': lambda_temp_dir,
+                   'to_path': '.'
+                }
+            ]
+
+            # Zip what we've got so far
+            zipper(lambda_temp_dir, target, LAMBDA_EXCLUDE, False, replace_path)
+
+       
+        # Default type function doesn't need lmdo's lambda wrappers
         if func_type != self.FUNCTION_TYPE_DEFAULT:
             # Don't load lmdo __init__.py
             if LAMBDA_EXCLUDE.get('LAMBDA_EXCLUDE'):
@@ -303,11 +326,11 @@ class Lambda(AWSBase):
 
         return True
 
-    def function_update_or_create(self, function_config, package_only=False):
+    def function_update_or_create(self, function_config, package_only=False, ignore_cmd=False):
         """Create/update function based on config"""
         # If user specify a function
         specify_function = self.if_specify_function()
-        if specify_function and specify_function != function_config.get('FunctionName'):
+        if not ignore_cmd and specify_function and specify_function != function_config.get('FunctionName'):
             return True
  
         function_config = self.update_function_config(function_config)
@@ -357,6 +380,11 @@ class Lambda(AWSBase):
 
             # Clean up
             shutil.rmtree(tmp_path)
+        
+        # Add container heater
+        self.heat_up(function_config)
+        # If it's a dispatcher
+        self.create_dispatcher_and_rules(function_config)
 
     def update_function_config(self, function_config):
         """Update function config value based on types"""
@@ -370,9 +398,8 @@ class Lambda(AWSBase):
 
         if function_type == self.FUNCTION_TYPE_CLOUDWATCHEVENTS:
             function_config['Handler'] = self.HANDLER_EVENTS_DISPATCHER_HANDLER
-            function_config['FunctionName'] = self.NAME_EVENTS_DISPATCHER
             function_config['Description'] = 'Lmdo cloudwatch event function deployed for service {} by lmdo'.format(self._config.get('Service'))
-        
+ 
         return function_config
 
     def create_role(self, role_name, role_policy):
@@ -603,50 +630,29 @@ class Lambda(AWSBase):
         """If user specify a function to process"""
         return False if not self._args.get('--function') else self._args.get('--function')
    
-    def get_events_dispatcher_name(self):
-        """lmdo events dispatcher function name"""
-        return self.get_lmdo_format_name(self.NAME_EVENTS_DISPATCHER)
-
-    def get_events_dispatcher_arn(self):
+    def get_events_dispatcher_arn(self, function_name):
         """Fetch lmdo events dispatcher arn"""
         # Return cache
-        if self._events_dispatcher_arn:
-            return self._events_dispatcher_arn
+        if not self._events_dispatcher_arn.get(function_name):
+            # Return arn if exist otherwise create a new one
+            info = self.get_function(self.get_lmdo_format_name(function_name))
+            if not info or not info.get('Configuration').get('FunctionArn'):
+                Oprint.err('You have not config lmdo event dispatch lambda function', self.NAME)
+                
+            self._events_dispatcher_arn[function_name] = info.get('Configuration').get('FunctionArn')
+            
+        return self._events_dispatcher_arn.get(function_name)
 
-        # Return arn if exist otherwise create a new one
-        info = self.get_function(self.get_events_dispatcher_name())
-        if not info.get('Configuration').get('FunctionArn'):
-            Oprint.err('You have not config lmdo event dispatch lambda function', self.NAME)
-
-        self._events_dispatcher_arn = info.get('Configuration').get('FunctionArn')
-        
-        return self._events_dispatcher_arn
-
-    def get_function_name_by_lambda_arn(self, arn):
+    def add_event_permission_to_lambda(self, lambda_arn, unique_code):
         """
-        Strip function number from ARN
-        """
-        arn_list = arn.split(':')
-        return arn_list.pop()
-
-    def if_lambda_function(self, arn):
-        """Check if arn is function"""
-        arns = arn.split(':')
-        if 'function' in arns:
-            return True
-
-        return False
-
-    def add_event_permission_to_lambda(self, lambda_arn):
-        """
-        Add SNS permission to Lambda function so that
+        Add permission to Lambda function so that
         the topic can trigger Lambda
         """
         if not self.if_lambda_function(lambda_arn):
             return False
 
         function_name = self.get_function_name_by_lambda_arn(lambda_arn)
-        stmt_id = 'Stmts-%s-sns-%s' % (function_name, str(random.randrange(1000000, 10000000)))
+        stmt_id = 'Stmts-%s-lambda-%s' % (function_name, unique_code)
 
         response = self._client.add_permission(
             FunctionName=function_name,
@@ -656,8 +662,172 @@ class Lambda(AWSBase):
         )
 
         if response.get('Statement') is None:
-            raise ValueError('Create lambda permission for SNS topic failed')
+            raise ValueError('Create lambda permission for Event topic failed')
 
         return stmt_id
+
+    def delete_event_permission_to_lambda(self, lambda_arn, unique_code):
+        """
+        Delete permission to Lambda function
+        """
+        if not self.if_lambda_function(lambda_arn):
+            return False
+        try: 
+            function_name = self.get_function_name_by_lambda_arn(lambda_arn)
+            stmt_id = 'Stmts-%s-lambda-%s' % (function_name, unique_code)
+
+            response = self._client.remove_permission(
+                FunctionName=function_name,
+                StatementId=stmt_id
+            )
+        except Exception as e:
+            pass 
+
+        return True
+
+    def get_default_event_role_arn(self):
+        """Get default event role"""
+        if not self._default_event_role_arn:
+            self._default_event_role_arn = self._iam.create_default_events_role(role_name=self.get_lmdo_format_name('default-events-lambda'))['Role']['Arn']
+
+        return self._default_event_role_arn
+
+    def delete_default_event_role_arn(self):
+        """Get default event role"""
+        self._default_event_role_arn = None 
+        self._iam.delete_default_events_role(role_name=self.get_lmdo_format_name('default-events-lambda'))
+
+        return True
+
+    def delete_rules_for_dispatcher(self, function_config):
+        """Delete rules for associated dispatcher"""
+        if function_config.get('Type') != self.FUNCTION_TYPE_CLOUDWATCHEVENTS:
+            return True
+    
+        rule_data = self.get_rule_data_for_dispatcher(function_config=function_config, delete=False)
+        for rule in rule_data:
+            self._event.delete_rule(name=rule.get('Name'))
+
+        return True
+
+    def create_dispatcher_and_rules(self, function_config):
+        """Create rules for associated dispatcher"""
+        if function_config.get('Type') != self.FUNCTION_TYPE_CLOUDWATCHEVENTS:
+            return True
+        
+        rule_data = self.get_rule_data_for_dispatcher(function_config=function_config)
+        if not rule_data:
+            return True
+        
+        for rule in rule_data:
+            target = rule.pop("Target")
+            self._event.upsert_rule(**rule)
+            self._event.upsert_targets(rule_name=rule.get('Name'), targets=target)
+
+        return True
+
+    def get_rule_data_for_dispatcher(self, function_config, delete=False):
+        """Prepare rule data for dispatcher function"""
+        if not function_config.get('RuleHandlers'):
+            return False
+
+        rule_data = []
+        for handler in function_config.get('RuleHandlers'):
+            # We only need the name for delete
+            if delete:
+                rule = {
+                    "Name": '{}--{}'.format(self.get_lmdo_format_name(function_config['FunctionName']), handler.get('Handler'))
+                }
+            else:    
+                rule = {
+                    "Name": '{}--{}'.format(self.get_lmdo_format_name(function_config['FunctionName']), handler.get('Handler')),
+                    "ScheduleExpression": handler.get('Rate'),
+                    "State": 'ENABLED',
+                    "Description": 'Lmdo dispatcher function',
+                    "RoleArn": self.get_default_event_role_arn(),
+                    "Target": [
+                        {
+                            'Id': str(uuid.uuid4()),
+                            'Arn': self.get_events_dispatcher_arn(function_config.get('FunctionName'))
+                        }
+                     ]
+                }
+                rule_data.append(rule)
+
+        return rule_data
+
+    def heat_up(self, function_config):
+        """Setup scheduled event to heat up the function by invoking it"""
+        # if no heatup or rule exists
+        if not function_config.get('HeatUp'):
+            return False
+
+        self.create_heater(function_config.get('S3Bucket'))
+        rule_name = '{}--{}'.format(self.NAME_HEATER, self.get_lmdo_format_name(function_config.get('FunctionName'))) 
+
+        rule = self._event.upsert_rule(
+            Name=rule_name,
+            ScheduleExpression=function_config.get('HeatRate', 'rate(4 minutes)'),
+            State='ENABLED',
+            Description='Lmdo heating function',
+            RoleArn=self.get_default_event_role_arn()
+        )
+
+        target = self._event.upsert_targets(    
+            rule_name=rule_name,
+            targets=[
+                {
+                    'Id': str(uuid.uuid4()),
+                    'Arn': self._heater_arn,
+                }
+            ]
+        )
+
+    def heat_down(self, function_config):
+        """Setup scheduled event to heat up the function by invoking it"""
+        rule_name = '{}--{}'.format(self.NAME_HEATER, self.get_lmdo_format_name(function_config.get('FunctionName')))
+        
+        response = None
+        try: 
+            response = self._event.client.describe_rule(Name=rule_name)
+        except Exception as e:
+            pass
+
+        # if no heatup or rule exists
+        if not function_config.get('HeatUp') or not response:
+            return False
+        
+        self._event.delete_rule(name=rule_name)
+
+        self.delete_heater()
+
+    def create_heater(self, s3_bucket):
+        """Create lmdo heater function"""
+        function_config = {
+            'FunctionName': self.NAME_HEATER,
+            'Type': self.FUNCTION_TYPE_HEATER,
+            'S3Bucket': s3_bucket,
+            'Handler': self.HANDLER_HEATER_HANDLER,
+            'Description': 'Lmdo heating function deployed for service {} by lmdo'.format(self._config.get('Service'))
+        }
+
+        if not self._heater_arn:
+            info = self.get_function(self.get_lmdo_format_name(self.NAME_HEATER))
+            if not info:
+                self.function_update_or_create(function_config=function_config, ignore_cmd=True)
+            
+            info = self.get_function(self.get_lmdo_format_name(self.NAME_HEATER))
+            self._heater_arn = info.get('Configuration').get('FunctionArn')
+            self.delete_event_permission_to_lambda(self._heater_arn, self.NAME_HEATER)
+            self.add_event_permission_to_lambda(self._heater_arn, self.NAME_HEATER)
+
+        return self._heater_arn
+
+    def delete_heater(self):
+        # Get function info before being deleted
+        info = self.get_function(self.get_lmdo_format_name(self.NAME_HEATER))
+        if info:
+            self.delete_function(info.get('Configuration').get('FunctionName'))
+            self.delete_role(info.get('Configuration').get('Role'))
 
 

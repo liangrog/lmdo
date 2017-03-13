@@ -54,8 +54,6 @@ CloudWatchEvent:
       Targets:                                   # @optional target list
           - Type: default                        # @optional default target, AWS resource ARN
             Arn: AWS resource arn
-          - Type: dispatcher                     # Lmdo lambda wrapper for dispatching schedule event to the seperate functions
-            Handler: lambda.handler              # base on rule name 
           - Type: local                          # local lambda function, lmdo will find the function arn for use
             FunctionName: local lambda name
 
@@ -104,6 +102,8 @@ CloudWatchEvent:
 #          - arn:aws:blah
 #      Runtime: python2.7                  # optional default to 'python2.7'
 #      Timeout: 180                        # optional default to 180
+#      HeatUp: False                       # optional keep container alive
+#      HeatRate: rate(4 minutes):          # optional, how often
 #      VpcConfig:                          # optional, Lambda VPC configuration
 #          SecurityGroupIds:
 #              - string
@@ -158,5 +158,7 @@ CloudWatchEvent:
 #              - string
 #      EnvironmentVariables:                       # mandatory
 #          DJANGO_SETTINGS_MODULE: mysite.settings # mandatory     
-
+       RuleHandlers:
+           - Handler: bla
+             Rate: Rate(1 minutes) 
 
