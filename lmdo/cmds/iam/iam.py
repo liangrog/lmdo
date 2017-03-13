@@ -78,12 +78,13 @@ class IAM(AWSBase):
         return response
 
     def create_default_events_role(self, role_name):
-        """Create default event role"""
+        """Create lmdo default event role"""
         try: 
             response = self.get_role(role_name)
             
             if response:
                 Oprint.warn('Role {} exists, no action required'.format(role_name), 'iam')
+                return response
 
             template = get_template(IAM_ROLE_EVENTS)
             if not template:
@@ -101,6 +102,12 @@ class IAM(AWSBase):
 
         return response
 
+    def delete_default_events_role(self, role_name):
+        """Delete lmdo the defaul event rule role"""
+        if self.get_role(role_name=role_name):
+            self.delete_role_and_associated_policies(role_name=role_name)
+
+        return True
 
     def detach_role_managed_policies(self, role_name):
         """Detach managed policies that attache to a role"""

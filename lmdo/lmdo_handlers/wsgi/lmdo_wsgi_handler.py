@@ -25,6 +25,9 @@ class LambdaHandler(object):
 
     def apigateway(self, event, context):
         """Handle reqeust from api gateway"""
+        if not event:
+            return False
+
         apigateway_response = ApigatewayResponse()
 
         if self._settings.DEBUG:

@@ -67,8 +67,8 @@ class AWSBase(object):
         """Get lmdo name format prefixed with get_name_id"""
         if prefix_disabled == True:
             return name.lower()
-        else:
-            return "{}-{}".format(self.get_name_id(), name.lower())
+        
+        return "{}-{}".format(self.get_name_id(), name.lower())
 
     def get_template_s3_url(self, template_name):
         """Construct the template URL for nested stack"""
@@ -90,4 +90,20 @@ class AWSBase(object):
     def get_lambda_arn(self, func_name):
         """Return invokeable function url"""
         return 'arn:aws:lambda:{}:{}:function:{}'.format(self.get_region(), self.get_account_id(), func_name)
+
+    def if_lambda_function(self, arn):
+        """Check if arn is function"""
+        arns = arn.split(':')
+        if 'function' in arns:
+            return True
+
+        return False
+
+    def get_function_name_by_lambda_arn(self, arn):
+        """
+        Strip function number from ARN
+        """
+        arn_list = arn.split(':')
+        return arn_list.pop()
+
 
