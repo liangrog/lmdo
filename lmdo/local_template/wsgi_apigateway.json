@@ -11,6 +11,12 @@
     "paths": {
         "/$basePath": {
             "options": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "responses": {
                     "200": {
                         "description": "200 response",
@@ -38,6 +44,12 @@
                                 "method.response.header.Access-Control-Allow-Methods": "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'",
                                 "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,x-requested-with'",
                                 "method.response.header.Access-Control-Allow-Origin": "'*'"
+                            }
+                        },
+                        "302" : {
+                            "statusCode" : "302",
+                            "responseParameters" : {
+                                "method.response.header.Location": "integration.response.body.redirect.url"
                             }
                         }
                     },
@@ -66,6 +78,12 @@
                     "responses": {
                         "default": {
                             "statusCode": "200"
+                        },
+                        "302" : {
+                            "statusCode" : "302",
+                            "responseParameters" : {
+                                "method.response.header.Location": "integration.response.body.redirect.url"
+                            }
                         }
                     },
                     "uri": "arn:aws:apigateway:$apiRegion:lambda:path/2015-03-31/functions/arn:aws:lambda:$functionRegion:$accountId:function:$functionName/invocations",
@@ -80,6 +98,12 @@
 
         "/$basePath/{proxy+}": {
             "options": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "responses": {
                     "200": {
                         "description": "200 response",
@@ -108,6 +132,12 @@
                                 "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,x-requested-with'",
                                 "method.response.header.Access-Control-Allow-Origin": "'*'"
                             }
+                        },
+                        "302" : {
+                            "statusCode" : "302",
+                            "responseParameters" : {
+                                "method.response.header.Location": "integration.response.body.redirect.url"
+                            }
                         }
                     },
                     "requestTemplates": {
@@ -131,11 +161,18 @@
                         "type": "string"
                     }
                 ],
-                "responses": {},
+                "responses": {
+                },
                 "x-amazon-apigateway-integration": {
                     "responses": {
                         "default": {
                             "statusCode": "200"
+                        },
+                        "302" : {
+                            "statusCode" : "302",
+                            "responseParameters" : {
+                                "method.response.header.Location": "integration.response.body.redirect.url"
+                            }
                         }
                     },
                     "uri": "arn:aws:apigateway:$apiRegion:lambda:path/2015-03-31/functions/arn:aws:lambda:$functionRegion:$accountId:function:$functionName/invocations",
