@@ -28,6 +28,12 @@
                                 "type": "string"
                             }
                         }
+                    },
+                    "302" : {
+                        "statusCode" : "302",
+                        "responseParameters" : {
+                            "method.response.header.Location": "integration.response.body.redirect.url"
+                        }
                     }
                 },
                 "x-amazon-apigateway-integration": {
@@ -38,6 +44,12 @@
                                 "method.response.header.Access-Control-Allow-Methods": "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'",
                                 "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,x-requested-with'",
                                 "method.response.header.Access-Control-Allow-Origin": "'*'"
+                            }
+                        },
+                        "302" : {
+                            "statusCode" : "302",
+                            "responseParameters" : {
+                                "method.response.header.Location": "integration.response.body.redirect.url"
                             }
                         }
                     },
@@ -60,12 +72,24 @@
                         "schema": {
                             "$ref": "#/definitions/Empty"
                         }
+                    },
+                    "302" : {
+                        "statusCode" : "302",
+                        "responseParameters" : {
+                            "method.response.header.Location": "integration.response.body.redirect.url"
+                        }
                     }
                 },
                 "x-amazon-apigateway-integration": {
                     "responses": {
                         "default": {
                             "statusCode": "200"
+                        },
+                        "302" : {
+                            "statusCode" : "302",
+                            "responseParameters" : {
+                                "method.response.header.Location": "integration.response.body.redirect.url"
+                            }
                         }
                     },
                     "uri": "arn:aws:apigateway:$apiRegion:lambda:path/2015-03-31/functions/arn:aws:lambda:$functionRegion:$accountId:function:$functionName/invocations",
@@ -96,6 +120,12 @@
                             "Access-Control-Allow-Headers": {
                                 "type": "string"
                             }
+                        },
+                        "302" : {
+                            "statusCode" : "302",
+                            "responseParameters" : {
+                                "method.response.header.Location": "integration.response.body.redirect.url"
+                            }
                         }
                     }
                 },
@@ -107,6 +137,12 @@
                                 "method.response.header.Access-Control-Allow-Methods": "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'",
                                 "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,x-requested-with'",
                                 "method.response.header.Access-Control-Allow-Origin": "'*'"
+                            }
+                        },
+                        "302" : {
+                            "statusCode" : "302",
+                            "responseParameters" : {
+                                "method.response.header.Location": "integration.response.body.redirect.url"
                             }
                         }
                     },
@@ -131,11 +167,24 @@
                         "type": "string"
                     }
                 ],
-                "responses": {},
+                "responses": {
+                    "302" : {
+                        "statusCode" : "302",
+                        "responseParameters" : {
+                            "method.response.header.Location": "integration.response.body.redirect.url"
+                        }
+                    }
+                },
                 "x-amazon-apigateway-integration": {
                     "responses": {
                         "default": {
                             "statusCode": "200"
+                        },
+                        "302" : {
+                            "statusCode" : "302",
+                            "responseParameters" : {
+                                "method.response.header.Location": "integration.response.body.redirect.url"
+                            }
                         }
                     },
                     "uri": "arn:aws:apigateway:$apiRegion:lambda:path/2015-03-31/functions/arn:aws:lambda:$functionRegion:$accountId:function:$functionName/invocations",
