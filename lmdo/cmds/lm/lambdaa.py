@@ -555,7 +555,6 @@ class Lambda(AWSBase):
             Oprint.info('Installing virtualenv python package dependancies to {}'.format(tmp_path), 'pip')
             spinner.start()
             for installed_package_name in installed_packages_name_set:
-                Oprint.warn(installed_package_name)
                 wheel_url = self.get_manylinux_wheel(installed_package_name)
                 if wheel_url:
                     resp = requests.get(wheel_url, timeout=2, stream=True)
