@@ -34,6 +34,17 @@
                                 "type": "string"
                             }
                         }
+                    },
+                    "302": {
+                        "description": "200 response",
+                        "schema": {
+                            "$ref": "#/definitions/Empty"
+                        },
+                        "headers": {
+                            "Location": {
+                                "type": "string"
+                            }
+                        }
                     }
                 },
                 "x-amazon-apigateway-integration": {
@@ -71,6 +82,17 @@
                         "description": "200 response",
                         "schema": {
                             "$ref": "#/definitions/Empty"
+                        }
+                    },
+                    "302": {
+                        "description": "200 response",
+                        "schema": {
+                            "$ref": "#/definitions/Empty"
+                        },
+                        "headers": {
+                            "Location": {
+                                "type": "string"
+                            }
                         }
                     }
                 },
@@ -121,6 +143,17 @@
                                 "type": "string"
                             }
                         }
+                    },
+                    "302": {
+                        "description": "302 response",
+                        "schema": {
+                            "$ref": "#/definitions/Empty"
+                        },
+                        "headers": {
+                            "Location": {
+                                "type": "string"
+                            }
+                        }
                     }
                 },
                 "x-amazon-apigateway-integration": {
@@ -162,6 +195,17 @@
                     }
                 ],
                 "responses": {
+                    "302": {
+                        "description": "302 response",
+                        "schema": {
+                            "$ref": "#/definitions/Empty"
+                        },
+                        "headers": {
+                            "Location": {
+                                "type": "string"
+                            }
+                        }
+                    }
                 },
                 "x-amazon-apigateway-integration": {
                     "responses": {
