@@ -24,8 +24,10 @@ Features
 - Manage API Gateway resources like deployments and stages
 - Automatically generate API Gateway for Lambda functions
 - Manage life cycles of AWS Lambda functions
-- Offer two type of managed Lambda functions: wsgi and CloudWatch Event scheduler dispatcher
+- Offer two type of managed Lambda functions: Django wsgi wrapper and CloudWatch Event scheduler dispatcher
+- Maintain Lambda function heart beat
 - CloudWatch log output on CL
+- Upload any files to S3 bucket
 
 Contents:
 ---------
@@ -87,7 +89,7 @@ Basic Configuration
 
     Details please ref to [AWS CLI](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
 
-    **Note**: If explicitly using config options `Region, AWSKey, AWSSecret`, it's recommended to define them in the environment. Using syntax like `$env|YOUR_ENV_VAR` lmdo will replace them with the value.
+    **Note**: If explicitly using config options `Region, AWSKey, AWSSecret`, it's recommended to define them in the environment. Using syntax like `$env|YOUR_ENV_VAR` lmdo will replace them with the actual environment value.
 
 2. Other mandatory configuration Options
 
@@ -114,11 +116,11 @@ CloudFormation
 ### Available reserved utility variables
 They will be replaced with correct value during deployment
 
-    $env|ENV_VAR_NAME: Environment variables
+`$env|ENV_VAR_NAME`: Environment variables, can be used both in parameters and templates.
 
-    $template|template-file-name: Nested stack template to be used to construct proper S3 bucket url for stack resource `TemplateURL`
+`$template|template-file-name`: Nested stack template to be used to construct proper S3 bucket url for stack resource `TemplateURL`, mostly used in templates.
 
-    $stack|stack-name::output-key: The value of an existing stack's output based on key name. **Note**: the stack referring to must exist before deployment.
+`$stack|stack-name::output-key`: The value of an existing stack's output based on key name. Can be used both in parameters and templates. **Note**: the stack referring to must exist before deployment.
 
 ### Configuration examples:
 
@@ -187,6 +189,36 @@ They will be replaced with correct value during deployment
               ParamsPath: relative/path/to/params/file-2/or/directory-2            
     ```
 
+### Parameter file
+Parameter file can be in either `.json` or `.yaml` format.
+
+For json file, you can use two types of syntax:
+
+    1. Standard AWS stack parameter format
+
+        [
+            {
+                "ParameterKey": "your-parameter-key-1",
+                "ParameterValue": "your-parameter-value-1"
+            },
+            {
+                "ParameterKey": "your-parameter-key-2",
+                "ParameterValue": "your-parameter-value-2"
+            }            
+        ]
+
+    2. lmdo json format
+
+        {
+            "your-parameter-key-1": "your-parameter-value-1",
+            "your-parameter-key-2": "your-parameter-value-2"
+        }
+
+For yaml file, the format as follow:
+
+        your-parameter-key-1: your-parameter-value-1
+        your-parameter-key-2: your-parameter-value-2
+
 ### Commands
 
 To create your CloudFormation, run:
@@ -202,4 +234,5 @@ To use change-set instead of directly update stack, use `-c` or `--change_set` o
 For output stack event during process, use `-e` or `--event` option:
 
     $ lmdo cf create -e
-
+    
+    
