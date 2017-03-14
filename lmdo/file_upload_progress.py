@@ -37,7 +37,7 @@ class FileUploadProgress(object):
                 sys.stdout.write("\033[1A\033[K")
                 sys.stdout.flush()
             else:
-                sys.stdout.write("%s %s %s (%.2f%%) \0\r" % (self._filename, self._size, self._seen_so_far, percentage))
+                sys.stdout.write("%s %s %s (%.2f%%) \0\r" % ('Uploading:', self._size, self._seen_so_far, percentage))
                 sys.stdout.flush()
 
 
