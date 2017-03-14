@@ -11,12 +11,6 @@
     "paths": {
         "/$basePath": {
             "options": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
                 "responses": {
                     "200": {
                         "description": "200 response",
@@ -86,12 +80,6 @@
 
         "/$basePath/{proxy+}": {
             "options": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
                 "responses": {
                     "200": {
                         "description": "200 response",
