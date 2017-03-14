@@ -11,6 +11,12 @@
     "paths": {
         "/$basePath": {
             "options": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "responses": {
                     "200": {
                         "description": "200 response",
@@ -27,12 +33,6 @@
                             "Access-Control-Allow-Headers": {
                                 "type": "string"
                             }
-                        }
-                    },
-                    "302" : {
-                        "statusCode" : "302",
-                        "responseParameters" : {
-                            "method.response.header.Location": "integration.response.body.redirect.url"
                         }
                     }
                 },
@@ -72,12 +72,6 @@
                         "schema": {
                             "$ref": "#/definitions/Empty"
                         }
-                    },
-                    "302" : {
-                        "statusCode" : "302",
-                        "responseParameters" : {
-                            "method.response.header.Location": "integration.response.body.redirect.url"
-                        }
                     }
                 },
                 "x-amazon-apigateway-integration": {
@@ -104,6 +98,12 @@
 
         "/$basePath/{proxy+}": {
             "options": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "responses": {
                     "200": {
                         "description": "200 response",
@@ -119,12 +119,6 @@
                             },
                             "Access-Control-Allow-Headers": {
                                 "type": "string"
-                            }
-                        },
-                        "302" : {
-                            "statusCode" : "302",
-                            "responseParameters" : {
-                                "method.response.header.Location": "integration.response.body.redirect.url"
                             }
                         }
                     }
@@ -168,12 +162,6 @@
                     }
                 ],
                 "responses": {
-                    "302" : {
-                        "statusCode" : "302",
-                        "responseParameters" : {
-                            "method.response.header.Location": "integration.response.body.redirect.url"
-                        }
-                    }
                 },
                 "x-amazon-apigateway-integration": {
                     "responses": {
