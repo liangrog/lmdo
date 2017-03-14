@@ -1,294 +1,205 @@
 lmdo
-=========
-A simple CLI tool for developing microservices using AWS Lambda function (python2.7) and managing logistic of AWS resources
+====
+A CD/CI tool for developing micro-services components using AWS Lambda function (python2.7) and managing other AWS resources.
 
+Inspirations
+------------
+[Apex](https://github.com/apex/apex),  [Serverless](https://github.com/serverless/serverless),
+[Zappa](https://github.com/Miserlou/Zappa),
+[sceptre](https://github.com/cloudreach/sceptre)
 
-Purpose
--------
+Why
+---
+Most of the open-source apps are very much opinionated and the model they employ doesn't always fit for the actual individual use case. In fact, there aren't a lot of flexibility provided. In addition, abstraction makes it hard to diagnose issues.
 
-The existing open source tool sets such as [Apex](https://github.com/apex/apex) and [Serverless](https://github.com/serverless/serverless) have all sorts of limitations and too much abstractions. Understandably tools are often opinionated but flexibility should be allowed.
+The tool I have in mind should allow raw inputs, be atomic, has important functionalities like the others and easy to use to a certain degree (You need to know what you are doing. E.g. I don't expect you to use it for creating stack if you don't know how to write a raw CloudFormation). Hence born lmdo.   
 
-In our case, we want to use cloudformation and swagger tempalte to manage our AWS resource and also we want to be able to build standard Lambda function or use Django in Lambda. 
-
-lmdo allows:
-- Use cloud formation templates
-- Use swagger for API Gateway
-- Individually managing AWS resources
+Features
+--------
+- Initialize project via Github boiler plate
+- Use of CloudFormation templates in either json or yaml format
+- Use of CloudFormation paramter files in either json or yaml format
+- Manage one or more CloudFormation stacks
+- Use of swagger template for API Gateway
+- Manage API Gateway resources like deployments and stages
+- Automatically generate API Gateway for Lambda functions
 - Manage life cycles of AWS Lambda functions
-- Bridge Django framework
-- Tail Cloudwatch logs
+- Offer two type of managed Lambda functions: wsgi and CloudWatch Event scheduler dispatcher
+- CloudWatch log output on CL
 
-Usage
------
+Contents:
+---------
+1. [Installation](#installation)
+2. [Project initiation](#project-initiation)
+3. [Basic configuration](#basic-configuration)
+4. [One step deployment](#one-step-deployment)
+5. [CloudFormation](#cloudformation)
+4. [Lambda function](#lambda-function)
+5. [API Gateway](#api-gateway)
+6. [CloudWatch events](#cloudwatch-events)
+7. [CloudWatch logs](#cloudwatch-logs)
+8. [S3 Upload](#s3-upload)
 
-    lmdo init <project_name>
-    lmdo bp fetch <url>
-    lmdo cf (create|update|delete)
-    lmdo lm (create|update|delete|package) [--function-name=<functionName>]
-    lmdo api (create|update|delete)
-    lmdo api create-stage <from_stage> <to_stage>
-    lmdo api delete-stage <from_stage>
-    lmdo api create-domain <domain_name> <cert_name> <cert_path> <cert_private_key_path> <cert_chain_path>
-    lmdo api delete-domain <domain_name>
-    lmdo api create-mapping <domain_name> <base_path> <api_name> <stage>
-    lmdo api delete-mapping <domain_name> <base_path>
-    lmdo s3 sync
-    lmdo logs tail function <function_name> [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>]
-    lmdo logs tail <log_group_name> [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>]
-    lmdo deploy
-    lmdo destroy
-    lmdo (-h | --help)
-    lmdo --version
-
-    Options:
-    -h --help                      Show this screen.
-    --version                      Show version.
-    --day=<int>                    Day to search e.g. 5, -10
-    --start-date=<datetime>        Start date in format 1970-01-01
-    --end-date=<datetime>          End date in format 1970-01-01
-    -f --follow                    Follow entry
-    --function-name=<functioName>  Lambda function name
-    --group-name=<groupName>       Cloudwatch log group name
-    
-    
 Installation
------
+------------
+Installing via pypi:
+
     $ sudo pip install lmdo
 
+Installing via code (Recommended, as lmdo is under active development at the moment):
 
-Project initiation
------
-To initiate your project, run
+    $ git pull https://github.com/MerlinTechnology/lmdo.git
+    $ cd lmdo
+    $ sudo pip install -U ./
+
+**Note**: All lmdo commands need to be run at the same directory of the `lmdo.yaml` file
+
+Project Initiation
+------------------
+To initiate your project, run:
 
     $ lmdo init <project_name>
-    
-This will create a project folder and the sample lmdo configuration file `lmdo.yml` for you.
 
-**Note**: Apart from the init command, all other lmdo commands need to be run at the same directory of the lmdo.yml file
+This will create you named project folder and the sample lmdo configuration file `lmdo.yaml`.
 
-AWS credentials
------
-You can either use session (`Profile`) or configure AWS key and secret (`AWSKey, AWSSecret`) in lmdo.yml
+If you already have an existing project, you can run:
 
-If using session, you will need to create two files:
+    $ lmdo init config
 
-    ~/.aws/config and ~/.aws/credentials
+The configuration file `lmdo.yaml` will be copied to your current directory. If there is already one, the new configuration file will be renamed to `lmdo.yaml.copy`
 
-Details please ref to [AWS CLI](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
-
-One step deployment
------
-Alternatively, you can deploy and delete your entire service by running
-    
-    $ lmdo deploy 
-        or
-    $ lmdo destroy
-
-Boiler plating
------
-To get a boiler plate repo from somewhere in github, run
+To start a project by using a github boiler plate, run:
 
     $ lmdo bp fetch <url>
-    
+
 The repo will then be copied from github to your current project folder without all the git folders or files
 
-AWS Cloudformation
------
-To use cloudformation, you need to 
 
-1. create a folder named `cloudformation` in your project folder, so it looks like:
+Basic Configuration
+-------------------
+1. AWS credentials
 
-        <your-project>/cloudformation
-   The cloudformation template can be in any of `.yml`, `.json` or `.template` format as per AWS requirements. 
-    
-2. there has to be one master template and named `main.*` regardless you are using single template or nested stacks. 
-   
-   If using nested stacks, you must provide S3 bucket in your lmdo.yml file under `CloudformationBucket` as per AWS requirements.
+    You can either use session (`Profile`) or configure AWS key and secret (`Region, AWSKey, AWSSecret`) in `lmdo.yaml`
 
-    For single template, if no S3 bucket provided, the template will be loaded from your local. 
+    When using session, you will need to create two files:
 
-3. If there are parameters, all parameters with their values must be provided in the file named `params.json`. This file however won't be uploaded to S3 under all scenarios for security reasons.
+        ~/.aws/config and ~/.aws/credentials
 
-4. If `StackName` is provided in lmdo.yml, it'll be used to create the stack. Otherwise lmdo will use `<user>-<stage>-<service-name>-service` to name your stack
+    Details please ref to [AWS CLI](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
 
-To manage your cloudformation resource, run:
+    **Note**: If explicitly using config options `Region, AWSKey, AWSSecret`, it's recommended to define them in the environment. Using syntax like `$env|YOUR_ENV_VAR` lmdo will replace them with the value.
 
-    $ lmdo cf (create|update|delete)
-    
-AWS Lambda
------
-You can create standard lambda function and or use a bridging lambda function provided by lmdo to connect to your django app. Lmdo allows you to create any number of lambda functions.
+2. Other mandatory configuration Options
 
-1. Standard Python Lambda function
+    `Service`: The name of your service/project
 
-   **Requirements**
-   
-   * The invokable lambda function files need to be placed on the top level of the project folder. 
-   * The `requirements.txt` file that specifies what packages are needed to be installed 
-   
-   **Writting your Lambda function**
-   
-    **lmdo.yml configuration**
-    
-    To configure your lambda, enter an entry under `Lambda`:
+    `User`: The user that deploys the service/project
 
-          S3Bucket: lambda.bucket.name        # mandatory, the bucket to load your package to
-          Type: default                       # Optional, other types is django
-          FunctionName: superman              # mandatory, the actual function name in AWS will have the format of <user>-<stage>-<service-name>-<FunctionName>
-          Handler: handler.fly                # mandatory, define the handler function
-          MemorySize: 128                     # optional, default to 128
-          RoleArn: rolearn                    # Either provide an existing role arn or RolePolicy, you only need one of them. If none defined, a default role with default policy will be generated
-          RolePolicy:                         # if none of it's children specified, lmdo will generate default
-              AssumeRoles:                    # optional, the default has added apigateway, lambda, events, ec2. You only need to add the extras here
-                  - sns.amazonaws.com         # optional, list assume roles
-              PolicyDocument: policy.json     # optional path/to/policy role policy json file (see note below).
-              ManagedPolicyArns:              # optional, add your managed policy here using arns
-                  - arn:aws:blah              # optional, list of managed policy arns
-          Runtime: python2.7                  # optional default to 'python2.7'
-          Timeout: 180                        # optional default to 180
-          VpcConfig:                          # optional, Lambda VPC configuration
-              SecurityGroupIds:
-                  - string
-                  - string
-              SubnetIds:
-                  - string
-                  - string
-          EnvironmentVariables:              # optional, runtime environment variable
-              MYSQL_HOST: localhost
-              MYSQL_PASSWORD: secret
-              MYSQL_USERNAME: admin
-              MYSQL_DATABASE: lmdo
-    
-    Note:
+    `Stage`: The deployment stage
 
-    1. `PolicyDocument` format:
 
-        ```
-        {
-            "Effect":"Allow",
-            "Action":[
-                "lambda:InvokeFunction",
-                "lambda:AddPermission",
-                "lambda:RemovePermission"
-            ],
-            "Resource": "arn:aws:lambda:ap-southeast-1:1234565:function:*"
-        },
-        {
-            "Effect":"Allow",
-            "Action":[
-                "sns:*"
-            ],
-            "Resource": "arn:aws:sns:*:*:*"
-        } 
-        ```
+One Step Deployment
+-------------------
+To deploy your entire service, run:
 
-    2. If the function uses Django ORM, you will need to append below to the beginning of your lambda function file and add `DJANGO_SETTINGS_MODULE` to the `EnvironmentVariables`.
-        
-        ```
-        import django
-        django.setup()
-        ```
+    $ lmdo deploy
 
-2. Django app
+To delete, run:
 
-   **Requirements**
-   
-   * The `requirements.txt` file that specifies what packages are needed to be installed 
-   
-   **lmdo.yml configuration**
-   
-   To config, add below entry in `Lambda`:
-   
-         S3Bucket: lambda.bucket.name        # mandatory
-         Type: wsgi                          # mandatory
-         CognitoUserPoolId: user_pool_id     # Optional, your AWS user pool authorizer id
-         DisableApiGateway: False            # Optional, if set to True, the apigateway for Django app won't be created
-         ApiBasePath: /path                  # Mandatory if apigateway to be created. Base resource path for django app
-         FunctionName: superman              # mandatory
-         MemorySize: 128                     # optional, default to 128
-         RoleArn: rolearn                    # Either provide a role arn or assume role policy doc, the RolePolicyDocument takes preccedent
-         RolePolicy:                         # if none of it's children specified, lmdo will generate default
-             AssumeRoles:                    # optional, the default has added apigateway, lambda, events, ec2. You only need to add the extras here
-                 - sns.amazonaws.com         # optional, list assume roles
-             PolicyDocument: policy.json     # optional path/to/policy role policy json file (see note below).
-             ManagedPolicyArns:              # optional, add your managed policy here using arns
-                 - arn:aws:blah              # optional, list of managed policy arns
-         Runtime: python2.7                  # optional default to 'python2.7'
-         Timeout: 180                        # optional default to 180
-         VpcConfig:                          # optional
-             SecurityGroupIds:
-                 - string
-                 - string
-             SubnetIds:
-                 - string
-         EnvironmentVariables:                       # mandatory
-             DJANGO_SETTINGS_MODULE: mysite.settings # mandatory
- 
-3. Naming convention
+    $ lmdo destroy
 
-    lmdo will append `<user>-<stage>-<service-name>` to the function name and created role name as a convention
 
-    
-To deploy all the functions, run
+CloudFormation
+--------------
+### Available reserved utility variables
+They will be replaced with correct value during deployment
 
-    $ lmdo lm (create|update|delete)
+    $env|ENV_VAR_NAME: Environment variables
 
-To only deploy one function, run
-    
-    $ lmdo lm (create|update|delete) --function-name=blah
+    $template|template-file-name: Nested stack template to be used to construct proper S3 bucket url for stack resource `TemplateURL`
 
-If you are using virtualenv, please set `VirtualEnv: True` in config
+    $stack|stack-name::output-key: The value of an existing stack's output based on key name. **Note**: the stack referring to must exist before deployment.
 
-AWS API Gateway
------
-1. Standard API Gateway
-   Swagger template is used to create API Gateway
+### Configuration examples:
 
-    **Requirements**
-    
-    * A folder named 'swagger' under your project folder
-    * Name your swagger template as `apigateway.json`
+1. Single CloudFormation template without parameters
 
-    **lmdo.yml configuration**
-    
-        ApiGatewayName: Your unique Apigateway name
-        ApiVarMapToFile:                    #Optional for replacement of variable in your swagger with another file (usually reusable template)
-            $mappingKey: file_name               
-   
-    **NOTE:** Please name your version as `$version` and your title as `$title` so that Lmdo can update it during creation using the value of `ApiGatewayName` in your lmdo.yml.
+    ```    
+    CloudFormation:
+        Stacks:
+            - Name: your-stack-name
+              TemplatePath: relative/path/to/template            
+    ```        
 
-2. WSGI(Django) API
-   Lmdo automatically create a API Gateway resource if you have Django Lambda function configured using proxy unless you have `DisableApiGateway` set to `True` in your Lambda function config in `lmdo.yml`. There will only be one API gateway created. Django api will be appended as part of the resource
+2. Single CloudFormation template with parameters. You can either provide a single file or a directory that contains all the parameter files. If a directory is provided, lmdo will combine all files into one during deployment.
 
-To manage your APIGateway resource, run:
+    ```
+    CloudFormation:
+        Stacks:
+            - Name: your-stack-name
+              TemplatePath: relative/path/to/template  
+              ParamsPath: relative/path/to/params/file/or/directory
+    ```
 
-    $ lmdo api (create|update|delete)
-    
-You can create or delete a stage by running
+3. CloudFormation using S3 bucket
 
-    $ lmdo api create-stage <from_stage> <to_stage>
-    or 
-    $ lmdo api delete-stage <from_stage>
+    ```
+    CloudFormation:
+        S3Bucket: your.bucket.url
+        Stacks:
+            - Name: your-stack-name
+              TemplatePath: relative/path/to/template  
+              ParamsPath: relative/path/to/params/file/or/directory
+    ```  
 
-AWS S3
------
-Lmdo offers a simple command line to upload your local static asset into a S3 bucket. All you need to do is to configure `AssetS3Bucket` and `AssetDirectory` in your lmdo.yml, then run
+4. Single CloudFormation template with nested stacks
 
-    $ lmdo s3 sync
+    ```
+    CloudFormation:
+        S3Bucket: your.bucket.url
+        TemplateRepoPath: relative/path/to/nested/stack/template/directory
+        Stacks:
+            - Name: your-stack-name
+              TemplatePath: relative/path/to/template  
+              ParamsPath: relative/path/to/params/file/or/directory
+    ```       
 
-    
-AWS Cloudwatch Logs
------
-1. You can tail any AWS cloudwatch group logs by running:
+    **Note**:
 
-        $ lmdo logs tail <log_group_name> [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>]
+    a. You must provide `S3Bucket` for nested stacks as it'll be used for uploading all the templates to.
 
-    `--day` value defines how many days ago the logs need to be retrieved or you specify a start date and/or end date for the log entries using format `YYYY-MM-DD`
+    b. All nested stack templates must reside in `TemplateRepoPath`. If not given, lmdo will look for nested stack template (see point **c** below) from the project folder by default.
 
-2. You can also tail logs of your lambda function in your project by running:
+    c. Using syntax like `TemplateURL: $template|your-nested-stack-template-file-name` in your master template stack resource, lmdo will replace the syntax to appropriate S3 url.
 
-        $ lmdo logs tail function <function_name> [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>]
+5. Multiple CloudFormation Stacks
 
-  The `<function_name>` is the name you configure in your lmdo.yml
+    ```
+    CloudFormation:
+        S3Bucket: your.bucket.url
+        TemplateRepoPath: relative/path/to/nested/stack/template/directory
+        Stacks:
+            - Name: your-stack-name-1
+              TemplatePath: relative/path/to/template-1  
+              ParamsPath: relative/path/to/params/file-1/or/directory-1
+            - Name: your-stack-name-2
+              TemplatePath: relative/path/to/template-2  
+              ParamsPath: relative/path/to/params/file-2/or/directory-2            
+    ```
 
+### Commands
+
+To create your CloudFormation, run:
+
+    $ lmdo cf create
+
+To update or delete, run the similar command using `update` or `delete` keyword
+
+To use change-set instead of directly update stack, use `-c` or `--change_set` option:
+
+    $ lmdo cf create -c
+
+For output stack event during process, use `-e` or `--event` option:
+
+    $ lmdo cf create -e
 
