@@ -22,6 +22,8 @@ class Cloudformation(AWSBase):
     Class upload cloudformation template to S3
     and create/update stack
     """
+    
+    NAME = 'cloudformation'
 
     def __init__(self, args=None):
         super(Cloudformation, self).__init__()
@@ -192,6 +194,8 @@ class Cloudformation(AWSBase):
         try:
             self.unlock_stack(stack_name=stack_name)
 
+            from botocore.exceptions import ClientError
+
             if self._args.get('-e') or self._args.get('--event'):
                 response = self._client.update_stack(
                     StackName=stack_name,
@@ -209,6 +213,12 @@ class Cloudformation(AWSBase):
                 waiter.wait(stack_name)
 
             self.lock_stack(stack_name=stack_name)
+        except ClientError as ce:
+            if str(ce.response['Error']['Message']) == 'No updates are to be performed.':
+                Oprint.warn('AWS Validation Error: {} (If purely there isn\'t any changes to your cloudformation, you can safely ignore it)'.format(str(ce.response['Error']['Message'])), self.NAME)
+                return True
+            else:
+                Oprint.err(str(ce.response['Error']['Message']), self.NAME)
         except Exception as e:
             Oprint.err(e, 'cloudformation')
             return False
