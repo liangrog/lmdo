@@ -1,7 +1,9 @@
 from __future__ import print_function
 import os
+import json
 
 from lmdo.cmds.aws_base import AWSBase
+from lmdo.file_loader import FileLoader
 from lmdo.oprint import Oprint
 from lmdo.utils import get_template, update_template 
 from lmdo.config import IAM_ROLE_APIGATEWAY_LAMBDA, IAM_POLICY_APIGATEWAY_LAMBDA_INVOKE, \
@@ -175,6 +177,56 @@ class IAM(AWSBase):
         """wrapper"""
         return self.delete_role_and_associated_policies(role_name)
 
+    def get_lambda_default_assume_role_doc(self, extra_services):
+        """Get dict of default lambda default assume role"""
+        role_doc = {
+            "Version":"2012-10-17",
+            "Statement": [
+                {
+                    "Effect":"Allow",
+                    "Principal":{
+                        "Service": LAMBDA_DEFAULT_ASSUME_ROLES + (extra_services or [])
+                    },
+                    "Action":["sts:AssumeRole"]
+                }
+            ]
+        }
+
+        return role_doc
+
+    def get_lambda_default_policy_doc(self, extra_statement):
+        """Get dict of default lambda default policy docs"""
+        policy_doc = {
+            "Version":"2012-10-17",
+            "Statement": [
+                {
+                    "Effect":"Allow",
+                    "Action":[
+                        "lambda:InvokeFunction",
+                        "lambda:AddPermission",
+                        "lambda:RemovePermission"
+                    ],
+                    "Resource": "arn:aws:lambda:$region:$accountId:function:*"
+                },
+                {
+                    "Effect":"Allow",
+                    "Action":[
+                        "logs:CreateLogGroup",
+                        "logs:CreateLogStream",
+                        "logs:PutLogEvents",
+                        "ec2:DescribeNetworkInterfaces",
+                        "ec2:CreateNetworkInterface",
+                        "ec2:DeleteNetworkInterface"
+                    ],
+                    "Resource": "*"
+                }
+            ]
+        }
+
+        policy_doc['Statement'] += extra_statement or [] 
+
+        return policy_doc
+
     def create_lambda_role(self, role_name, role_policy):
         """
             Create role for Lambda, all policies
@@ -186,43 +238,29 @@ class IAM(AWSBase):
         """
         try:
             Oprint.info('Start creating role {} and policie for Lambda'.format(role_name), 'iam')
-            
-            roles = LAMBDA_DEFAULT_ASSUME_ROLES
-            if role_policy and role_policy.get('AssumeRoles'):
-                roles += role_policy.get('AssumeRoles')
-
-            assume_template = get_template(IAM_ROLE_LAMBDA_ASSUME)
- 
-            # Default assum roles
-            assume_roles = '"{}"'.format('","'.join(roles))
            
-            to_replace = {
-                "$services": assume_roles,
-                "$region": self.get_region(),
-                "$accountId": self.get_account_id()
-            }
-
-            with open(assume_template, 'r') as outfile:
-                policy_doc = update_template(outfile.read(), to_replace)
-
+            role_doc = self.get_lambda_default_assume_role_doc(extra_services=role_policy.get('AssumeRoles'))
+                    
             role = self.get_role(role_name)
             
             if not role:
-                role = self._client.create_role(RoleName=role_name, AssumeRolePolicyDocument=policy_doc)
+                role = self._client.create_role(RoleName=role_name, AssumeRolePolicyDocument=json.dumps(role_doc))
             else:
-                self._client.update_assume_role_policy(RoleName=role_name, PolicyDocument=policy_doc)
+                self._client.update_assume_role_policy(RoleName=role_name, PolicyDocument=json.dumps(role_doc))
             
             # If inline policy document provided
             policy_template = get_template(IAM_POLICY_LAMBDA_DEFAULT)
 
+            to_replace = {
+                "$region": self.get_region(),
+                "$accountId": self.get_account_id()
+            }
+
             if role_policy and role_policy.get('PolicyDocument'):
-                with open(os.path.join(os.getcwd(), role_policy.get('PolicyDocument')), 'r') as outfile:
-                    to_replace['$more'] = ',' + outfile.read()
-            else:
-                to_replace['$more'] = ''
+                policy_doc = FileLoader(file_path=role_policy.get('PolicyDocument')).process()
+                policy_doc = self.get_lambda_default_policy_doc(extra_statement=policy_doc['Statement'])
             
-            with open(policy_template, 'r') as outfile:
-                policy_doc = update_template(outfile.read(), to_replace)
+            policy_doc = update_template(json.dumps(policy_doc), to_replace)
 
             # Do inline policy so that when deleting the role, it'll be deleted
             self._client.put_role_policy(RoleName=role_name, PolicyName='{}-policy'.format(role_name), PolicyDocument=policy_doc)
