@@ -439,6 +439,9 @@ CloudWatch events
                 Arn: aws-resource-arn
               - Type: local                          
                 FunctionName: local-function-name
+                
+[schedule-expression]: http://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+[path/to/pattern/file]: http://docs.aws.amazon.com/AmazonCloudWatch/latest/events/CloudWatchEventsandEventPatterns.html
 
 Options:
 `Description`: description of your rule
