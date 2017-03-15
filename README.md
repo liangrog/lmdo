@@ -432,8 +432,8 @@ CloudWatch events
 
     CloudWatchEvent:
         - Name: rule_name                          
-          ScheduleExpression: [schedule-expression](#http://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html)   
-          EventPatternFile: [path/to/pattern/file](http://docs.aws.amazon.com/AmazonCloudWatch/latest/events/CloudWatchEventsandEventPatterns.html)     
+          ScheduleExpression: [schedule-expression]  
+          EventPatternFile: [path/to/pattern/file] 
           Targets:                                  
               - Type: default                        
                 Arn: aws-resource-arn
@@ -445,7 +445,9 @@ CloudWatch events
 
 Options:
 `Description`: description of your rule
+
 `DisablePrefix`: default to `False`. If `True`, lmdo will use your rule name instead of using `<user>-<stage>-<service-name>-<rule_name>`
+
 `RoleArn`: default lmdo will create lambda invokable role
 
 **Note**
