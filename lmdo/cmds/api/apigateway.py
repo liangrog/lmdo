@@ -26,7 +26,7 @@ class Apigateway(AWSBase):
 
     def create(self):
         if not self.get_apigateway_name():
-            Oprint.warn('No action for api gateway as no ApiGatewayName is setup in {}'.format(PROJECT_CONFIG_FILE), 'apigateway')
+            Oprint.info('No action for api gateway, skip...', 'apigateway')
             sys.exit(0)
 
         swagger_api = self.create_api_by_swagger()
