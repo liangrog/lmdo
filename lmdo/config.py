@@ -79,9 +79,6 @@ CONFIG_MANDATORY_KEYS= [
 IAM_ROLE_APIGATEWAY_LAMBDA = 'apigateway_lambda_role.json'
 IAM_POLICY_APIGATEWAY_LAMBDA_INVOKE = 'iam_policy_lambda_invoke.json'
 
-IAM_ROLE_LAMBDA_ASSUME = 'default_lambda_assume_role.json'
-IAM_POLICY_LAMBDA_DEFAULT = 'default_lambda_role_policy.json'
-
 IAM_ROLE_EVENTS = 'default_events_role.json'
 IAM_POLICY_EVENTS = 'default_events_policy.json'
 
