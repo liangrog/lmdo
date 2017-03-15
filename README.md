@@ -120,7 +120,9 @@ They will be replaced with correct value during deployment
 
 `$template|template-file-name`: Nested stack template to be used to construct proper S3 bucket url for stack resource `TemplateURL`, mostly used in templates.
 
-`$stack|stack-name::output-key`: The value of an existing stack's output based on key name. Can be used both in parameters and templates. **Note**: the stack referring to must exist before deployment.
+`$stack|stack-name::output-key`: The value of an existing stack's output based on key name. Can be used both in parameters and templates.
+
+**Note**: the stack referring to must exist before deployment.
 
 ### Configuration examples:
 
@@ -194,25 +196,29 @@ Parameter file can be in either `.json` or `.yaml` format.
 
 For json file, you can use two types of syntax:
 
-    1. Standard AWS stack parameter format
+1. Standard AWS stack parameter format
 
-        [
-            {
-                "ParameterKey": "your-parameter-key-1",
-                "ParameterValue": "your-parameter-value-1"
-            },
-            {
-                "ParameterKey": "your-parameter-key-2",
-                "ParameterValue": "your-parameter-value-2"
-            }            
-        ]
-
-    2. lmdo json format
-
+    ```
+    [
         {
-            "your-parameter-key-1": "your-parameter-value-1",
-            "your-parameter-key-2": "your-parameter-value-2"
-        }
+            "ParameterKey": "your-parameter-key-1",
+            "ParameterValue": "your-parameter-value-1"
+        },
+        {
+            "ParameterKey": "your-parameter-key-2",
+            "ParameterValue": "your-parameter-value-2"
+        }            
+    ]
+    ```
+
+2. lmdo json format
+
+    ```
+    {
+        "your-parameter-key-1": "your-parameter-value-1",
+        "your-parameter-key-2": "your-parameter-value-2"
+    }
+    ```
 
 For yaml file, the format as follow:
 
@@ -234,5 +240,247 @@ To use change-set instead of directly update stack, use `-c` or `--change_set` o
 For output stack event during process, use `-e` or `--event` option:
 
     $ lmdo cf create -e
-    
-    
+
+
+Lambda Function
+---------------
+lmdo facilitates packaging, uploading and managing your lambda function. Out of box, it also provides support for two types of lambda function wrapper: wsgi and event dispatcher apart from the standard Lambda function.
+
+### Basic configuration structure
+
+
+    VirtualEnv: False
+    Lambda:
+        - function-1 configuration
+        - function-2 configuration
+        ...
+
+**Note**:
+- If you are using virtualenv, please set `VirtualEnv` to `True`
+- The actual deployed function name created by lmdo will be using `<user>-<stage>-<service-name>-<FunctionName>`
+
+### Optional configurations and their default values available for all function types
+
+`Type`: default `default`. Other availabe types are `wsgi` and `cron_dispatcher`
+
+`MemorySize`: default `128`
+
+`Runtime`: default `python2.7` (Note: lmdo only support python at the moment)
+
+`Timeout`: default `180`
+
+`HeatUp`: default `False`. Provide CPR for lambda function to keep container alive. Only avaiable for `wsgi` and `default` functions.
+
+`HeatRate`: default `rate(4 minutes)` before container becomes inactive. Only avaiable for `wsgi` and `default` functions.
+
+VPC configuration:
+
+    VpcConfig:                          
+        SecurityGroupIds:
+            - security-group-id-1
+            - security-group-id-2
+        SubnetIds:
+            - subnet-id-1
+            - subnet-id-2
+
+Runtime environment variables
+
+    EnvironmentVariables:          
+        MYSQL_HOST: host-url
+        MYSQL_PASSWORD: password
+        MYSQL_USERNAME: username
+        MYSQL_DATABASE: dbname
+
+Role and policies:
+
+    RoleArn: your-role-arn
+
+or
+
+    RolePolicy:                         
+        AssumeRoles:                    
+            - sns.amazonaws.com         
+        PolicyDocument: file/path/to/your/policy
+        ManagedPolicyArns:             
+            - your-managed-policy-arn      
+
+**Note**:
+- Only one of `RoleArn` and `RolePolicy` required.
+- If both provided, `RolePolicy` takes over.
+- If none provided, lmdo will create a default role with default policy
+- the default role will assume role of apigateway, lambda, events, ec2.
+- the default policy will allow `lambda:InvokeFunction`, `lambda:AddPermission`, `lambda:RemovePermission` on the lambda function, `log:CreateLogGroup`, `logs:CreateLogStream`, `logs:PutLogEvents`, `ec2:DescribeNetworkInterfaces`, `ec2:CreateNetworkInterface` and `ec2:DeleteNetworkInterface` actions    
+- Only extra assume roles and policies need to be configured other than the default
+
+### Examples
+1. Standard lambda function
+
+    Requirements:
+
+    The invokable lambda function files need to be placed on the top level of the project folder.
+
+    Put all your dependent packages in `requirements.txt`
+
+    Configuration:
+
+    ```
+    Lambda:
+        - S3Bucket: lambda.bucket.name
+          FunctionName: your-function-name
+          Handler: handler.fly                
+    ```
+
+2. Django wsgi lambda function
+    It wraps up Django and bridge between API gateway and your Django
+
+    Requirements:
+
+    Put all your dependent packages in `requirements.txt`
+
+    Optional configuration:
+
+    `CognitoUserPoolId`: It will set the API gateway authentication if provided. You can only have one per `ApiBasePath`
+
+    Configuration:
+
+    ```
+    Lambda:
+        - S3Bucket: lambda.bucket.name       
+          Type: wsgi                       
+          DisableApiGateway: False            
+          ApiBasePath: /path                  
+          FunctionName: your-function-name         
+          EnvironmentVariables:              
+              DJANGO_SETTINGS_MODULE: mysite.settings
+    ```
+
+    **Note**:
+
+    By default, `DisableApiGateway` is set to `False`. You must set your `ApiBasePath` when it's `False`
+
+    `DJANGO_SETTINGS_MODULE` environment variable is a must for it to work
+
+3. Cron dispatcher
+
+    Cron dispatcher function allows you to create multiple event schedulers on different functions via a single dispatcher.
+    **Note**: lmdo will construct rule name based on `<user>-<stage>-<service-name>-<FunctionName>--<handler>`. CloudWatch events rule name can only be within 64 characters, so mind your names.
+
+    Configuration:
+
+    ```
+    Lambda:
+        - S3Bucket: lambda.bucket.name      
+          Type: cron_dispatcher                     
+          FunctionName: your-dispatcher-name            
+          RuleHandlers:
+              - Handler: your.module.handler
+                Rate: your cron string e.g. Rate(1 minutes)
+    ```
+
+### Commands
+
+To create all functions, run (update/delete similar):
+
+    $ lmdo lm create
+
+Options:
+`--function-name`: Only action on a particular function
+
+To package the function only:
+
+    $ lmdo package --function-name=your-function-name
+
+
+API Gateway
+---------------
+Swagger template is used to create API Gateway
+
+### Requirments
+
+* A folder named 'swagger' under your project folder
+* Name your swagger template as `apigateway.json`
+
+### Configuration
+
+    ApiGatewayName: Your unique Apigateway name
+
+Optionally, you can use `ApiVarMapToFile` to map your custom key to a file for replacement
+
+    ApiVarMapToFile:                   
+        $mappingKey: file/path/name               
+
+**NOTE:** Please name your version as `$version` and your title as `$title` so that Lmdo can update it during creation using the value of `ApiGatewayName` in your lmdo.yaml
+
+### Commands
+
+To manage your APIGateway resource, run(update/delete similar):
+
+    $ lmdo api create
+
+You can create or delete a stage by running:
+
+    $ lmdo api create-stage <from_stage> <to_stage>
+
+or
+
+    $ lmdo api delete-stage <from_stage>
+
+CloudWatch events
+-----------------
+
+### Configuration
+
+    CloudWatchEvent:
+        - Name: rule_name                          
+          ScheduleExpression: [schedule-expression](#http://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html)   
+          EventPatternFile: [path/to/pattern/file](http://docs.aws.amazon.com/AmazonCloudWatch/latest/events/CloudWatchEventsandEventPatterns.html)     
+          Targets:                                  
+              - Type: default                        
+                Arn: aws-resource-arn
+              - Type: local                          
+                FunctionName: local-function-name
+
+Options:
+`Description`: description of your rule
+`DisablePrefix`: default to `False`. If `True`, lmdo will use your rule name instead of using `<user>-<stage>-<service-name>-<rule_name>`
+`RoleArn`: default lmdo will create lambda invokable role
+
+**Note**
+
+When target type is `local`, lmdo will replace it with your function ARN
+
+
+CloudWatch Logs
+-------------------
+
+### Commands
+
+You can tail any AWS cloudwatch group logs by running:
+
+    $ lmdo logs tail your_log_group_name
+
+`--day`: defines how many days ago the logs need to be retrieved
+
+`--start-date` or `--end-date`: specify a start date and/or end date for the log entries using format `YYYY-MM-DD`
+
+You can also tail logs of your lambda function in your project by running:
+
+    $ lmdo logs tail function your-function-name
+
+`your-function-name` is the function name you configure in your lmdo.yaml
+
+S3 Upload
+------
+
+lmdo offers a simple command line to upload your local static asset into a S3 bucket.
+
+### Configuration
+
+    AssetS3Bucket: your.bucket.url
+    AssetDirectory: directory/where/your/assets/in
+
+### Commands
+
+To upload (Note: it doesn't delete files):
+
+    $ lmdo s3 sync
