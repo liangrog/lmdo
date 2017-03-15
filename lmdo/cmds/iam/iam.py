@@ -7,8 +7,7 @@ from lmdo.file_loader import FileLoader
 from lmdo.oprint import Oprint
 from lmdo.utils import get_template, update_template 
 from lmdo.config import IAM_ROLE_APIGATEWAY_LAMBDA, IAM_POLICY_APIGATEWAY_LAMBDA_INVOKE, \
-        IAM_ROLE_LAMBDA_ASSUME, IAM_POLICY_LAMBDA_DEFAULT, LAMBDA_DEFAULT_ASSUME_ROLES, \
-        IAM_ROLE_EVENTS, IAM_POLICY_EVENTS
+        LAMBDA_DEFAULT_ASSUME_ROLES, IAM_ROLE_EVENTS, IAM_POLICY_EVENTS
 
 class IAM(AWSBase):
     """create/update IAM properties"""
@@ -248,9 +247,6 @@ class IAM(AWSBase):
             else:
                 self._client.update_assume_role_policy(RoleName=role_name, PolicyDocument=json.dumps(role_doc))
             
-            # If inline policy document provided
-            policy_template = get_template(IAM_POLICY_LAMBDA_DEFAULT)
-
             to_replace = {
                 "$region": self.get_region(),
                 "$accountId": self.get_account_id()
