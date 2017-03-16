@@ -83,8 +83,13 @@ class LmdoWSGI(object):
         environ['wsgi.run_once'] = False
 
         # API Gateway params
+        # isBase64Encoded using 'true' and 'false'        
+        base64 = event.get('isBase64Encoded', False)
+        if base64 == 'true':
+            base64 = True
+        environ['APIGATEWAY_BASE64'] = base64
+
         environ['APIGATEWAY_STAGE_VAR'] = event.get('stageVariables', '')
-        environ['APIGATEWAY_BASE64'] = event.get('isBase64Encoded', False)
         environ['APIGATEWAY_PATH_PARAMS'] = event.get('pathParameters', '')
         environ['APIGATEWAY_REQUEST_CONTEXT'] = event.get('requestContext', '') 
         environ['APIGATEWAY_PATH'] = event.get('path', '')
