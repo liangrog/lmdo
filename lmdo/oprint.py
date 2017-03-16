@@ -1,6 +1,7 @@
 from __future__ import print_function
 import os
 import sys
+import traceback
 
 from botocore.exceptions import ClientError
 
@@ -75,6 +76,7 @@ class Oprint(object):
             print(Oprint.fail + str(msg.response['Error']['Message']) + Oprint.endc)
         else:
             print(msg)
+            print(traceback.format_exc())
         
         # Exit if error. It's anti-pattern here (seperation
         # of responsibility) but hate to put this everywhere
