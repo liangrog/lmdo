@@ -31,7 +31,7 @@ class LambdaHandler(object):
         apigateway_response = ApigatewayResponse()
 
         if self._settings.DEBUG:
-            logger.info(event) 
+            logger.info(json.dumps(event)) 
 
         try:
             time_start = datetime.datetime.now()
