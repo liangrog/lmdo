@@ -2,6 +2,7 @@ import os
 import importlib
 import logging
 import json
+import base64
 
 from werkzeug.wrappers import Response
 
@@ -33,7 +34,14 @@ class ApigatewayResponse(ResponseInterface):
             result['headers']['Access-Control-Allow-Headers'] = 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-requested-with'
             result['headers']['Access-Control-Allow-Methods'] = 'DELETE,GET,OPTIONS,PUT,POST'
             result['headers']['Access-Control-Allow-Origin'] = '*'
-       
+
+        # Binary support
+        if from_data.data \
+            and (not from_data.mimetype.startswith("text/") \
+            or from_data.mimetype != "application/json"):
+                result['body'] = base64.b64encode(result['body'])
+                result["isBase64Encoded"] = "true"
+
         self.response_log(from_data, environ)
 
         return result

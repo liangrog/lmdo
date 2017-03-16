@@ -1,6 +1,7 @@
 import logging
 import importlib
 import boto3
+import json
 
 # Set up logging
 logging.basicConfig()
@@ -13,12 +14,13 @@ def handler(event, context):
     if event['source'] == 'aws.events':
         arn_prefix, rule_name = event['resources'][0].split('/')
         prefix, function_name = rule_name.split('--')
+        payload = {}
         client = boto3.client('lambda')
         client.invoke(
             FunctionName=function_name,
-            InvocationType='Event',
+            InvocationType='RequestResponse',
             LogType='None',
             ClientContext='lmdo_heater',
-            Payload='{}')
+            Payload=json.dumps(payload))
 
     return False
