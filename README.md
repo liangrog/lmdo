@@ -305,6 +305,7 @@ or
             - your-managed-policy-arn      
 
 **Note**:
+- `$region` and `$accountId` are available to use in your `PolicyDocument` so you don't need to hard-code them
 - Only one of `RoleArn` and `RolePolicy` required.
 - If both provided, `RolePolicy` takes over.
 - If none provided, lmdo will create a default role with default policy
