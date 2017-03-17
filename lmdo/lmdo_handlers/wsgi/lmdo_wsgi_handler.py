@@ -22,6 +22,7 @@ class LambdaHandler(object):
     def __init__(self):
        self._wsgi = LmdoWSGI()
        self._settings = importlib.import_module(os.environ["DJANGO_SETTINGS_MODULE"])
+       self._django = get_django()
 
     def apigateway(self, event, context):
         """Handle reqeust from api gateway"""
@@ -34,14 +35,23 @@ class LambdaHandler(object):
             logger.info(json.dumps(event)) 
 
         try:
+            if event.get('heater'):
+                logger.info('Pinged by heater')
+                return {"alive": context.function_name}
+
             time_start = datetime.datetime.now()
-
+            
             environ = self._wsgi.translate(event, context)
-
+           
             if self._settings.DEBUG:
                 logger.info(environ) 
 
-            response = apigateway_response.run_app(get_django(), environ)
+            response = apigateway_response.run_app(self._django, environ)
+
+            if self._settings.DEBUG:
+                time_end = datetime.datetime.now()
+                delta = time_end - time_start
+                logger.info('Django app run time {} milliseconds'.format(str(delta.total_seconds()*1000)))
 
             return response
         except Exception as e:
@@ -56,8 +66,9 @@ class LambdaHandler(object):
             content['body'] = json.dumps(body, sort_keys=True, indent=4).encode('utf-8')
             return content
 
+handler_singleton = LambdaHandler()
 
 def handler(event, context):
-    return LambdaHandler().apigateway(event, context)
+    return handler_singleton.apigateway(event, context)
 
 
