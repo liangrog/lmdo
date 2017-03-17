@@ -332,6 +332,7 @@ or
     ```
 
 2. Django wsgi lambda function
+
     It wraps up Django and bridge between API gateway and your Django
 
     Requirements:
