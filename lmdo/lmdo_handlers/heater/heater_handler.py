@@ -14,13 +14,15 @@ def handler(event, context):
     if event['source'] == 'aws.events':
         arn_prefix, rule_name = event['resources'][0].split('/')
         prefix, function_name = rule_name.split('--')
-        payload = {}
+        payload = {'heater': True}
         client = boto3.client('lambda')
-        client.invoke(
+        response = client.invoke(
             FunctionName=function_name,
             InvocationType='RequestResponse',
             LogType='None',
-            ClientContext='lmdo_heater',
             Payload=json.dumps(payload))
+
+        logger.info(function_name)
+        return True
 
     return False
