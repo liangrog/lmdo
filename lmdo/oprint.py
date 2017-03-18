@@ -30,6 +30,7 @@ class Oprint(object):
     bold = "\033[1m"
 
     def disable(self):
+        """Reset"""
         header = ''
         okblue = ''
         okgreen = ''

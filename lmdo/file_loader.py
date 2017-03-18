@@ -35,9 +35,8 @@ class FileLoader(object):
 
     def file_allowed(self):
         """If fiel type is allowed to load"""
-        if self._allowed_ext:
-            if self.get_ext() not in self._allowed_ext:
-                return False
+        if self._allowed_ext and self.get_ext() not in self._allowed_ext:
+            return False
        
         return True
 

@@ -3,6 +3,7 @@ import time
 import threading
 
 class Spinner(object):
+    """Provide spinning action while waiting"""
     busy = False
     delay = 0.1
 

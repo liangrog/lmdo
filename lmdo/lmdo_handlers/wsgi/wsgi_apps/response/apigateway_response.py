@@ -14,6 +14,7 @@ logger.setLevel(logging.INFO)
 
 
 class ApigatewayResponse(ResponseInterface):
+    """Prepare response for apigateway"""
     def run_app(self, app, environ):
         """Run wsgi app and return result back to Lambda"""
         response = Response.from_app(app, environ)

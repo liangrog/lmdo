@@ -1,6 +1,7 @@
 
 
 class CfStatus(object):
+    """CloudFormation lmdo status mapping"""
     STACK_COMPLETE = "complete"
     STACK_FAILED = "failed"
     STACK_IN_PROGRESS = "in progress"

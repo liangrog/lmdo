@@ -11,7 +11,6 @@ from lmdo.config import PROJECT_CONFIG_FILE
 from lmdo.oprint import Oprint
 from lmdo.utils import mkdir, get_sitepackage_dirs, copytree
 from lmdo.spinner import spinner
-from lmdo.config import PROJECT_CONFIG_FILE 
 
 class BoilerPlate(object):
     """Boiler plating handler"""

@@ -11,6 +11,7 @@ from lmdo.oprint import Oprint
 
 
 class CloudWatchEvent(AWSBase):
+    """CloudWatch Event class"""
     NAME = 'cloudwatchevent'
 
     TARGET_DEFAULT = 'default'
@@ -145,8 +146,8 @@ class CloudWatchEvent(AWSBase):
     def upsert_rule(self, **kwargs):
         """Create or update rule"""
         try:
-            Name = kwargs.get('Name')
-            Oprint.info('Creating Cloudwatch Event rule {}'.format(Name), self.NAME)
+            name = kwargs.get('Name')
+            Oprint.info('Creating Cloudwatch Event rule {}'.format(name), self.NAME)
             response = self._client.put_rule(**kwargs)
         except Exception as e:
             Oprint.err(e, self.NAME)

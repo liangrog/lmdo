@@ -1,5 +1,6 @@
 import logging
 import importlib
+import imp
 
 # Set up logging
 logging.basicConfig()
@@ -7,10 +8,14 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 try:
+    # If django framework exists
+    django_file, pathname, description = imp.find_module('django')
     import django
     django.setup()
-except:
-    pass
+except ImportError:
+    logger.info('No Django package found (won\'t be an issue if you are not using it)')
+except Exception as e:
+    logger.info(e)    
 
 def handler(event, context):
     # Only deal with schedule events
