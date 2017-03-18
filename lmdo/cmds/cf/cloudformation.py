@@ -161,9 +161,10 @@ class Cloudformation(AWSBase):
                 # Remove temporary template dir
                 shutil.rmtree(templates['tmp_dir'])
 
-    def create_stack(self, stack_name, capabilities=['CAPABILITY_NAMED_IAM', 'CAPABILITY_IAM'], **kwargs):
+    def create_stack(self, stack_name, capabilities=None, **kwargs):
         """Create stack"""
         try:
+            capabilities = capabilities or ['CAPABILITY_NAMED_IAM', 'CAPABILITY_IAM']
             if self._args.get('-e') or self._args.get('--event'):
                 response = self._client.create_stack(
                     StackName=stack_name,
