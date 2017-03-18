@@ -25,6 +25,7 @@ class Apigateway(AWSBase):
         return self._client
 
     def create(self):
+        """Create"""
         if not self.get_apigateway_name():
             Oprint.info('No action for api gateway, skip...', 'apigateway')
             sys.exit(0)
@@ -35,13 +36,16 @@ class Apigateway(AWSBase):
             self.create_deployment(swagger_api.get('id'), self._config.get('Stage'), swagger_api.get('name'))
 
     def update(self):
+        """Update"""
         self.create()
 
     def delete(self):
+        """Delete"""
         self.delete_rest_api(self.get_apigateway_name())
         self.delete_wsgi_api_roles()
 
     def create_stage(self):
+        """Create statge"""
         self.create_stage_from_stage(self._args.get('<from_stage>'), self._args.get('<to_stage>'), self.get_apigateway_name())
 
     def delete_stage(self):

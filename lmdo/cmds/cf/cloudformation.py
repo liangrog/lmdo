@@ -189,9 +189,10 @@ class Cloudformation(AWSBase):
 
         return True
 
-    def update_stack(self, stack_name, capabilities=['CAPABILITY_NAMED_IAM', 'CAPABILITY_IAM'], **kwargs):
+    def update_stack(self, stack_name, capabilities=None, **kwargs):
         """Update a stack"""
         try:
+            capabilities = capabilities or ['CAPABILITY_NAMED_IAM', 'CAPABILITY_IAM']
             self.unlock_stack(stack_name=stack_name)
 
             from botocore.exceptions import ClientError

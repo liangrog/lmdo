@@ -578,7 +578,7 @@ class Lambda(AWSBase):
         for egg_link in egg_links:
             with open(egg_link) as df:
                 egg_path = df.read().decode('utf-8').splitlines()[0].strip()
-                pkgs = set([x.split(".")[0] for x in find_packages(egg_path, exclude=['test', 'tests'])])
+                pkgs = {x.split(".")[0] for x in find_packages(egg_path, exclude=['test', 'tests'])}
                 for pkg in pkgs:
                     copytree(os.path.join(egg_path, pkg), os.path.join(temp_package_path, pkg), symlinks=False)
 

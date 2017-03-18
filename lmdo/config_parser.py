@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 
 
 class ConfigParser:
+    """Configuration file parser ABC"""
     __metaclass__ = ABCMeta
 
     """

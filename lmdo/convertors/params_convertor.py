@@ -7,9 +7,11 @@ class ParamsConvertor(ChainProcessor, Convertor):
     """Convert json data to AWS cloudformation parameter list"""
    
     def process(self, data):
+        """Call"""
         return self.convert(data)
 
     def convert(self, data):
+        """Convert data"""
         # If already is a list, return it
         if type(data) is list:
             return data
@@ -21,6 +23,7 @@ class ParamsConvertor(ChainProcessor, Convertor):
         return params
 
     def get_param_dict(self, key, value):
+        """AWS param format"""
         return {"ParameterKey": key, "ParameterValue": value}
         
 
