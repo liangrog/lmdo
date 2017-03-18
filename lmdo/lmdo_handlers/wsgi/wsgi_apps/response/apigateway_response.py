@@ -51,7 +51,7 @@ class ApigatewayResponse(ResponseInterface):
         log_str = '{} {} {} {}'.format(
             environ['APIGATEWAY_REQUEST_CONTEXT']['httpMethod'], 
             environ['PATH_INFO'],
-            response._status_code,
+            str(response._status_code),
             environ['APIGATEWAY_REQUEST_CONTEXT']['identity']['userAgent'])
 
         log_dict = {
