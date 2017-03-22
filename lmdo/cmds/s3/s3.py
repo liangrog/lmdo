@@ -44,7 +44,7 @@ class S3(AWSBase):
         """Create private bucket"""
         waiter = S3WaiterBucketCreate(self._client)
         self._client.create_bucket(ACL=acl, Bucket=bucket_name, CreateBucketConfiguration={'LocationConstraint': self.get_region()})
-        waiter.wait(Bucket=bucket_name)
+        waiter.wait(bucket_name)
 
         return True
 
