@@ -241,6 +241,8 @@ For output stack event during process, use `-e` or `--event` option:
 
     $ lmdo cf create -e
 
+For only change one specific stack, use option `--stack=`
+
 
 Lambda Function
 ---------------
