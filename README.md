@@ -220,11 +220,27 @@ For json file, you can use two types of syntax:
     }
     ```
 
-For yaml file, the format as follow:
+3. For yaml file, the format as follow:
+    
+    ```
+    your-parameter-key-1: your-parameter-value-1
+    your-parameter-key-2: your-parameter-value-2
+    ```
 
-        your-parameter-key-1: your-parameter-value-1
-        your-parameter-key-2: your-parameter-value-2
+4. Available reserved utility variables
 
+  They will be replaced with correct value during deployment
+
+  `$env|ENV_VAR_NAME`: Environment variables, can be used both in parameters and templates.
+
+  `$stack|stack-name::output-key`: The value of an existing stack's output based on key name. Can be used both in parameters and templates.
+
+  **Note**: 
+  
+  The stack referring to must exist before deployment.
+  
+  For `CommaDelimitedList` type, you can do `"$env|ENV_VAR_NAME1, $env|ENV_VAR_NAME2"`. Same to `$stack|*`.
+   
 ### Commands
 
 To create your CloudFormation, run:
