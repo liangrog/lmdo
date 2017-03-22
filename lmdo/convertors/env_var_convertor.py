@@ -47,7 +47,7 @@ class EnvVarConvertor(ChainProcessor, Convertor):
         
     def get_pattern(self):
         """Environment variable pattern $env|[env_name]"""
-        return r'\$env\|.*?"'
+        return r'(\$env\|[^"\', ]+)+'
 
     def get_env_names(self, content):
         """Get all the stack names and keys need to query"""
