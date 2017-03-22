@@ -5,7 +5,7 @@ Usage:
     lmdo init <project_name>
     lmdo init config
     lmdo bp fetch <url>
-    lmdo cf (create|update|delete) [-c | --change_set] [-e | --event]
+    lmdo cf (create|update|delete) [-c | --change_set] [-e | --event] [--stack=<stackName>]
     lmdo lm (create|update|delete|package) [--function=<functionName>]
     lmdo cwe (create|update|delete)
     lmdo api (create|update|delete)
