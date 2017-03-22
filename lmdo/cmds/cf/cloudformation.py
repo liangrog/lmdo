@@ -151,7 +151,7 @@ class Cloudformation(AWSBase):
                 if stack_info:
                     # You cannot update a stack with status ROLLBACK_COMPLETE during creation
                     if stack_info['Stacks'][0]['StackStatus'] == 'ROLLBACK_COMPLETE':
-                        Oprint.warn('Stack {} exited with bad state ROLLBACK_COMPLETE. Required to be removed first'.format(stack_name), self.NAME)
+                        Oprint.warn('Stack {} exited with bad state ROLLBACK_COMPLETE during last attempt to create. Required to be removed first'.format(stack_name), self.NAME)
                         self.delete_stack(stack_name, no_policy=True)
                     else:
                         to_update = True
