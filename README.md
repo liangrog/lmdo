@@ -229,17 +229,17 @@ For json file, you can use two types of syntax:
 
 4. Available reserved utility variables
 
-  They will be replaced with correct value during deployment
+    They will be replaced with correct value during deployment
 
-  `$env|ENV_VAR_NAME`: Environment variables, can be used both in parameters and templates.
+    `$env|ENV_VAR_NAME`: Environment variables, can be used both in parameters and templates.
 
-  `$stack|stack-name::output-key`: The value of an existing stack's output based on key name. Can be used both in parameters and templates.
+    `$stack|stack-name::output-key`: The value of an existing stack's output based on key name. Can be used both in parameters and templates.
 
-  **Note**: 
+    **Note**: 
   
-  The stack referring to must exist before deployment.
+    The stack referring to must exist before deployment.
   
-  For `CommaDelimitedList` type, you can do `"$env|ENV_VAR_NAME1, $env|ENV_VAR_NAME2"`. Same to `$stack|*`.
+    For `CommaDelimitedList` type, you can do `"$env|ENV_VAR_NAME1, $env|ENV_VAR_NAME2"`. Same to `$stack|*`.
    
 ### Commands
 
