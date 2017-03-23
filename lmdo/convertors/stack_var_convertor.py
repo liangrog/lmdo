@@ -43,7 +43,7 @@ class StackVarConvertor(ChainProcessor, Convertor):
         if search_result:
             result = {}
             for item in search_result:
-                header, body = item[0:-1].split("|")
+                header, body = item.split("|")
                 stack_name, key = body.split("::")
                 if not result.get(stack_name):
                     result[stack_name] = [key]
