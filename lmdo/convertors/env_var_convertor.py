@@ -1,10 +1,10 @@
 import os
-import json
 import re
 
 from lmdo.convertors import Convertor
 from lmdo.chain_processor import ChainProcessor
 from lmdo.oprint import Oprint
+from lmdo.file_loader import FileLoader
 
 class EnvVarConvertor(ChainProcessor, Convertor):
     """
@@ -21,12 +21,12 @@ class EnvVarConvertor(ChainProcessor, Convertor):
         Convert all possible environment
         variable name to value
         """
-        data_string = json.dumps(data)
+        data_string, _ = data
         
         for key, value in self.replacement_data(data_string).iteritems():
             data_string = data_string.replace(key, value)
         
-        return json.loads(data_string)
+        return data_string, FileLoader.toJson(data_string)
 
     def replacement_data(self, content):
         """
@@ -47,7 +47,7 @@ class EnvVarConvertor(ChainProcessor, Convertor):
         
     def get_pattern(self):
         """Environment variable pattern $env|[env_name]"""
-        return r'(\$env\|[^"\', ]+)+'
+        return r'(\$env\|[^"\', \r\n]+)+'
 
     def get_env_names(self, content):
         """Get all the stack names and keys need to query"""

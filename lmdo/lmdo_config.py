@@ -48,7 +48,7 @@ class LmdoConfig(ConfigParser):
         env_var_convertor = EnvVarConvertor()
         file_loader = FileLoader(file_path=PROJECT_CONFIG_FILE)
         file_loader.successor = env_var_convertor
-        self._config = file_loader.process()
+        _, self._config = file_loader.process()
         
         self.validate()
 

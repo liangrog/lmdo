@@ -1,12 +1,11 @@
 import os
-import json
 import re
 
 from lmdo.convertors import Convertor
 from lmdo.chain_processor import ChainProcessor
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.oprint import Oprint
-
+from lmdo.file_loader import FileLoader
 
 class StackVarConvertor(ChainProcessor, Convertor):
     """
@@ -25,16 +24,16 @@ class StackVarConvertor(ChainProcessor, Convertor):
         Convert all possible stack output
         variable name to its value
         """
-        data_string = json.dumps(data)
+        data_string, _ = data
         
         for key, value in self.replacement_data(data_string).iteritems():
             data_string = data_string.replace(key, value)
         
-        return json.loads(data_string)
+        return data_string, FileLoader.toJson(data_string)
 
     def get_pattern(self):
         """Stack variable pattern $stack|[stack_name]::[key]"""
-        return r'(\$stack\|[^"\', ]+)+'
+        return r'(\$stack\|[^"\', \r\n]+)+'
 
     def get_stack_names_and_keys(self, content):
         """Get all the stack names and keys need to query"""
@@ -77,7 +76,7 @@ class StackVarConvertor(ChainProcessor, Convertor):
                 self._stack_info_cache = AWSBase().get_client('cloudformation').describe_stacks(StackName=stack_name)
 
             outputs = self._stack_info_cache['Stacks'][0]['Outputs']
-
+            
             for opts in outputs:
                 if opts['OutputKey'] == key:
                     return opts['OutputValue']

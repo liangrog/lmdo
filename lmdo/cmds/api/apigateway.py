@@ -6,7 +6,7 @@ import datetime
 
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.iam.iam import IAM
-from lmdo.cmds.lm.lambdaa import Lambda
+from lmdo.cmds.lm.aws_lambda import AWSLambda
 from lmdo.oprint import Oprint
 from lmdo.config import SWAGGER_DIR, SWAGGER_FILE, PROJECT_CONFIG_FILE, APIGATEWAY_SWAGGER_WSGI
 from lmdo.utils import update_template, get_template
@@ -333,7 +333,7 @@ class Apigateway(AWSBase):
         iam = IAM()
 
         for lm_func in self._config.get('Lambda'):
-            if lm_func.get('Type') != Lambda.FUNCTION_TYPE_WSGI or lm_func.get('DisableApiGateway'):
+            if lm_func.get('Type') != AWSLambda.FUNCTION_TYPE_WSGI or lm_func.get('DisableApiGateway'):
                 continue
             
             function_name = self.get_lmdo_format_name(lm_func.get('FunctionName'))
