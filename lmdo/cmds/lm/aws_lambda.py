@@ -22,7 +22,7 @@ from lmdo.utils import zipper, get_sitepackage_dirs, class_function_retry, copyt
 from lmdo.spinner import spinner
 
 
-class Lambda(AWSBase):
+class AWSLambda(AWSBase):
     """Class  create/update lambda function"""
     NAME = 'lambda'
     LMDO_HANDLER_DIR = 'lmdo_handlers'
@@ -52,7 +52,7 @@ class Lambda(AWSBase):
     ]
 
     def __init__(self, args=None):
-        super(Lambda, self).__init__()
+        super(AWSLambda, self).__init__()
         self._client = self.get_client('lambda') 
         self._s3 = S3()
         self._iam = IAM()

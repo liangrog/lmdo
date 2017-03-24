@@ -12,15 +12,17 @@ class ParamsConvertor(ChainProcessor, Convertor):
 
     def convert(self, data):
         """Convert data"""
+        raw, json_content = data
+
         # If already is a list, return it
-        if type(data) is list:
-            return data
+        if type(json_content) is list:
+            return raw, json_content
 
         params = []
-        for key, value in data.iteritems():
+        for key, value in json_content.iteritems():
             params.append(self.get_param_dict(key, value))
 
-        return params
+        return raw, params
 
     def get_param_dict(self, key, value):
         """AWS param format"""

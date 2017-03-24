@@ -1,6 +1,6 @@
 
 from lmdo.cmds.cf.cloudformation import Cloudformation
-from lmdo.cmds.lm.lambdaa import Lambda
+from lmdo.cmds.lm.aws_lambda import AWSLambda
 from lmdo.cmds.api.apigateway import Apigateway
 from lmdo.cmds.cwe.cloudwatch_event import CloudWatchEvent
 from lmdo.cmds.commands import Dispatcher, DeleteCommand
@@ -11,7 +11,7 @@ class DestroyClient(ClientFactory):
     """Cloudformation command client"""
     def __init__(self, args):
         self._cloudformation = Cloudformation()
-        self._lambda = Lambda()
+        self._lambda = AWSLambda()
         self._apigateway = Apigateway(args)
         self._cloudwatchevent = CloudWatchEvent(args)
         self._dispatcher = Dispatcher()

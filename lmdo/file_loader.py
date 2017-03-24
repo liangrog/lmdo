@@ -1,8 +1,7 @@
 import os
 import json
 
-import yaml
-
+from lmdo.lmdo_yaml import yaml
 from lmdo.oprint import Oprint
 
 class FileLoader(object):
@@ -40,35 +39,67 @@ class FileLoader(object):
        
         return True
 
-    def is_json(self):
+    def isJson(self):
         return True if self.get_ext() == '.json' else False
 
-    def is_template(self):
+    def isTemplate(self):
         return True if self.get_ext() == '.template' else False
 
-    def is_yaml(self):
+    def isYaml(self):
         return True if self.get_ext() in ['.yml', '.yaml'] else False
 
+    @staticmethod
+    def ifJsonLoadable(data_str):
+        """If string is json loadable"""
+        try:
+            json_obj = json.loads(data_str)
+            return json_obj
+        except ValueError:
+            return False
+
+    @staticmethod
+    def ifYamlLoadable(data_str):
+        """If string is yaml loadable"""
+        try:
+            
+            json_obj = yaml.load(data_str)
+            return json_obj
+        except Exception as e:
+            return False
+
+    @staticmethod
+    def toJson(data_str):
+        """Convert string to json"""
+        json_str = FileLoader.ifJsonLoadable(data_str)
+        # Try yaml
+        if not json_str:
+            json_str = FileLoader.ifYamlLoadable(data_str)
+            if not json_str:
+                raise ValueError('Data is neither valida json or yaml')
+
+        return json_str
+
     def loading_strategy(self):
-        """Load file into json object"""
+        """
+        Load file into json object
+        Returns a tuple raw and json
+        """
         try:
             if not self.file_allowed():
                 raise Exception('File type {} is not allowed'.format(self.get_ext()))
-
+            
+            
             with open(self._file_path, 'r') as outfile:
-                content = outfile.read()
+                raw = outfile.read()
 
-                if self.is_json() or self.is_template():
-                    return json.loads(content)
-
-                if self.is_yaml():
+                if self.isYaml():
                     if self._yaml_replacements:
                         for key, value in self._yaml_replacements.iteritems():
-                            content = content.replace(key, value)
+                            raw = raw.replace(key, value)
 
-                    return yaml.load(content)
-                else:
-                    return content
+                json_content = FileLoader.toJson(raw)
+                    
+                return raw, json_content
 
         except Exception as e:
             Oprint.err(e)

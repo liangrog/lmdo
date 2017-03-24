@@ -258,7 +258,7 @@ class IAM(AWSBase):
 
             policy_doc = [] 
             if role_policy and role_policy.get('PolicyDocument'):
-                policy_doc = FileLoader(file_path=role_policy.get('PolicyDocument')).process()
+                _, policy_doc = FileLoader(file_path=role_policy.get('PolicyDocument')).process()
                 policy_doc = policy_doc['Statement']
 
             policy_doc = self.get_lambda_default_policy_doc(extra_statement=policy_doc)

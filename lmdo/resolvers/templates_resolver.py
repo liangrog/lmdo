@@ -17,6 +17,9 @@ class TemplatesResolver(Resolver):
     """
     Resolve templates
     """
+    # Temporary convertion to avoid
+    # yaml trying to load function
+    # hasn't been defined
     YAML_TO = {'!': '^'}
     TO_YAML = {'^': '!'}
 
@@ -45,7 +48,7 @@ class TemplatesResolver(Resolver):
             if tag.suffix.startswith('!'):
                 return node
 
-        master_tpl = FileLoader(file_path=self._template_path, allowed_ext=FILE_LOADER_TEMPLATE_ALLOWED_EXT, yaml_replacements=self.YAML_TO).process()
+        _, master_tpl = FileLoader(file_path=self._template_path, allowed_ext=FILE_LOADER_TEMPLATE_ALLOWED_EXT, yaml_replacements=self.YAML_TO).process()
         
         template_urls = []
         for name, resource in master_tpl['Resources'].iteritems():
@@ -83,17 +86,14 @@ class TemplatesResolver(Resolver):
 
         file_loader = FileLoader(file_path=file_path, allowed_ext=FILE_LOADER_TEMPLATE_ALLOWED_EXT, yaml_replacements=self.YAML_TO)
         file_loader.successor = env_var_convertor
-        result = file_loader.process()
+        result, json_content = file_loader.process()
       
         # If it's yaml template, change ^ back to !
         # and dump back with yaml syntax
-        if file_loader.is_yaml():
-            result = yaml.safe_dump(result, default_flow_style=False, encoding=('utf-8'))
+        if file_loader.isYaml():
+            #result = yaml.safe_dump(result, default_flow_style=False, encoding=('utf-8'))
             for key, value in self.TO_YAML.iteritems():
                 result = result.replace(key, value)
-        
-        if file_loader.is_json():
-            result = json.dumps(result)
 
         template_name = os.path.basename(file_path)
         new_file_path = os.path.join(self._temp_dir, template_name)

@@ -36,7 +36,8 @@ class ParamsResolver(Resolver):
         for file_path in files:
             file_loader = FileLoader(file_path=file_path, allowed_ext=FILE_LOADER_PARAM_ALLOWED_EXT)
             file_loader.successor = env_var_convertor
-            result += file_loader.process()
+            raw, json_content = file_loader.process()
+            result += json_content
 
         return result
 
