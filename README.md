@@ -122,7 +122,10 @@ They will be replaced with correct value during deployment
 
 `$stack|stack-name::output-key`: The value of an existing stack's output based on key name. Can be used both in parameters and templates.
 
-**Note**: the stack referring to must exist before deployment.
+**Note**: 
+
+- the stack referring to must exist before deployment. 
+- Recommand to avoid use those variable in the template so to keep the template complying to AWS. Instead, use those variables in the parameter file to pass in as parameters
 
 ### Configuration examples:
 
@@ -234,6 +237,8 @@ For json file, you can use two types of syntax:
     `$env|ENV_VAR_NAME`: Environment variables, can be used both in parameters and templates.
 
     `$stack|stack-name::output-key`: The value of an existing stack's output based on key name. Can be used both in parameters and templates.
+    
+    `$template|template-file-name`: Nested stack template to be used to construct proper S3 bucket url for stack resource   `TemplateURL`, mostly used in templates.
 
     **Note**: 
   
