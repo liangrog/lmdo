@@ -341,7 +341,7 @@ class Cloudformation(AWSBase):
 
         return True
 
-    def create_change_set(self, stack_name, *args, **kwargs):
+    def create_change_set(self, stack_name, capabilities=None, *args, **kwargs):
         """Creating change set"""
         try:
             waiter = CloudformationWaiterChangeSetCreateComplete(self._client)
@@ -349,7 +349,8 @@ class Cloudformation(AWSBase):
             change_set_name = self.create_change_set_name(stack_name)
 
             #Oprint.info('Creating change set {} for stack {}'.format(change_set_name, stack_name), self.NAME)
-            response = self._client.create_change_set(StackName=stack_name, ChangeSetName=change_set_name, *args, **kwargs)
+            capabilities = capabilities or ['CAPABILITY_NAMED_IAM', 'CAPABILITY_IAM'] 
+            response = self._client.create_change_set(StackName=stack_name, ChangeSetName=change_set_name, Capabilities=capabilities, *args, **kwargs)
 
             waiter.wait(change_set_name=change_set_name, stack_name=stack_name)
         except Exception as e:
