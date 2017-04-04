@@ -83,6 +83,6 @@ class Oprint(object):
         # of responsibility) but hate to put this everywhere
         # in the code, so a compromise
         if exit:
-            sys.exit(0)
+            sys.exit(1)
 
 

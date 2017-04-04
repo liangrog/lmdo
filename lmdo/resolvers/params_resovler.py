@@ -38,7 +38,7 @@ class ParamsResolver(Resolver):
             file_loader.successor = env_var_convertor
             raw, json_content = file_loader.process()
             result += json_content
-
+        
         return result
 
     def get_list(self):

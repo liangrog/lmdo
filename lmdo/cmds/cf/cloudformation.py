@@ -149,6 +149,15 @@ class Cloudformation(AWSBase):
                 stack_info = self.get_stack(stack_name=stack_name)
 
                 if stack_info:
+                    # You can't do much with UPDATE_ROLLBACK_FAILED state
+                    if stack_info['Stacks'][0]['StackStatus'] == 'UPDATE_ROLLBACK_FAILED':
+                        Oprint.warn('State {} is in a very bad state, lmdo cannot do anything. Please refer to {} for action you can take'.format(
+                          stack_name,
+                          'https://aws.amazon.com/blogs/devops/continue-rolling-back-an-update-for-aws-cloudformation-stacks-in-the-update_rollback_failed-state/'), 
+                          self.NAME)
+
+                        continue
+
                     # You cannot update a stack with status ROLLBACK_COMPLETE during creation
                     if stack_info['Stacks'][0]['StackStatus'] == 'ROLLBACK_COMPLETE':
                         Oprint.warn('Stack {} exited with bad state ROLLBACK_COMPLETE during last attempt to create. Required to be removed first'.format(stack_name), self.NAME)
@@ -341,7 +350,7 @@ class Cloudformation(AWSBase):
 
         return True
 
-    def create_change_set(self, stack_name, *args, **kwargs):
+    def create_change_set(self, stack_name, capabilities=None, *args, **kwargs):
         """Creating change set"""
         try:
             waiter = CloudformationWaiterChangeSetCreateComplete(self._client)
@@ -349,7 +358,8 @@ class Cloudformation(AWSBase):
             change_set_name = self.create_change_set_name(stack_name)
 
             #Oprint.info('Creating change set {} for stack {}'.format(change_set_name, stack_name), self.NAME)
-            response = self._client.create_change_set(StackName=stack_name, ChangeSetName=change_set_name, *args, **kwargs)
+            capabilities = capabilities or ['CAPABILITY_NAMED_IAM', 'CAPABILITY_IAM'] 
+            response = self._client.create_change_set(StackName=stack_name, ChangeSetName=change_set_name, Capabilities=capabilities, *args, **kwargs)
 
             waiter.wait(change_set_name=change_set_name, stack_name=stack_name)
         except Exception as e:
@@ -381,9 +391,28 @@ class Cloudformation(AWSBase):
 
         return response
 
+    def can_update_stack_policy(self, stack_name):
+        """Check if we can update stack policy"""
+        stack_info = self.get_stack(stack_name=stack_name)
+       
+        # If stack doesn't exist anymore, ignore
+        if not stack_info:
+            return True
+
+        not_in_status = ['ROLLBACK_COMPLETE', 'UPDATE_ROLLBACK_FAILED']
+        if stack_info.get('Stacks') and stack_info['Stacks'][0]['StackStatus'] not in not_in_status:
+            return True
+
+        Oprint.warn('Can not update stack policy due to stack in the state of {}'.format(stack_info['Stacks'][0]['StackStatus']), self.NAME)
+
+        return False
+
     def lock_stack(self, stack_name):
         """Lock stack so no changes can be made accidentally"""
         try:
+            if not self.can_update_stack_policy(stack_name=stack_name):
+                return True
+
             lock_policy = get_template(CLOUDFORMATION_STACK_LOCK_POLICY)
             with open(lock_policy, 'r') as outfile:
                 policy = outfile.read()
@@ -400,6 +429,9 @@ class Cloudformation(AWSBase):
     def unlock_stack(self, stack_name):
         """Unlock stack for update"""
         try:
+            if not self.can_update_stack_policy(stack_name=stack_name):
+                return True
+
             unlock_policy = get_template(CLOUDFORMATION_STACK_UNLOCK_POLICY)
             with open(unlock_policy, 'r') as outfile:
                 policy = outfile.read()
