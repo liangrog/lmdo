@@ -4,6 +4,7 @@ from lmdo.resolvers import Resolver
 from lmdo.convertors.env_var_convertor import EnvVarConvertor
 from lmdo.convertors.stack_var_convertor import StackVarConvertor
 from lmdo.convertors.params_convertor import ParamsConvertor
+from lmdo.convertors.nested_template_url_convertor import NestedTemplateUrlConvertor
 from lmdo.file_loader import FileLoader
 from lmdo.config import FILE_LOADER_PARAM_ALLOWED_EXT 
 
@@ -29,9 +30,11 @@ class ParamsResolver(Resolver):
         param_convertor = ParamsConvertor()
         env_var_convertor = EnvVarConvertor()
         stack_var_convertor = StackVarConvertor()
+        nested_template_convertor = NestedTemplateUrlConvertor()
 
         env_var_convertor.successor = stack_var_convertor
-        stack_var_convertor.successor = param_convertor
+        stack_var_convertor.successor = nested_template_convertor
+        nested_template_convertor.successor = param_convertor
 
         for file_path in files:
             file_loader = FileLoader(file_path=file_path, allowed_ext=FILE_LOADER_PARAM_ALLOWED_EXT)

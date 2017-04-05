@@ -23,11 +23,12 @@ class TemplatesResolver(Resolver):
     YAML_TO = {'!': '^'}
     TO_YAML = {'^': '!'}
 
-    def __init__(self, template_path, repo_path=None):
+    def __init__(self, template_path, repo_path=None, params_path=None):
         if not os.path.isfile(template_path):
             Oprint.err('Template not found by given path {}'.format(templated_path), 'cloudformation')
 
         self._template_path = template_path
+        self._params_path = params_path
         # Default to project root if not given
         self._repo_path = repo_path or './'
         self._temp_dir = tempfile.mkdtemp()
@@ -62,9 +63,29 @@ class TemplatesResolver(Resolver):
                     header, template_name = found[0].split("|")
                     templates['children'].append(self.create_template(template_name))
         
+        more_childen = self.get_child_template_from_param()
+        if more_childen:
+            templates['children'] += more_childen
+
         templates['master'] = self.create_template(self._template_path)
 
         return templates
+    
+    def get_child_template_from_param(self):
+        """Check if we have nested templates from params"""
+        if not self._params_path:
+            return False
+
+        _, child_tpls = FileLoader(file_path=self._params_path, allowed_ext=FILE_LOADER_TEMPLATE_ALLOWED_EXT).process()
+        
+        templates = []
+        for key, value in child_tpls.iteritems():
+            found = NestedTemplateUrlConvertor.match(value)
+            if found:
+                header, template_name = found[0].split("|")
+                templates.append(self.create_template(template_name))
+
+        return templates if len(templates) > 0 else False
 
     def create_template(self, template_name):
         """Create shadow template for upload"""
