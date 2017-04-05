@@ -14,7 +14,7 @@ class StackVarConvertor(ChainProcessor, Convertor):
     $stack|[name]::[key]
     """
     def __init__(self):
-        self._stack_info_cache = None
+        self._stack_info_cache = {}
 
     def process(self, data):
         return self.convert(data)
@@ -72,11 +72,11 @@ class StackVarConvertor(ChainProcessor, Convertor):
         condition as cloudformation import this module as well
         """
         try:
-            if not self._stack_info_cache:
-                self._stack_info_cache = AWSBase().get_client('cloudformation').describe_stacks(StackName=stack_name)
+            if not self._stack_info_cache.get(stack_name):
+                self._stack_info_cache[stack_name] = AWSBase().get_client('cloudformation').describe_stacks(StackName=stack_name)
 
-            outputs = self._stack_info_cache['Stacks'][0]['Outputs']
-            
+            outputs = self._stack_info_cache[stack_name]['Stacks'][0]['Outputs']
+      
             for opts in outputs:
                 if opts['OutputKey'] == key:
                     return opts['OutputValue']
