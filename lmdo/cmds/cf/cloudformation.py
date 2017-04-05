@@ -141,8 +141,8 @@ class Cloudformation(AWSBase):
                 
                 stack_name = self.get_lmdo_format_name(stack.get('Name'), stack.get('DisablePrefix', False))
                 
-                templates = TemplatesResolver(template_path=stack.get('TemplatePath'), repo_path=repo_path).resolve()
-
+                templates = TemplatesResolver(template_path=stack.get('TemplatePath'), params_path=params_path, repo_path=repo_path).resolve()
+                
                 self.prepare(templates=templates, bucket=s3_bucket)
 
                 to_update = False
