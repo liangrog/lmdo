@@ -113,7 +113,7 @@ To delete, run:
 
 CloudFormation
 --------------
-### Available reserved utility variables
+### Available reserved utility variables (`WARNING`, see Note)
 They will be replaced with correct value during deployment
 
 `$env|ENV_VAR_NAME`: Environment variables, can be used both in parameters and templates.
