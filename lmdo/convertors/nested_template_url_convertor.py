@@ -18,7 +18,7 @@ class NestedTemplateUrlConvertor(ChainProcessor, Convertor):
 
     @classmethod
     def match(cls, haystack):
-        return re.findall(cls.SEARCH_REGX_STR, haystack)
+        return re.findall(cls.SEARCH_REGX_STR, str(haystack))
 
     def process(self, data):
         return self.convert(data)

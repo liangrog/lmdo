@@ -59,9 +59,10 @@ class TemplatesResolver(Resolver):
         if template_urls:
             for url in template_urls:
                 found = NestedTemplateUrlConvertor.match(url)
-                if found:
-                    header, template_name = found[0].split("|")
-                    templates['children'].append(self.create_template(template_name))
+                if len(found) > 0:
+                    for fnd in found:
+                      header, template_name = fnd.split("|")
+                      templates['children'].append(self.create_template(template_name))
         
         more_childen = self.get_child_template_from_param()
         if more_childen:
@@ -80,10 +81,11 @@ class TemplatesResolver(Resolver):
         
         templates = []
         for key, value in child_tpls.iteritems():
-            found = NestedTemplateUrlConvertor.match(value)
-            if found:
-                header, template_name = found[0].split("|")
-                templates.append(self.create_template(template_name))
+            found = NestedTemplateUrlConvertor.match(value)            
+            if len(found) > 0:
+                for fnd in found:
+                  header, template_name = fnd.split("|")
+                  templates.append(self.create_template(template_name))
 
         return templates if len(templates) > 0 else False
 
