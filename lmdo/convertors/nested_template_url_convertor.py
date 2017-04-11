@@ -14,11 +14,10 @@ class NestedTemplateUrlConvertor(ChainProcessor, Convertor):
     Replace environment variable tags using enviroment variable
     """
     SEARCH_REGX = r'\$template\|[^"\', \r\n]+'
-    SEARCH_REGX_STR = r'\$template\|[^"\', \r\n]+'
 
     @classmethod
     def match(cls, haystack):
-        return re.findall(cls.SEARCH_REGX_STR, str(haystack))
+        return re.findall(cls.SEARCH_REGX, str(haystack))
 
     def process(self, data):
         return self.convert(data)

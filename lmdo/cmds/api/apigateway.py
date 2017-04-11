@@ -3,6 +3,7 @@ import os
 import sys
 import site
 import datetime
+import json
 
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.iam.iam import IAM
@@ -10,6 +11,7 @@ from lmdo.cmds.lm.aws_lambda import AWSLambda
 from lmdo.oprint import Oprint
 from lmdo.config import SWAGGER_DIR, SWAGGER_FILE, PROJECT_CONFIG_FILE, APIGATEWAY_SWAGGER_WSGI
 from lmdo.utils import update_template, get_template
+from lmdo.convertors.stack_var_convertor import StackVarConvertor
 
 
 class Apigateway(AWSBase):
@@ -159,11 +161,18 @@ class Apigateway(AWSBase):
             # Replace variable in swagger template with content in a file.
             var_to_file = self._config.get('ApiVarMapToFile')
             if (var_to_file):
-                for var_name, file_name in var_to_file.items():
+                for var_name, file_name in var_to_file.iteritems():
                     with open('{}/{}'.format(SWAGGER_DIR, file_name), 'r') as ofile:
                         file_content = ofile.read()
                         to_replace[var_name] = file_content.replace('\n', '\\n').replace('"', '\\"')
 
+            var_to_var = self._config.get('ApiVarMapToVar')
+            if var_to_var:
+                # Convert stack output key value if there is any
+                _, json_data = StackVarConvertor().process((json.dumps(var_to_var), var_to_var))
+                for var_name, replacement in json_data.iteritems():
+                    to_replace[var_name] = replacement
+                    
             body = update_template(outfile.read(), to_replace)
 
             if not api:

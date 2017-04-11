@@ -70,7 +70,10 @@ Stage: dev
 # **********************************************************************
 # ApiGatewayName: api-title
 # ApiVarMapToFile:  
-#     $apiIntegrationRequestTemple: api_integration_request_template.json
+#     $apiIntegrationRequestTemplate: api_integration_request_template.json
+# ApiVarMapToVar:  
+#     $apiRandomVar: randomValue
+#     $apiRandomVar: $stack|stack-name::output-key
 
 # ***********************************************
 # @optional

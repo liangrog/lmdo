@@ -13,6 +13,8 @@ class StackVarConvertor(ChainProcessor, Convertor):
     tag format:
     $stack|[name]::[key]
     """
+    SEARCH_REGX = r'(\$stack\|[^"\', \r\n]+)+'
+
     def __init__(self):
         self._stack_info_cache = {}
 
@@ -33,7 +35,7 @@ class StackVarConvertor(ChainProcessor, Convertor):
 
     def get_pattern(self):
         """Stack variable pattern $stack|[stack_name]::[key]"""
-        return r'(\$stack\|[^"\', \r\n]+)+'
+        return self.SEARCH_REGX
 
     def get_stack_names_and_keys(self, content):
         """Get all the stack names and keys need to query"""

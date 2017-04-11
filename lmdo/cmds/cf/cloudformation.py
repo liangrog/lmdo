@@ -127,11 +127,15 @@ class Cloudformation(AWSBase):
         if self._config.get('CloudFormation'):
             s3_bucket = self._config.get('CloudFormation').get('S3Bucket')
             repo_path = self._config.get('CloudFormation').get('TemplateRepoPath')
+
+            specified_stack_found = False
             for stack in self._config.get('CloudFormation').get('Stacks'):
                 # If only for specified stack
                 specified_stack = self.if_specify_stack()
                 if specified_stack and specified_stack != stack.get('Name'):
                     continue
+                else:
+                    specified_stack_found = True
 
                 func_params = {}
 
@@ -185,19 +189,16 @@ class Cloudformation(AWSBase):
 
                 # Remove temporary template dir
                 shutil.rmtree(templates['tmp_dir'])
+            
+            # If specified stack name and none matched
+            if self.if_specify_stack() and not specified_stack_found:
+                Oprint.warn('Cannot find specified stack {} in lmdo config'.format(self.if_specify_stack()), self.NAME)
 
     def create_stack(self, stack_name, capabilities=None, **kwargs):
         """Create stack"""
         try:
             capabilities = capabilities or ['CAPABILITY_NAMED_IAM', 'CAPABILITY_IAM']
-            if self._args.get('-e') or self._args.get('--event'):
-                response = self._client.create_stack(
-                    StackName=stack_name,
-                    Capabilities=capabilities,
-                    **kwargs
-                )
-                self.stack_events_waiter(stack_name=stack_name)
-            else:
+            if self._args.get('-he') or self._args.get('--hide-event'):
                 waiter = CloudformationWaiterStackCreate(self._client)
                 response = self._client.create_stack(
                     StackName=stack_name,
@@ -205,6 +206,13 @@ class Cloudformation(AWSBase):
                     **kwargs
                 )
                 waiter.wait(stack_name)
+            else:
+                response = self._client.create_stack(
+                    StackName=stack_name,
+                    Capabilities=capabilities,
+                    **kwargs
+                )
+                self.stack_events_waiter(stack_name=stack_name)
 
             self.lock_stack(stack_name=stack_name)
         except Exception as e:

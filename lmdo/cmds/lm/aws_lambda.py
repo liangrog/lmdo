@@ -9,6 +9,7 @@ import glob
 import copy
 import random
 import uuid
+import json
 
 from lambda_packages import lambda_packages
 
@@ -20,6 +21,7 @@ from lmdo.oprint import Oprint
 from lmdo.config import LAMBDA_MEMORY_SIZE, LAMBDA_RUNTIME, LAMBDA_TIMEOUT, LAMBDA_EXCLUDE, PIP_VENDOR_FOLDER, PIP_REQUIREMENTS_FILE
 from lmdo.utils import zipper, get_sitepackage_dirs, class_function_retry, copytree
 from lmdo.spinner import spinner
+from lmdo.convertors.stack_var_convertor import StackVarConvertor
 
 
 class AWSLambda(AWSBase):
@@ -313,15 +315,26 @@ class AWSLambda(AWSBase):
                 break
         return exist
 
+    def convert_config(self):
+        config = self._config.get('Lambda')
+        if config:
+            # Convert stack output key value if there is any
+            _, json_data = StackVarConvertor().process((json.dumps(config), config))
+            return json_data
+
+        return False
+
     def process(self, package_only=False):
         """Prepare function before creation/update"""
+        config_data = self.convert_config()
+        
         # Dont run if doesn't exist
-        if not self._config.get('Lambda'):
+        if not config_data:
             Oprint.info('No Lambda function configured, skip...', 'lambda')
             return True
 
         # Create all functions
-        for lm in self._config.get('Lambda'):
+        for lm in config_data:
             self.function_update_or_create(lm, package_only)
 
         return True
