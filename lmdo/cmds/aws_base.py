@@ -91,6 +91,10 @@ class AWSBase(object):
         """Return invokeable function url"""
         return 'arn:aws:lambda:{}:{}:function:{}'.format(self.get_region(), self.get_account_id(), func_name)
 
+    def get_lmdo_lambda_arn(self, func_name):
+        """Return lambda arn for created in lmdo"""
+        return self.get_lambda_arn(self.get_lmdo_format_name(func_name))
+
     def if_lambda_function(self, arn):
         """Check if arn is function"""
         arns = arn.split(':')

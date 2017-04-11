@@ -12,6 +12,7 @@ from lmdo.oprint import Oprint
 from lmdo.config import SWAGGER_DIR, SWAGGER_FILE, PROJECT_CONFIG_FILE, APIGATEWAY_SWAGGER_WSGI
 from lmdo.utils import update_template, get_template
 from lmdo.convertors.stack_var_convertor import StackVarConvertor
+from lmdo.convertors.lambda_var_convertor import LambdaVarConvertor
 
 
 class Apigateway(AWSBase):
@@ -168,8 +169,11 @@ class Apigateway(AWSBase):
 
             var_to_var = self._config.get('ApiVarMapToVar')
             if var_to_var:
-                # Convert stack output key value if there is any
-                _, json_data = StackVarConvertor().process((json.dumps(var_to_var), var_to_var))
+                convertor = StackVarConvertor()
+                convertor.successor = LambdaVarConvertor()
+
+                # Convert util variable value if there is any
+                _, json_data = convertor.process_next((json.dumps(var_to_var), var_to_var))
                 for var_name, replacement in json_data.iteritems():
                     to_replace[var_name] = replacement
                     

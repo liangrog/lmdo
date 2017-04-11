@@ -447,11 +447,12 @@ Optionally, you can use `ApiVarMapToFile` to map your custom key to a file for r
     ApiVarMapToFile:                   
         $mappingKey: file/path/name               
 
-You can also use `ApiVarMapToVar` to map any string values to your defined key. For this mapping, you can also use `$stack` utitlity variable for the value.
+You can also use `ApiVarMapToVar` to map any string values to your defined key. For this mapping, you can also use `$stack` and `$lambda-arn` utitlity variable for the value.
 
     ApiVarMapToVar:
         $mappingKey1: value
         $mappingKey2: $stack|stack-name::key1
+        $mappingKey3: $lambda-arn|lambda-name
 
 
 **NOTE:** Please name your version as `$version` and your title as `$title` so that Lmdo can update it during creation using the value of `ApiGatewayName` in your lmdo.yaml
