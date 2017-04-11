@@ -113,7 +113,7 @@ To delete, run:
 
 CloudFormation
 --------------
-### Available reserved utility variables
+### Available reserved utility variables (`WARNING`, see Note)
 They will be replaced with correct value during deployment
 
 `$env|ENV_VAR_NAME`: Environment variables, can be used both in parameters and templates.
@@ -178,6 +178,8 @@ They will be replaced with correct value during deployment
     b. All nested stack templates must reside in `TemplateRepoPath`. If not given, lmdo will look for nested stack template (see point **c** below) from the project folder by default.
 
     c. Using syntax like `TemplateURL: $template|your-nested-stack-template-file-name` in your master template stack resource, lmdo will replace the syntax to appropriate S3 url.
+    
+    d. You can use `DisablePrefix` option to create stack with exact name you give
 
 5. Multiple CloudFormation Stacks
 
