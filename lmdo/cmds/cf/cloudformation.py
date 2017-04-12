@@ -498,7 +498,6 @@ class Cloudformation(AWSBase):
         change_set_info = self.describe_change_set(change_set_name=change_set_name, StackName=stack_name)
         # If no changes, skip
         if not change_set_info.get('Changes'):
-            print(change_set_info)
             Oprint.warn('There is no changes in change set, abort', self.NAME)
             return False
 
