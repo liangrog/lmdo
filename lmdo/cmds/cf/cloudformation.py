@@ -229,14 +229,7 @@ class Cloudformation(AWSBase):
             capabilities = capabilities or ['CAPABILITY_NAMED_IAM', 'CAPABILITY_IAM']
             self.unlock_stack(stack_name=stack_name)
 
-            if self._args.get('-e') or self._args.get('--event'):
-                response = self._client.update_stack(
-                    StackName=stack_name,
-                    Capabilities=capabilities,
-                    **kwargs
-                )
-                self.stack_events_waiter(stack_name=stack_name)
-            else:
+            if self._args.get('-he') or self._args.get('--hide-event'):
                 waiter = CloudformationWaiterStackUpdate(self._client)
                 response = self._client.update_stack(
                     StackName=stack_name,
@@ -244,6 +237,13 @@ class Cloudformation(AWSBase):
                     **kwargs
                 )
                 waiter.wait(stack_name)
+            else:
+                response = self._client.update_stack(
+                    StackName=stack_name,
+                    Capabilities=capabilities,
+                    **kwargs
+                )
+                self.stack_events_waiter(stack_name=stack_name)
 
             self.lock_stack(stack_name=stack_name)
         except ClientError as ce:
@@ -271,13 +271,13 @@ class Cloudformation(AWSBase):
             if not no_policy:
                 self.unlock_stack(stack_name=stack_name)
 
-            if self._args.get('-e') or self._args.get('--event'):
-                response = self._client.delete_stack(StackName=stack_name)
-                self.stack_events_waiter(stack_name=stack_name)
-            else:
+            if self._args.get('-he') or self._args.get('--hide-event'):
                 waiter = CloudformationWaiterStackDelete(self._client)
                 response = self._client.delete_stack(StackName=stack_name)
-                waiter.wait(stack_name)
+                waiter.wait(stack_name)   
+            else:
+                response = self._client.delete_stack(StackName=stack_name)
+                self.stack_events_waiter(stack_name=stack_name)
         except Exception as e:
             Oprint.err(e, self.NAME)
             return False
@@ -380,16 +380,16 @@ class Cloudformation(AWSBase):
         try:
             self.unlock_stack(stack_name=stack_name)
 
-            if self._args.get('-e') or self._args.get('--event'):
-                Oprint.info('Executing change set {} for updating stack {}'.format(change_set_name, stack_name), self.NAME)
-                response = self._client.execute_change_set(ChangeSetName=change_set_name, StackName=stack_name, *args, **kwargs)
-
-                self.stack_events_waiter(stack_name=stack_name)
-            else:
+            if self._args.get('-he') or self._args.get('--hide-event'):
                 waiter = CloudformationWaiterStackUpdate(self._client)
                 Oprint.info('Executing change set {} for updating stack {}'.format(change_set_name, stack_name), self.NAME)
                 response = self._client.execute_change_set(ChangeSetName=change_set_name, StackName=stack_name, *args, **kwargs)
                 waiter.wait(stack_name)
+            else:
+                Oprint.info('Executing change set {} for updating stack {}'.format(change_set_name, stack_name), self.NAME)
+                response = self._client.execute_change_set(ChangeSetName=change_set_name, StackName=stack_name, *args, **kwargs)
+
+                self.stack_events_waiter(stack_name=stack_name)
 
             self.lock_stack(stack_name=stack_name)
         except Exception as e:
