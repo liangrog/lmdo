@@ -118,7 +118,7 @@ They will be replaced with correct value during deployment
 
 `$env|ENV_VAR_NAME`: Environment variables, can be used both in parameters and templates.
 
-`$template|template-file-name`: Nested stack template to be used to construct proper S3 bucket url for stack resource `TemplateURL`, mostly used in templates.
+`$template|[relative/path/from/repo/to/template/]template-file-name`: Nested stack template to be used to construct proper S3 bucket url for stack resource `TemplateURL`, mostly used in templates.
 
 `$stack|stack-name::output-key`: The value of an existing stack's output based on key name. Can be used both in parameters and templates.
 
@@ -177,7 +177,7 @@ They will be replaced with correct value during deployment
 
     b. All nested stack templates must reside in `TemplateRepoPath`. If not given, lmdo will look for nested stack template (see point **c** below) from the project folder by default.
 
-    c. Using syntax like `TemplateURL: $template|your-nested-stack-template-file-name` in your master template stack resource, lmdo will replace the syntax to appropriate S3 url.
+    c. Using syntax like `TemplateURL: $template|[relative/path/from/repo/to/template/]your-nested-stack-template-file-name` in your master template stack resource, lmdo will replace the syntax to appropriate S3 url.
     
     d. You can use `DisablePrefix` option to create stack with exact name you give
 
@@ -240,7 +240,7 @@ For json file, you can use two types of syntax:
 
     `$stack|stack-name::output-key`: The value of an existing stack's output based on key name. Can be used both in parameters and templates.
     
-    `$template|template-file-name`: Nested stack template to be used to construct proper S3 bucket url for stack resource   `TemplateURL`, mostly used in templates.
+    `$template|[relative/path/from/repo/to/template/]template-file-name`: Nested stack template to be used to construct proper S3 bucket url for stack resource   `TemplateURL`, mostly used in templates.
 
     **Note**: 
   
