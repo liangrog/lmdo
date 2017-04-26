@@ -130,12 +130,29 @@ class FileLoader(object):
             
     @classmethod
     def find_files_by_names(cls, search_path, only_files):
-        """Find files recursively by giving directory"""
+        """
+        Find files recursively by giving directory
+        files can contain path like 'a/b/c/filename'
+        So that we can give file a namespace
+        """
+        search_list = []
+        for filename in only_files:
+            tmp_var = filename.split('/')
+            file_meta = {
+                "file_name": tmp_var.pop(),
+                "file_path": '/'.join(tmp_var)
+            }
+
+            search_list.append(file_meta)
+
         file_list = []
         for root, dirnames, filenames in os.walk(search_path):
             for filename in filenames:
-                if filename in only_files:
-                    file_list.append(os.path.join(root, filename))
+                for item in search_list: 
+                    if item["file_name"] == filename \
+                        and (len(item["file_path"]) == 0 \
+                        or (len(item["file_path"]) > 0 and root.endswith(item["file_path"]))):
+                        file_list.append(os.path.join(root, filename))
 
         return file_list
 

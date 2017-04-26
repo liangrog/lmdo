@@ -45,7 +45,7 @@ class NestedTemplateUrlConvertor(ChainProcessor, Convertor):
         if search_result:
             result = []
             for item in search_result:
-                header, template_name = item[0:-1].split("|")
+                header, template_name = item.split("|")
                 if template_name not in result:
                     result.append(template_name)
 
@@ -66,10 +66,11 @@ class NestedTemplateUrlConvertor(ChainProcessor, Convertor):
             Oprint.err('Nested stack requires S3 bucket, but found none', 'cloudformation')
 
         for template_name in template_names:
-            url = aws.get_template_s3_url(template_name=template_name)
+            template_file_name = template_name.split('/').pop()
+            url = aws.get_template_s3_url(template_name=template_file_name)
             from_str = '$template|{}'.format(template_name)
             replacement[from_str] = url                
-
+         
         return replacement
         
 

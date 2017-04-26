@@ -1,18 +1,22 @@
 """Packaging settings."""
 
-
+import os
 from codecs import open
-from os.path import abspath, dirname, join
 from subprocess import call
 
 from setuptools import Command, find_packages, setup
 
 from lmdo import __version__
 
+# Set external files
+try:
+    from pypandoc import convert
+    README = convert('README.md', 'rst')
+except ImportError:
+    README = open(os.path.join(os.path.dirname(__file__), 'README.md')).read()
 
-this_dir = abspath(dirname(__file__))
-with open(join(this_dir, 'README.md'), encoding='utf-8') as file:
-    long_description = file.read()
+# allow setup.py to be run from any path
+os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 
 class RunTests(Command):
@@ -37,9 +41,7 @@ setup(
     name='lmdo',
     version=__version__,
     description='CLI tools for microservices automation using AWS Lambda function',
-    long_description=long_description,
-    url='https://github.com/MerlinTechnology/lmdo',
-    download_url = 'https://github.com/MerlinTechnology/lmdo/tarball/2.0.1',
+    url='https://github.com/liangrog/lmdo',
     author='Roger Liang',
     author_email='pinguroger@gmail.com',
     license='MIT',

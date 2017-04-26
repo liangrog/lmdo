@@ -69,7 +69,7 @@ class TemplatesResolver(Resolver):
             templates['children'] += more_childen
 
         templates['master'] = self.create_template(self._template_path)
-
+        
         return templates
     
     def get_child_template_from_param(self):
