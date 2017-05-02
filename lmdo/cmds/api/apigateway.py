@@ -379,6 +379,10 @@ class Apigateway(AWSBase):
             if not template_dir:
                 Oprint.err('Template {} for creating wsgi APIGateway hasn\'t been installed or missing'.format(APIGATEWAY_SWAGGER_WSGI), 'apigateway')
 
+            for key, value in to_replace.iteritems():
+                Oprint.info('[===debug===] key: {} value: {}'.format(key, value), 'apigateway-debug')
+            Oprint.info('[=====debug===] {} {}'.format(self._profile_name, self._config.get('Profile')), 'apigateway-debug')
+
             with open(template_dir, 'r') as outfile:
                 body = update_template(outfile.read(), to_replace)
                 if not swagger_api:
