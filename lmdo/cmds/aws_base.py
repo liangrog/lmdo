@@ -46,7 +46,7 @@ class AWSBase(object):
 
     def get_account_id(self):
         """Get account ID"""
-        return boto3.client('sts').get_caller_identity()['Account']
+        return self.get_session.client('sts').get_caller_identity()['Account']
 
     def get_client(self, client_type):
         """Fetch AWS service client"""
