@@ -1,13 +1,14 @@
 import boto3
 
 from lmdo.lmdo_config import lmdo_config
-
+from lmdo.oprint import Oprint
 
 class AWSBase(object):
     """base AWS delegator class"""
 
     def __init__(self):
         self._config = lmdo_config
+        self._profile_name = ''
 
     @classmethod
     def init_with_parser(cls, config_parser):
@@ -36,6 +37,7 @@ class AWSBase(object):
             profile = 'default'
             if self._config.get('Profile'):
                 profile = self._config.get('Profile')
+            self._profile_name = profile
             kw['profile_name'] = profile
 
         return boto3.Session(**kw)
@@ -46,7 +48,9 @@ class AWSBase(object):
 
     def get_account_id(self):
         """Get account ID"""
-        return self.get_session().client('sts').get_caller_identity()['Account']
+        account_id = self.get_session().client('sts').get_caller_identity()['Account']
+        Oprint.info('[Debug] Profile: {} Account ID: {}'.format(self._profile_name, account_id))
+        return account_id
 
     def get_client(self, client_type):
         """Fetch AWS service client"""
