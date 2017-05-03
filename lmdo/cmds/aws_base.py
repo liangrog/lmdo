@@ -34,11 +34,11 @@ class AWSBase(object):
             kw['region_name'] = self._config.get('Region')
         else:
             # User 'default' if no specified profile
-            profile = 'default'
+            self._profile_name = 'default'
             if self._config.get('Profile'):
-                profile = self._config.get('Profile')
-            self._profile_name = profile
-            kw['profile_name'] = profile
+                self._profile_name = self._config.get('Profile')
+
+            kw['profile_name'] = self._profile_name
 
         return boto3.Session(**kw)
 
@@ -48,9 +48,7 @@ class AWSBase(object):
 
     def get_account_id(self):
         """Get account ID"""
-        account_id = self.get_session().client('sts').get_caller_identity()['Account']
-        Oprint.info('[Debug] Profile: {} Account ID: {}'.format(self._profile_name, account_id))
-        return account_id
+        return self.get_session().client('sts').get_caller_identity()['Account']
 
     def get_client(self, client_type):
         """Fetch AWS service client"""

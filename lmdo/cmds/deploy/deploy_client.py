@@ -18,7 +18,7 @@ class DeployClient(ClientFactory):
         self._args = args
 
     def execute(self):
-        Oprint.info('Start deploying service --', 'lmdo')
+        Oprint.info('Start deploying service', 'lmdo')
         self._dispatcher.run(CreateCommand(self._cloudformation))
         self._dispatcher.run(CreateCommand(self._lambda))
         self._dispatcher.run(CreateCommand(self._apigateway))

@@ -353,7 +353,6 @@ class Apigateway(AWSBase):
 
             role = iam.create_apigateway_lambda_role(self.get_apigateway_lambda_role_name(function_name))
             
-            Oprint.info('[=====debug===] {} {}'.format(self._profile_name, self._config.get('Profile')), 'apigateway-debug')
             Oprint.info('Create/Update API Gateway for wsgi function {}'.format(lm_func.get('FunctionName')), 'apigateway')
 
             to_replace = {
@@ -379,9 +378,6 @@ class Apigateway(AWSBase):
             template_dir = get_template(APIGATEWAY_SWAGGER_WSGI)
             if not template_dir:
                 Oprint.err('Template {} for creating wsgi APIGateway hasn\'t been installed or missing'.format(APIGATEWAY_SWAGGER_WSGI), 'apigateway')
-
-            for key, value in to_replace.iteritems():
-                Oprint.info('[===debug===] key: {} value: {}'.format(key, value), 'apigateway-debug')
 
             with open(template_dir, 'r') as outfile:
                 body = update_template(outfile.read(), to_replace)
