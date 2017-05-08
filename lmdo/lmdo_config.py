@@ -4,6 +4,7 @@ import os
 
 import jinja2
 
+from lmdo.cli import args
 from lmdo.config_parser import ConfigParser
 from lmdo.file_loader import FileLoader
 from lmdo.config import PROJECT_CONFIG_FILE, PROJECT_CONFIG_TEMPLATE, CONFIG_MANDATORY_KEYS
@@ -16,8 +17,20 @@ class LmdoConfig(ConfigParser):
     """lmdo project configuration Loader"""
     
     def __init__(self):
+        self._args = args
         self.template_to_config()
         self.load_config()
+
+    def get_config_file(self):
+      """Get lmdo configuration file"""
+      if self._args.get('--config'):
+          return self._args.get('--config')
+
+      return PROJECT_CONFIG_FILE
+
+    def get_args_value(self, key):
+        """Get command line input value"""
+        return self._args.get(key, None)
 
     def template_to_config(self):
         """translate jinja2 tempate into lmdo project config file"""
@@ -46,7 +59,7 @@ class LmdoConfig(ConfigParser):
     def load_config(self):
         """Load config data from project directory"""
         env_var_convertor = EnvVarConvertor()
-        file_loader = FileLoader(file_path=PROJECT_CONFIG_FILE)
+        file_loader = FileLoader(file_path=self.get_config_file())
         file_loader.successor = env_var_convertor
         _, self._config = file_loader.process()
         

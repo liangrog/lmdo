@@ -4,22 +4,22 @@ lmdo
 Usage:
     lmdo init <project_name>
     lmdo init config
-    lmdo bp fetch <url>
-    lmdo cf (create|update|delete) [-c | --change_set] [-he | --hide-event] [--stack=<stackName>]
-    lmdo lm (create|update|delete|package) [--function=<functionName>]
-    lmdo cwe (create|update|delete)
-    lmdo api (create|update|delete)
-    lmdo api create-stage <from_stage> <to_stage>
-    lmdo api delete-stage <from_stage>
-    lmdo api create-domain <domain_name> <cert_name> <cert_path> <cert_private_key_path> <cert_chain_path>
-    lmdo api delete-domain <domain_name>
-    lmdo api create-mapping <domain_name> <base_path> <api_name> <stage>
-    lmdo api delete-mapping <domain_name> <base_path>
-    lmdo s3 sync 
-    lmdo logs tail function <function_name> [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>]
-    lmdo logs tail <log_group_name> [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>]
-    lmdo deploy
-    lmdo destroy
+    lmdo bp fetch <url> [--config=<config-file.yaml>]
+    lmdo cf (create|update|delete) [-c | --change_set] [-he | --hide-event] [--stack=<stackName>] [--config=<config-file.yaml>]
+    lmdo lm (create|update|delete|package) [--function=<functionName>] [--config=<config-file.yaml>]
+    lmdo cwe (create|update|delete) [--config=<config-file.yaml>]
+    lmdo api (create|update|delete) [--config=<config-file.yaml>]
+    lmdo api create-stage <from_stage> <to_stage> [--config=<config-file.yaml>]
+    lmdo api delete-stage <from_stage> [--config=<config-file.yaml>]
+    lmdo api create-domain <domain_name> <cert_name> <cert_path> <cert_private_key_path> <cert_chain_path> [--config=<config-file.yaml>]
+    lmdo api delete-domain <domain_name> [--config=<config-file.yaml>]
+    lmdo api create-mapping <domain_name> <base_path> <api_name> <stage> [--config=<config-file.yaml>]
+    lmdo api delete-mapping <domain_name> <base_path> [--config=<config-file.yaml>]
+    lmdo s3 sync [--config=<config-file.yaml>]
+    lmdo logs tail function <function_name> [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>] [--config=<config-file.yaml>]
+    lmdo logs tail <log_group_name> [-f | --follow] [--day=<int>] [--start-date=<datetime>] [--end-date=<datetime>] [--config=<config-file.yaml>]
+    lmdo deploy [--config=<config-file.yaml>]
+    lmdo destroy [--config=<config-file.yaml>]
     lmdo (-h | --help)
     lmdo --version
 
@@ -33,7 +33,7 @@ Options:
     --function=<functioName>       Lambda function name
     --group-name=<groupName>       Cloudwatch log group name
     -he --hide-event               Hide CloudFormation event output
-
+    --config=<config-file.yaml>    Custom lmdo configuration file                  
 """
 
 from __future__ import print_function
@@ -44,10 +44,10 @@ from lmdo.oprint import Oprint
 from lmdo.cmds.bp.bp_client import BpClient
 
 
+args = docopt(__doc__, version=VERSION)
+
 def main():
     """Call Commands"""   
-
-    args = docopt(__doc__, version=VERSION)
 
     # Project initalisation
     if args.get('init'):

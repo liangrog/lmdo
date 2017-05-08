@@ -6,10 +6,9 @@ from lmdo.cmds.client_factory import ClientFactory
 
 class LogsClient(ClientFactory):
     """Cloudformation command client"""
-    def __init__(self, args):
+    def __init__(self):
         self._logs = Logs(args)
         self._dispatcher = Dispatcher()
-        self._args = args
 
     def execute(self):
         if self._args.get('tail'):

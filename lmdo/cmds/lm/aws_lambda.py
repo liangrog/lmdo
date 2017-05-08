@@ -53,13 +53,12 @@ class AWSLambda(AWSBase):
         "s3transfer", "six.py", "jmespath", "concurrent"
     ]
 
-    def __init__(self, args=None):
+    def __init__(self):
         super(AWSLambda, self).__init__()
         self._client = self.get_client('lambda') 
         self._s3 = S3()
         self._iam = IAM()
         self._event = CloudWatchEvent()
-        self._args = args or {}
         self._events_dispatcher_arn = {}
         self._heater_arn = None
         self._default_event_role_arn = None

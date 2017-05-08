@@ -1,5 +1,6 @@
 import boto3
 
+from lmdo.cli import args
 from lmdo.lmdo_config import lmdo_config
 from lmdo.oprint import Oprint
 
@@ -7,6 +8,7 @@ class AWSBase(object):
     """base AWS delegator class"""
 
     def __init__(self):
+        self._args = args
         self._config = lmdo_config
         self._profile_name = ''
 

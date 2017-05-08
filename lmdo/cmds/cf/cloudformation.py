@@ -27,14 +27,13 @@ class Cloudformation(AWSBase):
     
     NAME = 'cloudformation'
 
-    def __init__(self, args=None):
+    def __init__(self):
         super(Cloudformation, self).__init__()
         self._client = self.get_client('cloudformation')
         self._s3 = S3()
         self._stack_info_cache = {}
-        self._args = args or {}
         self.current_event_timestamp = (datetime.datetime.now(utc) - datetime.timedelta(seconds=3))
-
+    
     @property
     def client(self):
         return self._client

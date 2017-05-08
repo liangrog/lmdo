@@ -18,10 +18,9 @@ from lmdo.convertors.lambda_var_convertor import LambdaVarConvertor
 class Apigateway(AWSBase):
     """create/update APIGateway"""
 
-    def __init__(self, args):
+    def __init__(self):
         super(Apigateway, self).__init__()
         self._client = self.get_client('apigateway')
-        self._args = args
 
     @property
     def client(self):

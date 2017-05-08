@@ -10,10 +10,9 @@ from lmdo.oprint import Oprint
 
 class Logs(AWSBase):
     """Cloudwatch logs handler"""
-    def __init__(self, args):
+    def __init__(self):
         super(Logs, self).__init__()
         self._client = self.get_client('logs') 
-        self._args = args
         self._wait = object()
 
     @property

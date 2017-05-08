@@ -18,13 +18,12 @@ class CloudWatchEvent(AWSBase):
     TARGET_LOCAL = 'local'
 
     """CloudwatchEvent handler"""
-    def __init__(self, args=None):
+    def __init__(self):
         super(CloudWatchEvent, self).__init__()
         self._client = self.get_client('events')
         # Not to depends on Lambda class
         self._lambda = self.get_client('lambda')
         self._iam = IAM()
-        self._args = args or {}
         self._default_role_arn = None
 
     @property

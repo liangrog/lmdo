@@ -7,7 +7,7 @@ from lmdo.cmds.client_factory import ClientFactory
 class ApiClient(ClientFactory):
     """Cloudformation command client"""
     def __init__(self, args):
-        self._apigateway = Apigateway(args)
+        self._apigateway = Apigateway()
         self._dispatcher = Dispatcher()
         self._args = args
 

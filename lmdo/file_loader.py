@@ -68,14 +68,15 @@ class FileLoader(object):
             return False
 
     @staticmethod
-    def toJson(data_str):
+    def toJson(data_str, file_name=None):
         """Convert string to json"""
         json_str = FileLoader.ifJsonLoadable(data_str)
+         
         # Try yaml
         if not json_str:
             json_str = FileLoader.ifYamlLoadable(data_str)
             if not json_str:
-                raise ValueError('Data is neither valida json or yaml')
+                raise ValueError('Data is neither valida json or yaml for file {}'.format(file_name))
 
         return json_str
 
@@ -88,7 +89,6 @@ class FileLoader(object):
             if not self.file_allowed():
                 raise Exception('File type {} is not allowed'.format(self.get_ext()))
             
-            
             with open(self._file_path, 'r') as outfile:
                 raw = outfile.read()
 
@@ -97,7 +97,7 @@ class FileLoader(object):
                         for key, value in self._yaml_replacements.iteritems():
                             raw = raw.replace(key, value)
 
-                json_content = FileLoader.toJson(raw)
+                json_content = FileLoader.toJson(raw, file_name=self._file_path)
                     
                 return raw, json_content
 

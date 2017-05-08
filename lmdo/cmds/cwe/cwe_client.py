@@ -6,7 +6,7 @@ from lmdo.cmds.client_factory import ClientFactory
 class CweClient(ClientFactory):
     """Cloudwatch command client"""
     def __init__(self, args=None):
-        self._cloudwatchevent = CloudWatchEvent(args)
+        self._cloudwatchevent = CloudWatchEvent()
         self._dispatcher = Dispatcher()
         self._args = args
 
