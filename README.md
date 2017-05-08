@@ -99,6 +99,10 @@ Basic Configuration
 
     `Stage`: The deployment stage
 
+To user a different configuration file (must be in yaml format), you can use command line option `--config`, for example:
+  
+    $ lmdo deploy --config=custom-config-file.yaml
+
 
 One Step Deployment
 -------------------
