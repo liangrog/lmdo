@@ -367,13 +367,15 @@ class Apigateway(AWSBase):
 
             # Enable cognito user pool as authorizer
             if lm_func.get('CognitoUserPoolId'):
-                se_replace["$userPoolId"] = lm_func.get('CognitoUserPoolId')
-                se_replace['$CognitoUserPool'] = 'CognitoUserPool-{}'.format(lm_func.get('FunctionName'))
+                se_replace = {
+                    "$userPoolId": lm_func.get('CognitoUserPoolId'),
+                    "$CognitoUserPool": 'CognitoUserPool-{}'.format(lm_func.get('FunctionName'))
+                }
 
-                to_replace["securityDefinitions"] = self.get_apigateway_authorizer(se_replace)
-                to_replace["$authorizer"] = '{"' + str(to_replace['$CognitoUserPool'])+'":[]}'
+                to_replace["$securityDefinitions"] = self.get_apigateway_authorizer(se_replace)
+                to_replace["$authorizer"] = '{"' + str(se_replace['$CognitoUserPool'])+'":[]}'
             else:
-                to_replace["securityDefinitions"] = ''
+                to_replace["$securityDefinitions"] = ''
                 to_replace["$authorizer"] = ''
 
             template_dir = get_template(APIGATEWAY_SWAGGER_WSGI)
