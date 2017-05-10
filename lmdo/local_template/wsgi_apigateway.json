@@ -168,20 +168,7 @@
         "Empty": {
             "type": "object"
         }
-    },
-
-    "securityDefinitions": {
-        "$CognitoUserPool": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header",
-            "x-amazon-apigateway-authtype": "cognito_user_pools",
-            "x-amazon-apigateway-authorizer": {
-                "type": "cognito_user_pools",
-                "providerARNs": [
-                    "arn:aws:cognito-idp:$apiRegion:$accountId:userpool/$userPoolId"
-                ]
-            }
-        }
     }
+
+    $securityDefinitions
 }

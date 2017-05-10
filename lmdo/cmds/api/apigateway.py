@@ -367,11 +367,13 @@ class Apigateway(AWSBase):
 
             # Enable cognito user pool as authorizer
             if lm_func.get('CognitoUserPoolId'):
-                to_replace["$userPoolId"] = lm_func.get('CognitoUserPoolId')
-                to_replace['$CognitoUserPool'] = 'CognitoUserPool-{}'.format(lm_func.get('FunctionName'))
+                se_replace["$userPoolId"] = lm_func.get('CognitoUserPoolId')
+                se_replace['$CognitoUserPool'] = 'CognitoUserPool-{}'.format(lm_func.get('FunctionName'))
+
+                to_replace["securityDefinitions"] = self.get_apigateway_authorizer(se_replace)
                 to_replace["$authorizer"] = '{"' + str(to_replace['$CognitoUserPool'])+'":[]}'
             else:
-                to_replace['$CognitoUserPool'] = 'CognitoUserPool-{}'.format(lm_func.get('FunctionName'))
+                to_replace["securityDefinitions"] = ''
                 to_replace["$authorizer"] = ''
 
             template_dir = get_template(APIGATEWAY_SWAGGER_WSGI)
@@ -387,6 +389,25 @@ class Apigateway(AWSBase):
                     self.put_rest_api(swagger_api.get('id'), body, 'merge')
 
         return swagger_api
+
+    def get_apigateway_authorizer(self, to_replace):
+        template = '
+          ,"securityDefinitions": {
+              "$CognitoUserPool": {
+                  "type": "apiKey",
+                  "name": "Authorization",
+                  "in": "header",
+                  "x-amazon-apigateway-authtype": "cognito_user_pools",
+                  "x-amazon-apigateway-authorizer": {
+                    "type": "cognito_user_pools",
+                      "providerARNs": [
+                        "arn:aws:cognito-idp:$apiRegion:$accountId:userpool/$userPoolId"
+                      ]
+                  }
+              }
+          }
+     '
+     return update_template(template, to_replace)
 
     def get_apigateway_lambda_role_name(self, function_name):
         return "APIGateway-{}".format(function_name)
