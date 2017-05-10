@@ -391,23 +391,22 @@ class Apigateway(AWSBase):
         return swagger_api
 
     def get_apigateway_authorizer(self, to_replace):
-        template = '
-          ,"securityDefinitions": {
-              "$CognitoUserPool": {
-                  "type": "apiKey",
-                  "name": "Authorization",
-                  "in": "header",
-                  "x-amazon-apigateway-authtype": "cognito_user_pools",
-                  "x-amazon-apigateway-authorizer": {
-                    "type": "cognito_user_pools",
-                      "providerARNs": [
-                        "arn:aws:cognito-idp:$apiRegion:$accountId:userpool/$userPoolId"
-                      ]
-                  }
-              }
-          }
-     '
-     return update_template(template, to_replace)
+        template = ',"securityDefinitions": {' \
+              '"$CognitoUserPool": {' \
+                  '"type": "apiKey",' \
+                  '"name": "Authorization",'\
+                  '"in": "header",' \
+                  '"x-amazon-apigateway-authtype": "cognito_user_pools",' \
+                  '"x-amazon-apigateway-authorizer": {' \
+                    '"type": "cognito_user_pools",' \
+                      '"providerARNs": [' \
+                        '"arn:aws:cognito-idp:$apiRegion:$accountId:userpool/$userPoolId"' \
+                      ']' \
+                 '}' \
+              '}' \
+          '}' 
+
+        return update_template(template, to_replace)
 
     def get_apigateway_lambda_role_name(self, function_name):
         return "APIGateway-{}".format(function_name)
