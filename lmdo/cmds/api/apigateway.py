@@ -21,10 +21,22 @@ class Apigateway(AWSBase):
     def __init__(self):
         super(Apigateway, self).__init__()
         self._client = self.get_client('apigateway')
+        self.convert_config()
 
     @property
     def client(self):
         return self._client
+
+    def convert_config(self):
+        """converting stack var"""
+        convertor = StackVarConvertor()
+        convertor.successor = LambdaVarConvertor()
+        # Convert stack output key value if there is any
+        _, json_data = convertor.process_next((json.dumps(self._config.config), self._config.config))
+
+        self._config.config = json_data
+
+        return True
 
     def create(self):
         """Create"""
@@ -168,12 +180,7 @@ class Apigateway(AWSBase):
 
             var_to_var = self._config.get('ApiVarMapToVar')
             if var_to_var:
-                convertor = StackVarConvertor()
-                convertor.successor = LambdaVarConvertor()
-
-                # Convert util variable value if there is any
-                _, json_data = convertor.process_next((json.dumps(var_to_var), var_to_var))
-                for var_name, replacement in json_data.iteritems():
+                for var_name, replacement in var_to_var.iteritems():
                     to_replace[var_name] = replacement
                     
             body = update_template(outfile.read(), to_replace)
@@ -350,7 +357,7 @@ class Apigateway(AWSBase):
             
             function_name = self.get_lmdo_format_name(lm_func.get('FunctionName'))
 
-            role = iam.create_apigateway_lambda_role(self.get_apigateway_lambda_role_name(function_name))
+            #role = iam.create_apigateway_lambda_role(self.get_apigateway_lambda_role_name(function_name))
             
             Oprint.info('Create/Update API Gateway for wsgi function {}'.format(lm_func.get('FunctionName')), 'apigateway')
 
@@ -368,6 +375,8 @@ class Apigateway(AWSBase):
             # Enable cognito user pool as authorizer
             if lm_func.get('CognitoUserPoolId'):
                 se_replace = {
+                    "$apiRegion": self.get_region(),
+                    "$accountId": self.get_account_id(),
                     "$userPoolId": lm_func.get('CognitoUserPoolId'),
                     "$CognitoUserPool": 'CognitoUserPool-{}'.format(lm_func.get('FunctionName'))
                 }
@@ -381,9 +390,10 @@ class Apigateway(AWSBase):
             template_dir = get_template(APIGATEWAY_SWAGGER_WSGI)
             if not template_dir:
                 Oprint.err('Template {} for creating wsgi APIGateway hasn\'t been installed or missing'.format(APIGATEWAY_SWAGGER_WSGI), 'apigateway')
-
+            
             with open(template_dir, 'r') as outfile:
                 body = update_template(outfile.read(), to_replace)
+                
                 if not swagger_api:
                     swagger_api = self.import_rest_api(body)
                 else:

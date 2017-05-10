@@ -5,6 +5,7 @@ from lmdo.convertors import Convertor
 from lmdo.chain_processor import ChainProcessor
 from lmdo.oprint import Oprint
 from lmdo.cmds.aws_base import AWSBase
+from lmdo.file_loader import FileLoader
 
 
 class LambdaVarConvertor(ChainProcessor, Convertor):

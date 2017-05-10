@@ -72,6 +72,16 @@ class LmdoConfig(ConfigParser):
 
         return None
 
+    @property
+    def config(self):
+        """Get all config in json"""
+        return self._config
+
+    @config.setter
+    def config(self, data):
+        """Set config in json"""
+        self._config = data
+
     def validate(self):
         """
         Set default value and check if mandatory keys exist
