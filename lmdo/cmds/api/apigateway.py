@@ -357,7 +357,7 @@ class Apigateway(AWSBase):
             
             function_name = self.get_lmdo_format_name(lm_func.get('FunctionName'))
 
-            #role = iam.create_apigateway_lambda_role(self.get_apigateway_lambda_role_name(function_name))
+            role = iam.create_apigateway_lambda_role(self.get_apigateway_lambda_role_name(function_name))
             
             Oprint.info('Create/Update API Gateway for wsgi function {}'.format(lm_func.get('FunctionName')), 'apigateway')
 
