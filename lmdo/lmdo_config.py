@@ -47,7 +47,7 @@ class LmdoConfig(ConfigParser):
 
     @staticmethod
     def if_lmdo_config_exist(args):
-        return (os.path.isfile(PROJECT_CONFIG_TEMPLATE) and os.access(PROJECT_CONFIG_TEMPLATE, os.R_OK)) \
+        return (os.path.isfile(PROJECT_CONFIG_FILE) and os.access(PROJECT_CONFIG_FILE, os.R_OK)) \
             or (os.path.isfile(PROJECT_CONFIG_TEMPLATE) and os.access(PROJECT_CONFIG_TEMPLATE, os.R_OK)) \
             or args.get('--config')
 
