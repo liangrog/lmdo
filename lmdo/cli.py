@@ -57,7 +57,7 @@ def main():
     from lmdo.lmdo_config import lmdo_config
 
     # Check if cli is at the right directory
-    if not lmdo_config.if_lmdo_config_exist():
+    if not lmdo_config.if_lmdo_config_exist(args):
         Oprint.err('Please run lmdo command at the directory contains the lmdo config file')
 
     # Call the right client to handle

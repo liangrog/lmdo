@@ -26,8 +26,9 @@ class S3(AWSBase):
         """Sync local asset to s3"""
         if not self._config.get('AssetDirectory') or not self._config.get('AssetS3Bucket'):
             Oprint.err('Your AssetDirectory or AssetS3Bucket is missing from {}'.format(PROJECT_CONFIG_FILE), 's3')
-
-        if os.path.isdir('./{}'.format(self._config.get('AssetDirectory'))):
+       
+        # WEIRD!!!! isdir won't work without repr!!!!
+        if os.path.isdir(repr('./{}'.format(self._config.get('AssetDirectory')))):
             Oprint.err('Your asset directory {} doesn\'t exist'.format(self._config.get('AssetDirectory')), 's3')
 
         files = self.prepare_files_for_upload('./{}'.format(self._config.get('AssetDirectory')), self._config.get('AssetDirectory'), S3_UPLOAD_EXCLUDE)
