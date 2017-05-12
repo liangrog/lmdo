@@ -12,7 +12,8 @@ from lmdo.oprint import Oprint
 from lmdo.config import SWAGGER_DIR, SWAGGER_FILE, PROJECT_CONFIG_FILE, APIGATEWAY_SWAGGER_WSGI
 from lmdo.utils import update_template, get_template
 from lmdo.convertors.stack_var_convertor import StackVarConvertor
-from lmdo.convertors.lambda_var_convertor import LambdaVarConvertor
+from lmdo.convertors.apigateway_local_lambda_convertor import ApiGatewayLocalLambdaConvertor 
+from lmdo.convertors.apigateway_local_lambda_role_convertor import ApiGatewayLocalLambdaRoleConvertor 
 
 
 class Apigateway(AWSBase):
@@ -30,10 +31,15 @@ class Apigateway(AWSBase):
     def convert_config(self):
         """converting stack var"""
         convertor = StackVarConvertor()
-        convertor.successor = LambdaVarConvertor()
+        apigateway_local_lambda_convertor = ApiGatewayLocalLambdaConvertor()
+        apigateway_local_lambda_role_convertor = ApiGatewayLocalLambdaRoleConvertor()
+
+        convertor.successor = apigateway_local_lambda_convertor
+        apigateway_local_lambda_convertor.successor = apigateway_local_lambda_role_convertor
+
         # Convert stack output key value if there is any
         _, json_data = convertor.process_next((json.dumps(self._config.config), self._config.config))
-
+        
         self._config.config = json_data
 
         return True
@@ -340,7 +346,7 @@ class Apigateway(AWSBase):
             Oprint.err(e, 'apigateway')
 
         return response
-
+      
     def create_wsgi_api(self):
         """Create/Update api definition for wsgi app"""
         swagger_api = False
@@ -357,7 +363,7 @@ class Apigateway(AWSBase):
             
             function_name = self.get_lmdo_format_name(lm_func.get('FunctionName'))
 
-            role = iam.create_apigateway_lambda_role(self.get_apigateway_lambda_role_name(function_name))
+            role = iam.get_lambda_apigateway_default_role(function_name)
             
             Oprint.info('Create/Update API Gateway for wsgi function {}'.format(lm_func.get('FunctionName')), 'apigateway')
 
@@ -419,9 +425,6 @@ class Apigateway(AWSBase):
           '}' 
 
         return update_template(template, to_replace)
-
-    def get_apigateway_lambda_role_name(self, function_name):
-        return "APIGateway-{}".format(function_name)
 
     def delete_wsgi_api_roles(self):
         """Remove IAM roles for wsgi"""

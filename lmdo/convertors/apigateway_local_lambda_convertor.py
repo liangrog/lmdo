@@ -8,13 +8,13 @@ from lmdo.cmds.aws_base import AWSBase
 from lmdo.file_loader import FileLoader
 
 
-class LambdaVarConvertor(ChainProcessor, Convertor):
+class ApiGatewayLocalLambdaConvertor(ChainProcessor, Convertor):
     """
     Replace variable tags using lambda arn
     tag format:
-    $lambda-arn|[name]
+    $lmdo-lambda-arn|[name]
     """
-    SEARCH_REGX = r'(\$lambda-arn\|[^"\', \r\n]+)+'
+    SEARCH_REGX = r'(\$lmdo-lambda-arn\|[^"\', \r\n]+)+'
 
     def process(self, data):
         return self.convert(data)
@@ -34,7 +34,7 @@ class LambdaVarConvertor(ChainProcessor, Convertor):
     def replacement_data(self, content):
         """
         Return enviroment variable in a dict
-        with a format of '$env|name': value
+        with a format of '$lmdo-lambda-arn\|name': value
         """
         replacement = {}
         aws_base = AWSBase() 

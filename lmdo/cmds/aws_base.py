@@ -114,4 +114,8 @@ class AWSBase(object):
         arn_list = arn.split(':')
         return arn_list.pop()
 
+    def get_apigateway_lambda_role_name(self, function_name):
+        """Get apigateway for lambda default role name"""
+        return "APIGateway-{}".format(function_name)
+
 

@@ -318,4 +318,10 @@ class IAM(AWSBase):
 
         return policy
 
+    def get_lambda_apigateway_default_role(self, function_name, lmdo_lambda=False):
+        """Get default role for apigateway"""
+        if lmdo_lambda:
+            function_name = self.get_lmdo_format_name(function_name)
 
+        return self.create_apigateway_lambda_role(self.get_apigateway_lambda_role_name(function_name))
+ 
