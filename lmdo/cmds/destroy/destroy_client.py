@@ -12,8 +12,8 @@ class DestroyClient(ClientFactory):
     def __init__(self, args):
         self._cloudformation = Cloudformation()
         self._lambda = AWSLambda()
-        self._apigateway = Apigateway(args)
-        self._cloudwatchevent = CloudWatchEvent(args)
+        self._apigateway = Apigateway()
+        self._cloudwatchevent = CloudWatchEvent()
         self._dispatcher = Dispatcher()
         self._args = args
 
