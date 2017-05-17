@@ -119,6 +119,17 @@ Stage: dev
 #          MYSQL_PASSWORD: secret
 #          MYSQL_USERNAME: admin
 #          MYSQL_DATABASE: lmdo
+#      EventSource:
+#         - Type: s3
+#           Config:
+#             BucketName: [name of the bucket]
+#             # Optional, default to "s3:ObjectCreated:*", "s3:ObjectRemoved:*" 
+#             Events:
+#               - "s3:ObjectCreated:*"
+#               - "s3:ObjectCreated:Put"
+#             FilterRules:
+#               - Name: 'prefix'|'suffix'
+#                 Value: string
 
     #*** Django bridged lambda function
 #    - S3Bucket: lambda.bucket.name        
@@ -146,7 +157,7 @@ Stage: dev
 #      EnvironmentVariables:                       
 #          DJANGO_SETTINGS_MODULE: mysite.settings      
 
-     #*** Cloudwatch Event dispatcher lambda function
+  #*** Cloudwatch Event dispatcher lambda function
 #    - S3Bucket: lambda.bucket.name        
 #      Type: cron_dispatcher              
 #      MemorySize: 128                     

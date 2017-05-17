@@ -15,6 +15,7 @@ from lambda_packages import lambda_packages
 
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.s3.s3 import S3
+from lmdo.cmds.s3.bucket_notification import BucketNotification
 from lmdo.cmds.iam.iam import IAM
 from lmdo.cmds.cwe.cloudwatch_event import CloudWatchEvent
 from lmdo.oprint import Oprint
@@ -53,10 +54,13 @@ class AWSLambda(AWSBase):
         "s3transfer", "six.py", "jmespath", "concurrent"
     ]
 
+    EVENT_SOURCE_TYPE_S3 = 's3'
+
     def __init__(self):
         super(AWSLambda, self).__init__()
         self._client = self.get_client('lambda') 
         self._s3 = S3()
+        self._bucket_notification = BucketNotification()
         self._iam = IAM()
         self._event = CloudWatchEvent()
         self._events_dispatcher_arn = {}
@@ -90,7 +94,9 @@ class AWSLambda(AWSBase):
 
         # delete  all functions
         for lm in self._config.get('Lambda'):
-            
+            # Delete event source
+            self.process_event_source(function_config=lm, delete=True)
+            break
             # If user specify a function
             specify_function = self.if_specify_function()
             if specify_function and specify_function != lm.get('FunctionName'):
@@ -397,6 +403,9 @@ class AWSLambda(AWSBase):
         self.heat_up(function_config)
         # If it's a dispatcher
         self.create_dispatcher_and_rules(function_config)
+
+        # If it has event source configuration
+        self.process_event_source(function_config)
 
     def update_function_config(self, function_config):
         """Update function config value based on types"""
@@ -840,5 +849,57 @@ class AWSLambda(AWSBase):
         if info:
             self.delete_function(info.get('Configuration').get('FunctionName'))
             self.delete_role(info.get('Configuration').get('Role'))
+
+    def add_s3_permission_to_lambda(self, function_name, unique_code, bucket_name):
+        """
+        Add permission to Lambda function so that
+        the s3 can trigger Lambda
+        """
+        stmt_id = 'Stmts-s3-{}'.format(unique_code)
+
+        response = self._client.add_permission(
+            FunctionName=function_name,
+            StatementId=stmt_id,
+            Action='lambda:InvokeFunction',
+            Principal='s3.amazonaws.com',
+            SourceArn=self.get_s3_arn(bucket_name)
+        )
+
+        if response.get('Statement') is None:
+            raise ValueError('Create lambda permission for s3 failed')
+
+        return stmt_id
+
+    def delete_s3_permission_to_lambda(self, function_name, unique_code):
+        """
+        Delete s3 permission to Lambda function
+        """
+        try: 
+            stmt_id = 'Stmts-s3-{}'.format(unique_code)
+
+            response = self._client.remove_permission(
+                FunctionName=function_name,
+                StatementId=stmt_id
+            )
+        except Exception as e:
+            pass 
+
+        return True
+
+    def process_event_source(self, function_config, delete=False):
+        """Updating event source"""
+        for event in function_config.get('EventSource', []):
+            if event['Type'] == self.EVENT_SOURCE_TYPE_S3:
+                event['FunctionName'] = self.get_lmdo_format_name(function_config['FunctionName'])                
+                 
+                # Always delete first
+                self.delete_s3_permission_to_lambda(function_name=event['FunctionName'], unique_code=event['BucketName'].replace('.', '-'))
+
+                if not delete:
+                    self.add_s3_permission_to_lambda(function_name=event['FunctionName'], unique_code=event['BucketName'].replace('.', '-'), bucket_name=event['BucketName'])
+                else:
+                    event['Delete'] = True
+
+                self._bucket_notification.update(event)
 
 

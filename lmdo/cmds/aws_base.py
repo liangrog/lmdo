@@ -118,4 +118,8 @@ class AWSBase(object):
         """Get apigateway for lambda default role name"""
         return "APIGateway-{}".format(function_name)
 
+    def get_s3_arn(self, bucket_name):
+        """Get s3 arn format"""
+        return "arn:aws:s3:::{}".format(bucket_name)
+
 
