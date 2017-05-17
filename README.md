@@ -360,6 +360,28 @@ or
           Handler: handler.fly                
     ```
 
+    For Standar lambda function, you can also setup event source such as S3. When defined event ocurrs from the source, lambda function will be triggered.
+    
+    The configuration of event source for lambda is as below:
+
+    ```
+    Lambda:
+      - S3Bucket: lambda.bucket.name
+        FunctionName: your-function-name
+        Handler: handler.fly                
+        EventSource:
+          - Type: s3
+            Config:
+            BucketName: [name of the source bucket]
+            # Optional, lmdo default to "s3:ObjectCreated:*", "s3:ObjectRemoved:*" 
+            Events:
+              - "s3:ObjectCreated:Put"
+            # Optional
+            FilterRules:
+              - Name: 'prefix'|'suffix'
+                Value: string
+    ```
+
 2. Django wsgi lambda function
 
     It wraps up Django and bridge between API gateway and your Django
