@@ -41,6 +41,7 @@ Contents:
 6. [CloudWatch events](#cloudwatch-events)
 7. [CloudWatch logs](#cloudwatch-logs)
 8. [S3 Upload](#s3-upload)
+8. [Environment Variables](#environment-variables)
 
 Installation
 ------------
@@ -575,3 +576,23 @@ lmdo offers a simple command line to upload your local static asset into a S3 bu
 To upload (Note: it doesn't delete files):
 
     $ lmdo s3 sync
+
+Environment Variables
+------
+
+You can use lmdo to create environment variables utilising `$Stack`, `$Env` or just a string
+
+### Configuration
+
+    EnvExportMap:
+      EnvName1: String
+      EnvName2: $env|env_name
+      EnvName3: $stack|stack-name::key
+
+### Commands
+
+Running `lmdo env export` will produce a string contains all your environment variable defined in `EnvExportMap`. To export to your shell, you need to run:
+
+    $ eval $(lmdo env export)
+
+

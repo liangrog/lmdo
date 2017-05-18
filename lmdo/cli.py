@@ -4,6 +4,7 @@ lmdo
 Usage:
     lmdo init <project_name>
     lmdo init config
+    lmdo env export
     lmdo bp fetch <url> [--config=<config-file.yaml>]
     lmdo cf (create|update|delete) [-c | --change_set] [-he | --hide-event] [--stack=<stackName>] [--config=<config-file.yaml>]
     lmdo lm (create|update|delete|package) [--function=<functionName>] [--config=<config-file.yaml>]
@@ -63,6 +64,9 @@ def main():
     # Call the right client to handle
     if args.get('bp'):
         client_factory = BpClient(args)
+    if args.get('env'):
+        from lmdo.cmds.env.env_client import EnvClient
+        client_factory = EnvClient(args)
     elif args.get('s3'):
         from lmdo.cmds.s3.s3_client import S3Client
         client_factory = S3Client(args)

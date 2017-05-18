@@ -28,6 +28,15 @@ Stage: dev
 
 # ***********************************************************************
 # @optional
+# To create value for the environment variable
+# ***********************************************************************
+#EnvExportMap:
+#  EnvName1: String
+#  EnvName2: $env|env_name
+#  EnvName3: $stack|stack-name::key
+
+# ***********************************************************************
+# @optional
 # ***********************************************************************
 #CloudFormation:
 #    S3Bucket: blah.com.au                   

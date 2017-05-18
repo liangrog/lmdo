@@ -78,6 +78,11 @@ class PackageCommand(CommandInterface):
     def run(self):
         self._obj.package()
 
+class ExportCommand(CommandInterface):
+    """Command for package"""
+    def run(self):
+        self._obj.export()
+
 class Dispatcher(object):
     """Command invocation class"""
     def run(self, command):
