@@ -50,11 +50,10 @@ class Apigateway(AWSBase):
             Oprint.info('No action for api gateway, skip...', 'apigateway')
             sys.exit(0)
 
-        swagger_api = self.create_wsgi_api()
         swagger_api = self.create_api_by_swagger()
+        swagger_api = self.create_wsgi_api()
         if swagger_api:
             self.create_deployment(swagger_api.get('id'), self._config.get('Stage'), swagger_api.get('name'))
-            #self.flush_rest_api(rest_api_id=swagger_api.get('id'), stage_name=self._config.get('Stage'))
 
     def update(self):
         """Update"""
@@ -196,7 +195,7 @@ class Apigateway(AWSBase):
                 return self.import_rest_api(body)
             else:
                 # Always overwrite for update
-                return self.put_rest_api(api.get('id'), body, 'merge')
+                return self.put_rest_api(api.get('id'), body, 'overwrite')
 
         return False
             
@@ -405,7 +404,7 @@ class Apigateway(AWSBase):
                     swagger_api = self.import_rest_api(body)
                 else:
                     # Always overwrite for update
-                    self.put_rest_api(swagger_api.get('id'), body, 'overwrite')
+                    self.put_rest_api(swagger_api.get('id'), body, 'merge')
 
         return swagger_api
 
