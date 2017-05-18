@@ -54,6 +54,7 @@ class Apigateway(AWSBase):
         swagger_api = self.create_wsgi_api()
         if swagger_api:
             self.create_deployment(swagger_api.get('id'), self._config.get('Stage'), swagger_api.get('name'))
+            self.flush_rest_api(rest_api_id=swagger_api.get('id'), stage_name=self._config.get('Stage'))
 
     def update(self):
         """Update"""
@@ -434,4 +435,39 @@ class Apigateway(AWSBase):
                 function_name = self.get_lmdo_format_name(lm_func.get('FunctionName'))
                 iam.delete_role_and_associated_policies(self.get_apigateway_lambda_role_name(function_name))
 
+    def get_authorizers(self, rest_api_id, filters=None, **kwargs):
+        """Get authorizers for a rest api"""
+        response = self._client.get_authorizers(restApiId=rest_api_id, **kwargs)
+        authorizers = response.get('items')
+
+        if filters:
+            f = lambda x: x.get('type') == filters.get('type') or \
+                          x.get('name') == filters.get('name') or \
+                          x.get('authType') == filters.get('authType') or \
+                          x.get('identitySource') == filters.get('identitySource')
+            authorizers = list(filter(f, authorizers))
+
+        return authorizers
+
+    def create_userpool_authorizer(self, rest_api_id, userpool_id):
+        """Create a userpool type authorizer"""
+        name = self.get_lmdo_authorizer_name()
+        userpool_arn = self.get_userpool_arn(userpool_id)
+        identitySource = "method.request.header.Authorization"
+        response = self._client.create_authorizer(
+            restApiId=rest_api_id,
+            name=name,
+            type='COGNITO_USER_POOLS',
+            providerARNs=[userpool_arn],
+            identitySource=identitySource)
+
+        Oprint.info('Authorizer {} for rest api {} has been created'.format(name, rest_api_id), self.NAME)
+
+        return response
+
+    def flush_rest_api(self, rest_api_id, stage_name):
+        """Flush cache so to take changes"""
+        self._client.flush_stage_authorizers_cache(restApiId=rest_api_id, stageName=stage_name)
+        self._client.flush_stage_cache(restApiId=rest_api_id, stageName=stage_name)
+        return True
 
