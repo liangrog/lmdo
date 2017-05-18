@@ -122,4 +122,8 @@ class AWSBase(object):
         """Get s3 arn format"""
         return "arn:aws:s3:::{}".format(bucket_name)
 
+    def get_sns_topic_arn(self, topic):
+        """Get sns topic arn format"""
+        return "arn:aws:sns:{}:{}:{}".format(self.get_region(), self.get_account_id(), topic)
+
 

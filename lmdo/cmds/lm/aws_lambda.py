@@ -16,6 +16,7 @@ from lambda_packages import lambda_packages
 from lmdo.cmds.aws_base import AWSBase
 from lmdo.cmds.s3.s3 import S3
 from lmdo.cmds.s3.bucket_notification import BucketNotification
+from lmdo.cmds.sns.sns import SNS
 from lmdo.cmds.iam.iam import IAM
 from lmdo.cmds.cwe.cloudwatch_event import CloudWatchEvent
 from lmdo.oprint import Oprint
@@ -55,12 +56,14 @@ class AWSLambda(AWSBase):
     ]
 
     EVENT_SOURCE_TYPE_S3 = 's3'
+    EVENT_SOURCE_TYPE_SNS = 'sns'
 
     def __init__(self):
         super(AWSLambda, self).__init__()
         self._client = self.get_client('lambda') 
         self._s3 = S3()
         self._bucket_notification = BucketNotification()
+        self._sns = SNS()
         self._iam = IAM()
         self._event = CloudWatchEvent()
         self._events_dispatcher_arn = {}
@@ -850,19 +853,19 @@ class AWSLambda(AWSBase):
             self.delete_function(info.get('Configuration').get('FunctionName'))
             self.delete_role(info.get('Configuration').get('Role'))
 
-    def add_s3_permission_to_lambda(self, function_name, unique_code, bucket_name):
+    def add_permission_to_lambda(self, function_name, unique_code, principal, source_arn):
         """
         Add permission to Lambda function so that
         the s3 can trigger Lambda
         """
-        stmt_id = 'Stmts-s3-{}'.format(unique_code)
+        stmt_id = 'Stmts-{}'.format(unique_code)
 
         response = self._client.add_permission(
             FunctionName=function_name,
             StatementId=stmt_id,
             Action='lambda:InvokeFunction',
-            Principal='s3.amazonaws.com',
-            SourceArn=self.get_s3_arn(bucket_name)
+            Principal=principal,
+            SourceArn=source_arn
         )
 
         if response.get('Statement') is None:
@@ -870,12 +873,12 @@ class AWSLambda(AWSBase):
 
         return stmt_id
 
-    def delete_s3_permission_to_lambda(self, function_name, unique_code):
+    def delete_permission_to_lambda(self, function_name, unique_code):
         """
         Delete s3 permission to Lambda function
         """
         try: 
-            stmt_id = 'Stmts-s3-{}'.format(unique_code)
+            stmt_id = 'Stmts-{}'.format(unique_code)
 
             response = self._client.remove_permission(
                 FunctionName=function_name,
@@ -889,17 +892,29 @@ class AWSLambda(AWSBase):
     def process_event_source(self, function_config, delete=False):
         """Updating event source"""
         for event in function_config.get('EventSource', []):
+            event['FunctionName'] = self.get_lmdo_format_name(function_config['FunctionName'])                
+            # S3 event
             if event['Type'] == self.EVENT_SOURCE_TYPE_S3:
-                event['FunctionName'] = self.get_lmdo_format_name(function_config['FunctionName'])                
-                 
                 # Always delete first
-                self.delete_s3_permission_to_lambda(function_name=event['FunctionName'], unique_code=event['BucketName'].replace('.', '-'))
+                self.delete_permission_to_lambda(function_name=event['FunctionName'], unique_code=event['BucketName'].replace('.', '-'))
 
                 if not delete:
-                    self.add_s3_permission_to_lambda(function_name=event['FunctionName'], unique_code=event['BucketName'].replace('.', '-'), bucket_name=event['BucketName'])
+                    self.add_permission_to_lambda(function_name=event['FunctionName'], unique_code=event['BucketName'].replace('.', '-'), principal='s3.amazonaws.com', source_arn=self.get_s3_arn(event['BucketName']))
                 else:
                     event['Delete'] = True
 
                 self._bucket_notification.update(event)
+            # SNS event
+            if event['Type'] == self.EVENT_SOURCE_TYPE_SNS:
+                # Always delete first
+                self.delete_permission_to_lambda(function_name=event['FunctionName'], unique_code=event['Topic'])
+
+                if not delete:
+                    self.add_permission_to_lambda(function_name=event['FunctionName'], unique_code=event['Topic'], principal='sns.amazonaws.com', source_arn=self.get_sns_topic_arn(event['Topic']))
+
+                if not delete:
+                    self._sns.update_event_source(event)
+                else:
+                    self._sns.remove_event_source(event)
 
 

@@ -121,15 +121,21 @@ Stage: dev
 #          MYSQL_DATABASE: lmdo
 #      EventSource:
 #         - Type: s3
-#           Config:
-#             BucketName: [name of the bucket]
-#             # Optional, default to "s3:ObjectCreated:*", "s3:ObjectRemoved:*" 
-#             Events:
-#               - "s3:ObjectCreated:*"
-#               - "s3:ObjectCreated:Put"
-#             FilterRules:
-#               - Name: 'prefix'|'suffix'
-#                 Value: string
+#           BucketName: [name of the bucket]
+#           # Optional, default to "s3:ObjectCreated:*", "s3:ObjectRemoved:*" 
+#           Events:
+#             - "s3:ObjectCreated:Put"
+#           # Optional
+#           FilterRules:
+#             - Name: 'prefix'|'suffix'
+#               Value: string
+#           # Optional default to False
+#           Delete: False
+#         - Type: sns
+#           Topic: [name of the SNS topic]
+#           # Optional default to False
+#           Delete: False
+
 
     #*** Django bridged lambda function
 #    - S3Bucket: lambda.bucket.name        

@@ -360,7 +360,7 @@ or
           Handler: handler.fly                
     ```
 
-    For Standar lambda function, you can also setup event source such as S3. When defined event ocurrs from the source, lambda function will be triggered.
+    For Standar lambda function, you can also setup event source such as S3 and SNS. When defined event ocurrs from the source, lambda function will be triggered.
     
     The configuration of event source for lambda is as below:
 
@@ -371,7 +371,6 @@ or
         Handler: handler.fly                
         EventSource:
           - Type: s3
-            Config:
             BucketName: [name of the source bucket]
             # Optional, lmdo default to "s3:ObjectCreated:*", "s3:ObjectRemoved:*" 
             Events:
@@ -380,7 +379,15 @@ or
             FilterRules:
               - Name: 'prefix'|'suffix'
                 Value: string
+            # Optional default to False
+            Delete: False
+          - Type: sns
+            Topic: [name of the SNS topic]
+            # Optional default to False
+            Delete: False
     ```
+
+    NOTE: `Delete` will need it if you want your function to unsubscribe without deleting the lambda function, if you don't specify, it defaults to `False`
 
 2. Django wsgi lambda function
 
