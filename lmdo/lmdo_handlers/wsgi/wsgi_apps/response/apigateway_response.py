@@ -37,8 +37,9 @@ class ApigatewayResponse(ResponseInterface):
             result['headers']['Access-Control-Allow-Origin'] = '*'
 
         # Binary support
+        default_mime_type = 'json'
         if not from_data.mimetype.startswith("text/") \
-            and from_data.mimetype != "application/json":
+            and default_mime_type not in from_data.mimetype:
             result['body'] = base64.b64encode(result['body'])
             result["isBase64Encoded"] = "true"
 
