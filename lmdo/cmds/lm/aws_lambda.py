@@ -35,8 +35,10 @@ class AWSLambda(AWSBase):
     FUNCTION_TYPE_WSGI = 'wsgi'
     FUNCTION_TYPE_CLOUDWATCHEVENTS = 'cron_dispatcher'
     FUNCTION_TYPE_HEATER = 'heater'
+    FUNCTION_TYPE_GO = 'go'
 
     HANDLER_WSGI = 'lmdo_wsgi_handler.handler'
+    HANDLER_GO = 'go_handler.handler'
 
     NAME_EVENTS_DISPATCHER = 'lmdo_events_dispatcher'
     HANDLER_EVENTS_DISPATCHER_HANDLER = 'events_dispatcher_handler.handler'
@@ -251,8 +253,11 @@ class AWSLambda(AWSBase):
         if not os.path.isfile(init_file):
             open(init_file, 'a').close()
 
-    def get_zipped_package(self, func_name, func_type):
+    def get_zipped_package(self, function_config):
         """Packaging lambda"""
+        func_name = function_config.get('FunctionName')
+        func_type = function_config.get('Type')
+
         # Create packaging temp dir
         lambda_temp_dir = tempfile.mkdtemp()
         # Create zip file temp dir
@@ -266,8 +271,17 @@ class AWSLambda(AWSBase):
       
         # Heater is one file only from lmdo. don't need packages
         if func_type != self.FUNCTION_TYPE_HEATER:
-            # Copy project files
-            copytree(os.getcwd(), lambda_temp_dir, ignore=shutil.ignore_patterns('*.git*'))
+            # Go only need executables
+            if func_type == self.FUNCTION_TYPE_GO:
+                if not function_config.get('ExecutableName'):
+                    Oprint.err('ExecutableName is not defined in lmdo config, function {} won\'t be deployed'.format(func_name), self.NAME)
+                    return False, False
+                
+                # We only have on executable needed 
+                shutil.copy(os.path.join(os.getcwd(), function_config.get('ExecutableName')), lambda_temp_dir)
+            else: 
+                # Copy project files
+                copytree(os.getcwd(), lambda_temp_dir, ignore=shutil.ignore_patterns('*.git*'))
 
             # Installing package
             self.dependency_packaging(lambda_temp_dir)
@@ -375,7 +389,7 @@ class AWSLambda(AWSBase):
         if function_config.get('EnvironmentVariables'):
             params['Environment'] = {'Variables': function_config.get('EnvironmentVariables')}
 
-        tmp_path, zip_package = self.get_zipped_package(function_config.get('FunctionName'), function_config.get('Type'))
+        tmp_path, zip_package = self.get_zipped_package(function_config)
         
         if zip_package:
             # Only package up lambda function
@@ -424,6 +438,11 @@ class AWSLambda(AWSBase):
             function_config['Handler'] = self.HANDLER_EVENTS_DISPATCHER_HANDLER
             function_config['Description'] = 'Lmdo cloudwatch event function deployed for service {} by lmdo'.format(self._config.get('Service'))
  
+        if function_type == self.FUNCTION_TYPE_GO:
+            function_config['Handler'] = self.HANDLER_GO
+            env_var = {"GO_EXE": function_config.get('ExecutableName')}
+            function_config['EnvironmentVariables'] = dict(env_var, **function_config.get('EnvironmentVariables', {}))
+
         return function_config
 
     def create_role(self, role_name, role_policy):

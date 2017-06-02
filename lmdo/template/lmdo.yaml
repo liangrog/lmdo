@@ -190,3 +190,52 @@ Stage: dev
 #          - Handler: bla.blah.handler
 #            Rate: Rate(1 minutes) 
 
+  #*** golang lambda function
+#    - S3Bucket: lambda.bucket.name        
+#      Type: go
+#      ExecutableName: gocode                       
+#      FunctionName: superman              
+#      Description: blah                   
+#      MemorySize: 128                     
+#      RoleArn: rolearn                    
+#      RolePolicy:                             
+#        AssumeRoles:                      
+#          - apigateway.amazonaws.com      
+#        PolicyDocument: policy.json       
+#        ManagedPolicyArns:                
+#          - arn:aws:blah
+#      Runtime: python2.7                  
+#      Timeout: 180                        
+#      HeatUp: False                       
+#      HeatRate: rate(4 minutes):          
+#      VpcConfig:                          
+#          SecurityGroupIds:
+#              - string
+#              - string
+#          SubnetIds:
+#              - string
+#              - string
+#      EnvironmentVariables:
+#          DEBUG: true|false              
+#          MYSQL_HOST: localhost
+#          MYSQL_PASSWORD: secret
+#          MYSQL_USERNAME: admin
+#          MYSQL_DATABASE: lmdo
+#      EventSource:
+#         - Type: s3
+#           BucketName: [name of the bucket]
+#           # Optional, default to "s3:ObjectCreated:*", "s3:ObjectRemoved:*" 
+#           Events:
+#             - "s3:ObjectCreated:Put"
+#           # Optional
+#           FilterRules:
+#             - Name: 'prefix'|'suffix'
+#               Value: string
+#           # Optional default to False
+#           Delete: False
+#         - Type: sns
+#           Topic: [name of the SNS topic]
+#           # Optional default to False
+#           Delete: False
+
+

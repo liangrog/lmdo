@@ -438,7 +438,20 @@ or
                 Rate: your cron string e.g. Rate(1 minutes)
     ```
 
-### Available reserved utility variables
+3. Go function
+
+    Configuration (mostly the same as standard lambda function except below):
+
+    ```
+    Lambda:
+        - ...   
+          Type: go
+          ExecutableName: go-exe-name   # go build package name
+          EnvironmentVariables:                     
+            DEBUG: true|false           # turn on/off logging           
+    ```
+
+### Available reserved utility variables (apart from `$env|name`)
 
 They will be replaced with correct value during deployment
 
