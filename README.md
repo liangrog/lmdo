@@ -291,7 +291,7 @@ lmdo facilitates packaging, uploading and managing your lambda function. Out of 
 
 ### Optional configurations and their default values available for all function types
 
-`Type`: default `default`. Other availabe types are `wsgi` and `cron_dispatcher`
+`Type`: default `default`. Other availabe types are `wsgi`, `cron_dispatcher` and `go`
 
 `MemorySize`: default `128`
 
