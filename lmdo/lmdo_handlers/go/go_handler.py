@@ -32,7 +32,9 @@ def dump(obj):
         return {slot: getattr(obj, slot) for slot in obj.__slots__}
     return obj.__dict__
 
-def handler(event, context):   
+def handler(event, context):  
+    error_msg = {'error': True}
+
     # debug mode
     debug = False
     if os.getenv(ENV_DEBUG, 'False').lower() == 'true':
@@ -43,7 +45,7 @@ def handler(event, context):
  
     if not os.getenv(ENV_GO_EXE):
         logger.error('No handler executable found from the environment variable {}'.format(ENV_GO_EXE))
-        return False
+        return error_msg
    
     # Run go executable
     cmd = [GO_EXE, json.dumps(event), json.dumps(context, default=dump)]
@@ -51,7 +53,7 @@ def handler(event, context):
 
     if error:
         logger.error(error)
-        return False
+        return error_msg
 
     try:
         json_obj = json.loads(output)
