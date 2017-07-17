@@ -387,7 +387,13 @@ class AWSLambda(AWSBase):
             params['VpcConfig'] = function_config.get('VpcConfig')
 
         if function_config.get('EnvironmentVariables'):
-            params['Environment'] = {'Variables': function_config.get('EnvironmentVariables')}
+            ev = function_config.get('EnvironmentVariables')
+            # Convert all value to string
+            nev = {}
+            for k, v in ev.iteritems():
+                nev[k] = str(v)
+
+            params['Environment'] = {'Variables': nev}
 
         tmp_path, zip_package = self.get_zipped_package(function_config)
         
