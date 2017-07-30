@@ -49,7 +49,7 @@ Installing via pypi:
 
     $ sudo pip install lmdo
 
-Installing via code (Recommended, as lmdo is under active development at the moment):
+Installing via code:
 
     $ git pull https://github.com/MerlinTechnology/lmdo.git
     $ cd lmdo
