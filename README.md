@@ -408,7 +408,7 @@ or
     Lambda:
         - S3Bucket: lambda.bucket.name       
           Type: wsgi                       
-          DisableApiGateway: True            
+          DisableApiGateway: False            
           ApiBasePath: /path                  
           FunctionName: your-function-name         
           EnvironmentVariables:              
@@ -417,7 +417,7 @@ or
 
     **Note**:
 
-    By default, `DisableApiGateway` is set to `False`. You must set your `ApiBasePath` when it's `True`
+    By default, `DisableApiGateway` is set to `False`. You must set your `ApiBasePath` when it's `False`
 
     `DJANGO_SETTINGS_MODULE` environment variable is a must for it to work
 
