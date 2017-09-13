@@ -382,7 +382,12 @@ class AWSLambda(AWSBase):
             'Timeout': function_config.get('Timeout') or LAMBDA_TIMEOUT,
             'Description': function_config.get('Description') or 'Function deployed for service {} by lmdo'.format(self._config.get('Service'))
         }
-        
+
+        # If we have tracing flag active 
+        params['TracingConfig'] = {'Mode': 'PassThrough'}
+        if function_config.get("Tracing"):
+            params['TracingConfig'] = {'Mode': 'Active'}
+
         if function_config.get('VpcConfig'):                
             params['VpcConfig'] = function_config.get('VpcConfig')
 

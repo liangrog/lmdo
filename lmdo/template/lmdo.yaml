@@ -115,7 +115,8 @@ Stage: dev
 #      Runtime: python2.7                  
 #      Timeout: 180                        
 #      HeatUp: False                       
-#      HeatRate: rate(4 minutes):          
+#      HeatRate: rate(4 minutes):         
+#      Tracing: False 
 #      VpcConfig:                          
 #          SecurityGroupIds:
 #              - string

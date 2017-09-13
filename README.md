@@ -303,6 +303,8 @@ lmdo facilitates packaging, uploading and managing your lambda function. Out of 
 
 `HeatRate`: default `rate(4 minutes)` before container becomes inactive. Only avaiable for `wsgi` and `default` functions.
 
+`Tracing`: default `False` which will set TracingConfig mode in Lambda to `PassThrough`. Lambda will only trace the request from an upstream service if it contains a tracing header with "sampled=1". If set it to `True` which will set TracingConfig mode to `Active`, Lambda will respect any tracing header it receives from an upstream service. If no tracing header is received, Lambda will call X-Ray for a tracing decision
+
 VPC configuration:
 
     VpcConfig:                          
