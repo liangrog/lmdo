@@ -191,6 +191,14 @@ class AWSLambda(AWSBase):
 
         return response
 
+    @class_function_retry(aws_retry_condition=['InvalidParameterValueException'], tries=10, delay=2)
+    def update_function_configuration(**kargs):
+        """
+        Wrapper for AWS lambda client as policy change
+        can take longer than updating function configuration
+        """
+        response = self._client.update_function_configuration(**kargs)
+
     def delete_function(self, func_name, **kwargs):
         """Wrapper to delete lambda function"""
         try:
@@ -416,7 +424,7 @@ class AWSLambda(AWSBase):
                     self.update_function_code(info.get('Configuration').get('FunctionName'), function_config.get('S3Bucket'), self.get_zip_name(function_config.get('FunctionName')))
                    
                     params.pop('Code')
-                    self._client.update_function_configuration(**params)
+                    self.update_function_configuration(**params)
                     Oprint.info('Updated lambda function configuration', 'lambda')
                 else:
                     # User configured role or create a new on based on policy document
