@@ -192,7 +192,7 @@ class AWSLambda(AWSBase):
         return response
 
     @class_function_retry(aws_retry_condition=['InvalidParameterValueException'], tries=10, delay=2)
-    def update_function_configuration(**kargs):
+    def update_function_configuration(self, **kargs):
         """
         Wrapper for AWS lambda client as policy change
         can take longer than updating function configuration
