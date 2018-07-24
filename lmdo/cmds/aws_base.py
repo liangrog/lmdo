@@ -34,6 +34,11 @@ class AWSBase(object):
             kw['aws_access_key_id'] = self._config.get('AWSKey')
             kw['aws_secret_access_key'] = self._config.get('AWSSecret')
             kw['region_name'] = self._config.get('Region')
+           
+            # Provide session token if there is one, such as 
+            # token recieved from after MFA
+            if self._config.get('AWSSessionToken'):
+                kw['aws_session_token'] = self._config.get('AWSSessionToken')
         else:
             # User 'default' if no specified profile
             self._profile_name = 'default'

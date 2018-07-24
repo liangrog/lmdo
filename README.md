@@ -82,7 +82,7 @@ Basic Configuration
 -------------------
 1. AWS credentials
 
-    You can either use session (`Profile`) or configure AWS key and secret (`Region, AWSKey, AWSSecret`) in `lmdo.yaml`
+    You can either use session (`Profile`) or configure AWS key and secret (`Region, AWSKey, AWSSecret, AWSSessionToken (optional)`) in `lmdo.yaml`
 
     When using session, you will need to create two files:
 
@@ -90,7 +90,7 @@ Basic Configuration
 
     Details please ref to [AWS CLI](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
 
-    **Note**: If explicitly using config options `Region, AWSKey, AWSSecret`, it's recommended to define them in the environment. Using syntax like `$env|YOUR_ENV_VAR` lmdo will replace them with the actual environment value.
+    **Note**: If explicitly using config options `Region, AWSKey, AWSSecret, AWSSessionToken (optional)`, it's recommended to define them in the environment. Using syntax like `$env|YOUR_ENV_VAR` lmdo will replace them with the actual environment value.
 
 2. Other mandatory configuration Options
 
