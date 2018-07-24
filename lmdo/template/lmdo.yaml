@@ -17,8 +17,9 @@ User: default
 Profile: default
 # Or
 # Region: AWS Region Code
-# AWSKey: aws_access_key_id
-# AWSSecret: aws_secret_access_key
+# AWSKey: aws access key id
+# AWSSecret: aws secret access key
+# AWSSessionToken: aws session token
 
 # ***********************************
 # @mandatory
